@@ -32,8 +32,9 @@ export function createApp(env: Env, db: Db) {
   });
 
   app.route("/health", health);                            // public
-  app.use("/session/*", rateLimit({ windowSec: 900, max: 10 }));
-  app.route("/session", session);                          // login / logout / me
+  // Login only (not /me): 10 attempts per 15 min per IP. One limiter per app instance.
+  app.use("/session/login", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
+  app.route("/session", session);                          // login public; me/logout/devices apply auth inside
   app.route("/app", appVersion);                           // public: mobile update check
   app.use("*", auth);                                      // everything below needs a session
 
