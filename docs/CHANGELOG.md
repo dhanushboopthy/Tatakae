@@ -9,3 +9,7 @@
 - core: sync helpers (`SYNC_TABLES`, `primaryKeyOf`, LWW, plan-lock checks), zod row schemas for every synced table, v2/v3 input schemas, story pack schema, settings defaults.
 - core: `pickStory`, offline-first `createSyncClient` (outbox, debounced flush, LWW pull, status), `newId` (ULID), `reschedule`; tests for scoring, time, sync and story (written, not yet run).
 - db: v1–v3 schema incl. `changes`, `sync_items`, `sessions.last_seen_at`, applications/stories/japanese_log; initial migration, notes FTS5 migration, seed defaults, `db/migrate.ts`.
+- infra: Terraform for OCI (VCN, subnet, security list with closable admin SSH, A1 2 OCPU/12 GB Ubuntu 24.04 arm64, reserved IP, 100 GB data volume, versioned backup bucket with lifecycle purge, optional ₹1 budget alert and S3 key).
+- deploy: cloud-init template runs an idempotent `bootstrap.sh` (Docker, Oracle iptables, Tailscale SSH, ufw, fail2ban, unattended-upgrades, data volume at /srv/tatakae); Caddy CSP and immutable asset caching; compose health dependencies and uid 1000; Litestream daily snapshots; real `deploy.sh` (snapshot, health check, rollback), `restore.sh`, `hash-password.sh`.
+- ci: `deploy.yml` (checks → arm64 images to GHCR → Tailscale → deploy.sh → smoke test) and `mobile.yml` (signed release APK on `mobile-v*` tags).
+- docs: `docs/MANUAL-STEPS.md`, the ordered by-hand steps for Phase 0.

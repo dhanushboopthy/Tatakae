@@ -70,6 +70,7 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 
 ## Progress
 - [x] Skeleton committed; `pnpm install` ok; 0.1 `.npmrc` + `ci.yml`
+- [x] infra: task 1 written, not applied (🟡): 0.3 Terraform, 0.4 cloud-init + bootstrap.sh, 0.6 Caddy CSP/caching, 0.7 Litestream/compose + restore.sh + hash-password.sh, 0.8 deploy.yml + deploy.sh + mobile.yml. 0.2 and 0.5 are manual → `docs/MANUAL-STEPS.md`.
 - [x] core: time, scoring, sync helpers + row schemas, settings defaults, story picker, sync client, tests (🟡 written, not run)
 - [x] core: db schema v1–v3 (+ changes, sync_items, sessions.last_seen_at), `0000_init` + `0001_notes_fts` migrations, seed.sql, db/migrate.ts (🟡 SQL applied cleanly to an in-memory SQLite as a syntax check only)
 
@@ -78,6 +79,16 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - D2: `.npmrc` keeps pnpm's isolated linker, which Expo SDK 54+ supports. The hoisted fallback is documented in the file.
 - D3: Phase/CHANGELOG bookkeeping is done once per area rather than per task, to save time. Commits are still one per task.
 - D4: Sandbox placeholder files (`.bashrc`, `.claude/skills`, …) are excluded through `.git/info/exclude`. Project skills in `.claude/skills` could not be read or committed from the sandbox.
+- infra: D5: cloud-init only embeds and runs `deploy/scripts/bootstrap.sh` (base64 via `filebase64`), so there is one copy of the setup logic, it needs no `$$` escaping, and it is also the manual path (`sudo /usr/local/sbin/tatakae-bootstrap`). The Tailscale key line is deleted from `/etc/tatakae/bootstrap.env` once connected.
+- infra: D6: The instance ignores changes to `metadata` and the image id. That way a newer Ubuntu image or an edited cloud-init never silently rebuilds the VM. Rebuild on purpose with `terraform apply -replace=oci_core_instance.tatakae`. The reserved IP and the data volume have `prevent_destroy`.
+- infra: D7: Extra ingress 41641/udp (security list, iptables, ufw) so Tailscale can make direct connections instead of going through DERP relays. Also added: IMDSv2 only, and an object lifecycle rule (plus the IAM policy it needs) that purges previous object versions after 30 days. Without it, versioning plus Litestream deletions would slowly fill the 20 GB.
+- infra: D8: Possible conflict on Ubuntu: ufw and iptables-persistent may be mutually exclusive. bootstrap opens 80/443 in the live iptables and runs `netfilter-persistent save` first, only when it added a rule (so Docker chains are never saved), then installs ufw. Either way the same ports end up open after a reboot. ufw keeps 22/tcp only while Tailscale is down, so a failed `tailscale up` can't lock you out.
+- infra: D9: Safety for the data volume: it is formatted only when completely blank, and bootstrap refuses if it has a partition table or if several candidate disks exist. Docker gets `RequiresMountsFor=/srv/tatakae`, so the api can never start against an empty database on the boot disk.
+- infra: D10: litestream runs as uid 1000, like the api. web and litestream wait for a healthy api. `snapshot-interval: 24h` added so restores don't replay up to 30 days of WAL. unattended-upgrades reboots at 21:30 UTC (03:00 IST) when needed.
+- infra: D11: deploy.sh health = api healthcheck + in-container fetch of `/api/health` + Caddy answering on :80 (a cert may not exist yet on the first deploy). The real HTTPS check is the workflow's smoke test. A rollback re-deploys the previous tag but does not restore the DB snapshot automatically; it prints the `restore.sh --from-file` command.
+- infra: D12: deploy.yml runs typecheck + tests before building, because ci.yml is not a dependency of it. `workflow_dispatch` has a `skip_checks` input for emergencies. Doc/mobile/infra-only pushes don't deploy.
+- infra: D13: mobile.yml signs through `-Pandroid.injected.signing.*` (survives `prebuild --clean`, no gradle edits) and fails if the APK carries the debug certificate.
+- infra: D14: The owner password hash must be single-quoted in `/opt/tatakae/.env` (compose expands `$`). `hash-password.sh` prints the quoted line. **`deploy/.env.example` could not be edited (permission settings deny `.env*` writes)**, so its `OWNER_PASSWORD_HASH=` line still lacks that hint. MANUAL-STEPS step 10 covers it.
 - core: `newId()` is a small built-in ULID generator (crypto.getRandomValues, Math.random fallback) instead of the `ulid` package, whose module init throws on React Native before crypto is polyfilled. `ulid` stays in package.json (unused by core).
 - core: `Day.energy` is `number | null` (1..5) instead of a literal union so it matches the zod row schema. Rows carry `deletedAt` everywhere. Row schemas are checked against types.ts with `satisfies`.
 - core: Goal status enum `active|paused|done|dropped`; watch_queue status `queued|watching|done|dropped` (DB columns stay free text).

@@ -22,13 +22,13 @@ Rules for every phase
 | # | Task | Area | Done when |
 |---|---|---|---|
 | 0.1 | `pnpm install`, typecheck/test pass; `.npmrc` decision for Expo | repo | CI green |
-| 0.2 | OCI account (home region Mumbai/Hyderabad); decide Pay-As-You-Go upgrade + ₹1 budget alert | infra | Documented in DECISIONS |
-| 0.3 | Terraform: VCN, subnet, security list (80/443), A1 2 OCPU/12 GB arm64, reserved IP, block volume, backup bucket | infra | `terraform apply` succeeds |
-| 0.4 | cloud-init/bootstrap: Docker, iptables 80/443, ufw, fail2ban, unattended-upgrades, Tailscale; close public 22 | infra | SSH only via tailnet |
-| 0.5 | Domain: claim `.me` via Student Pack, auto-renew off, A record → reserved IP | infra | `dig` resolves |
-| 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
-| 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
-| 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
+| 📝 0.2 manual — see MANUAL-STEPS.md | OCI account (home region Mumbai/Hyderabad); decide Pay-As-You-Go upgrade + ₹1 budget alert | infra | Documented in DECISIONS |
+| 🟡 0.3 | Terraform: VCN, subnet, security list (80/443), A1 2 OCPU/12 GB arm64, reserved IP, block volume, backup bucket | infra | `terraform apply` succeeds |
+| 🟡 0.4 | cloud-init/bootstrap: Docker, iptables 80/443, ufw, fail2ban, unattended-upgrades, Tailscale; close public 22 | infra | SSH only via tailnet |
+| 📝 0.5 manual — see MANUAL-STEPS.md | Domain: claim `.me` via Student Pack, auto-renew off, A record → reserved IP | infra | `dig` resolves |
+| 🟡 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
+| 🟡 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
+| 🟡 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
 | 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
 | 0.10 | Web: Login screen, 401 handling, desktop install prompt | web | Installed on both laptops |
 | 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
