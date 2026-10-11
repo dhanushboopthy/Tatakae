@@ -22,8 +22,14 @@ export function createApp(env: Env, db: Db) {
   const app = new Hono<AppBindings>().basePath("/api");
 
   app.onError(errors);
-  app.use("*", async (c, next) => { c.set("env", env); await next(); });
-  // TODO(phase0): make db available via c.var or closure
+  app.notFound((c) => c.json({ error: "not_found", message: "No such endpoint." }, 404));
+  app.use("*", async (c, next) => {
+    c.set("env", env);
+    c.set("db", db);
+    c.set("session", null);
+    c.set("email", "");
+    await next();
+  });
 
   app.route("/health", health);                            // public
   app.use("/session/*", rateLimit({ windowSec: 900, max: 10 }));
