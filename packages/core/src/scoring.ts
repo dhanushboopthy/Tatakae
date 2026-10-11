@@ -19,22 +19,25 @@ export const DEFAULT_SCORING: ScoringSettings = {
 export type ScoredMission = Pick<Mission, "points" | "status" | "slot"> & { deletedAt?: string | null };
 
 const live = <T extends { deletedAt?: string | null }>(ms: readonly T[]): T[] => ms.filter((m) => m.deletedAt == null);
+/** Side quests are optional and unscored (docs/02-method.md, night ritual step 7). */
+const scored = <T extends { deletedAt?: string | null; slot: string }>(ms: readonly T[]): T[] =>
+  live(ms).filter((m) => m.slot !== "side");
 
 /** Points for a mission; blank = 1. */
 export function missionPoints(m: Pick<Mission, "points">): number {
   return m.points ?? 1;
 }
 
-/** Sum of points excluding rescheduled/backlog. */
+/** Sum of points excluding rescheduled/backlog and side quests. */
 export function plannedPoints(missions: readonly ScoredMission[]): number {
-  return live(missions)
+  return scored(missions)
     .filter((m) => m.status !== "rescheduled" && m.status !== "backlog")
     .reduce((sum, m) => sum + missionPoints(m), 0);
 }
 
-/** done = full, minimum = half, missed/open = 0. */
+/** done = full, minimum = half, missed/open = 0. Side quests earn nothing (unscored). */
 export function earnedPoints(missions: readonly ScoredMission[]): number {
-  return live(missions).reduce((sum, m) => {
+  return scored(missions).reduce((sum, m) => {
     if (m.status === "done") return sum + missionPoints(m);
     if (m.status === "minimum") return sum + missionPoints(m) / 2;
     return sum;

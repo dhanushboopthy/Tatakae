@@ -49,7 +49,7 @@ One screen: "What would make today a win?" → P1 card (title, Minimum, if-then)
 ## Scoring (exact)
 ```
 points(m)  = m.points ?? 1
-planned    = Σ points(m) where status ∉ {rescheduled, backlog}
+planned    = Σ points(m) where status ∉ {rescheduled, backlog} and slot ≠ side   (side quests are unscored)
 earned     = Σ done → points, minimum → points/2, missed|open → 0
 exec       = planned == 0 ? 0 : round(100 × earned / planned)
 penalty    = −min(20, 5 × floor(max(0, screen_min − 120) / 30))

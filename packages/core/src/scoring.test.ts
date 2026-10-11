@@ -46,6 +46,7 @@ describe("plannedPoints", () => {
     ["rescheduled and backlog are excluded", [m("P1", "done"), m("P2", "rescheduled"), m("backlog", "backlog")], 1],
     ["explicit points", [m("P1", "open", 3), m("P2", "missed", 2)], 5],
     ["soft-deleted missions are ignored", [m("P1", "open"), m("P2", "open", null, "2026-10-20T00:00:00Z")], 1],
+    ["side quests are unscored", [m("P1", "open"), m("side", "open", 2)], 1],
   ])("%s", (_name, missions, expected) => {
     expect(plannedPoints(missions)).toBe(expected);
   });
@@ -57,6 +58,7 @@ describe("earnedPoints", () => {
     ["minimum earns half", [m("P1", "minimum", 3)], 1.5],
     ["missed and open earn 0", [m("P1", "missed"), m("P2", "open")], 0],
     ["mixed", [m("P1", "done"), m("P2", "minimum"), m("P3", "missed")], 1.5],
+    ["side quest done earns nothing", [m("P1", "missed"), m("side", "done")], 0],
   ])("%s", (_name, missions, expected) => {
     expect(earnedPoints(missions)).toBe(expected);
   });
