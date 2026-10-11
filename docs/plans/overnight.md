@@ -70,9 +70,47 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 
 ## Progress
 - [x] Skeleton committed; `pnpm install` ok; 0.1 `.npmrc` + `ci.yml`
+- [x] core: time, scoring, sync helpers + row schemas, settings defaults, story picker, sync client, tests (🟡 written, not run)
+- [x] core: db schema v1–v3 (+ changes, sync_items, sessions.last_seen_at), `0000_init` + `0001_notes_fts` migrations, seed.sql, db/migrate.ts (🟡 SQL applied cleanly to an in-memory SQLite as a syntax check only)
 
 ## Decisions log
 - D1: Git author is the existing git config (`dhanush-superdom <dhanush.boopathy@superdom.ai>`), which is a work email. It was left unchanged as instructed. Run `git config user.email` in this repo if you want your personal email instead.
 - D2: `.npmrc` keeps pnpm's isolated linker, which Expo SDK 54+ supports. The hoisted fallback is documented in the file.
 - D3: Phase/CHANGELOG bookkeeping is done once per area rather than per task, to save time. Commits are still one per task.
 - D4: Sandbox placeholder files (`.bashrc`, `.claude/skills`, …) are excluded through `.git/info/exclude`. Project skills in `.claude/skills` could not be read or committed from the sandbox.
+- core: `newId()` is a small built-in ULID generator (crypto.getRandomValues, Math.random fallback) instead of the `ulid` package, whose module init throws on React Native before crypto is polyfilled. `ulid` stays in package.json (unused by core).
+- core: `Day.energy` is `number | null` (1..5) instead of a literal union so it matches the zod row schema. Rows carry `deletedAt` everywhere. Row schemas are checked against types.ts with `satisfies`.
+- core: Goal status enum `active|paused|done|dropped`; watch_queue status `queued|watching|done|dropped` (DB columns stay free text).
+- core: `averageScore` returns an integer (rounded). Normal days with nothing planned count in averages (they are missed days); only rest/write-off are excluded.
+- core: `capacityCheck` returns `{ ratio, overCapacity, budgetMin }`; budget = floor(free × 0.8); ratio is Infinity when budget is 0 and work is planned.
+- core: `isServerAuthoritative(table,row,forgedDates?)` is true for every `days` row and for missions whose `dayDate` is forged (all dated missions if `forgedDates` is omitted). The API must check both the previous and the next dayDate; `isLockedChange(prev,next,forged)` does the field diff (create/delete/locked fields).
+- core: `validateForge(missions)` → problems `no_p1 | p1_missing_minimum | p1_missing_if_then | duplicate_slot | too_many_side` (a P1 must exist to forge).
+- core: sync client conflicts put the server row locally unconditionally; a conflict with `server: null` (rejected create) soft-deletes the local-only row. `syncResponse.conflicts[].server` is nullable for that case. Remote changes are not zod-validated on the client (only `updatedAt` + PK checked) to stay forward-compatible with new columns.
+- core: sync client auto-flush is on by default (debounced 2 s after each write); `stop()` disables it, `start()` re-enables and flushes. A flush always pulls at least once, even with an empty outbox. Backoff 2 s → 60 s; 401 stops retrying and calls `onAuthError`.
+- core: `LocalStore.countOutbox()` is optional (falls back to `peekOutbox(10000).length`).
+- core: settings defaults live in `packages/core/src/settings.ts` (`DEFAULT_SETTINGS`, `defaultSettingRows()`, `DEFAULT_RECHARGE_ITEMS`, `defaultRechargeRows()`); seeded rows use `updatedAt = 1970-01-01T00:00:00.000Z` so any real edit wins LWW. db/seed.sql has identical values. Recharge ids are fixed: `0000000000RECHARGE0000000{1..5}`.
+- core: `pnpm db:generate` could not run (corepack/pnpm tried to download pnpm 9.12.0 from the blocked registry), so migrations were generated with `./node_modules/.bin/drizzle-kit generate --name init` and `--custom --name notes_fts` — same tool, same config.
+- core: notes FTS is a standalone `notes_fts(note_id UNINDEXED, title, body)` fts5 table with `porter unicode61` tokenizer, kept in sync by insert/update/delete triggers; soft-deleted notes are dropped from the index.
+- core: `db/migrate.ts` loads better-sqlite3 via `createRequire` from apps/api (pnpm isolated linker means it is not resolvable from db/), resolves a relative `DATABASE_PATH` against the repo root, runs the drizzle migrator and then seed.sql.
+- core: v3 tables: `applications(company, role, status, applied_on, url, source, next_step, next_step_on, notes)`, `stories` (STAR: situation/task/action/result, tags JSON, goal_id), `japanese_log(date, minutes, kind, note)`. Not synced.
+
+## Core API reference (`@tatakae/core`)
+_Signatures only; see JSDoc in `packages/core/src`. Keep adding Progress / Decisions entries in their sections above, not here._
+
+Types: `ISODate, ISOTime, RowMeta, Day, Mission, Habit, HabitLog, Anchor, SettingRow, InboxItem, MuraEvent, StuckEvent, RechargeItem, Area, Goal, Review, Experiment, StoryRef, WatchQueueItem, SyncRowMap, DayScore, ScoringSettings, Mark, Slot, MissionStatus, DayKind, StoryMoment`.
+
+Time: `TZ, DAY_BOUNDARY_HOUR, CYCLE_1, todayIST(now?) → ISODate, istTimeHHMM(now?) → "HH:MM", nowIso(), addDays(date, n), daysBetween(a, b), weekdayOf(date) → 0..6 (0 = Sun), isoWeek(date) → {year, week}, isoWeekRange(year, week) → {start, end}, formatIsoWeek({year, week}) → "2026-W42", parseIsoWeek(s) → {year, week} | null, monthRange("YYYY-MM" | "YYYYMM") → {start, end}, monthOf(date), isIsoDate(s), canEditScoring(date)`.
+
+Scoring: `DEFAULT_SCORING, missionPoints, plannedPoints(ms), earnedPoints(ms), execScore(planned, earned), screenPenalty(min, s?), comebackBonus(yMissed, ms, s?), markFor(final, planned, s?), scoreDay(day, ms, yesterdayMissed, s?) → DayScore, isMissedDay(date, day | null, ms, {firstUseDate, today}, s?), firstUseDate(days), averageScore(scores) → number | null, capacityCheck(plannedMin, freeMin, s?) → {ratio, overCapacity, budgetMin}, daysShownUp(scores), scoringFromSettings(value: unknown) → ScoringSettings`.
+
+Settings: `DEFAULT_SETTINGS, ResolvedSettings, EDITABLE_FROM, SEED_UPDATED_AT, DEFAULT_RECHARGE_ITEMS, defaultSettingRows(at?), defaultRechargeRows(at?), parseSettingValue(key, decoded) → {ok, value} | {ok: false, error}, readSettings(rows) → ResolvedSettings, settingValueSchemas, SettingKey, isSettingKey(k)`. Keys: `scoring, wake_time, ritual_time, focus_default, story_enabled, haptics_enabled, afternoon_nudge`. Values are JSON text in `settings.value`.
+
+Sync (pure): `SYNC_TABLES, SyncTable, isSyncTable(t), SYNC_TABLE_PK, primaryKeyOf(table, row), splitPrimaryKey(table, pk), compareIso(a, b), mergeLww(local, remote), shouldApplyIncoming(serverRow | null, incoming) (server-side, strict >), isServerAuthoritative(table, row, forgedDates?), LOCKED_MISSION_FIELDS, FREE_MISSION_FIELDS, isLockedChange(prev | null, next, forged)`.
+
+Schemas (zod): rows `dayRow, missionRow, habitRow, habitLogRow, anchorRow, settingRow, inboxRow, muraEventRow, stuckEventRow, rechargeItemRow, areaRow, goalRow, reviewRow, experimentRow, storyRefRow, watchQueueRow, rowSchemas[table]`; inputs `missionInput, missionPatch, missionForgeReady, lockedEdit, dayPatch, writeOffInput, habitInput, habitPatch, habitLogInput, anchorInput, inboxInput, inboxPatch, stuckInput, settingPut, goalInput/goalPatch (MAX_ACTIVE_GOALS = 4), areaInput/areaPatch, reviewInput/reviewPatch, experimentInput/experimentPatch, storyRefInput/storyRefPatch, storyPack, storyNextQuery, watchQueueInput, noteInput/notePatch, noteSearchQuery, loginInput, loginMobileResponse`; sync `outboxItem (meta.lockReason?), syncRequest, syncResponse (conflicts[].server nullable), syncConflict, syncTable`; helpers `p1Ready(m), validateForge(ms) → ForgeProblem[]`; primitives `isoDate, isoTime, hhmm`. Inferred types: `OutboxItem, SyncRequest, SyncResponse, ClientKind, MissionInput, MissionPatch, …Input/…Patch, StoryPack`.
+
+Story: `STORY_CHANCE, NO_REPEAT_DAYS, pickStory(refs, moment, recentIds, rand?) → ref | null, recentlyShownIds(refs, now?) (from lastShownAt), MONTHLY_THEMES, themeFor(date)`.
+
+Sync client: `createSyncClient({ store, client, post, onChange(tables), onAuthError(), onConflict?, now?, flushDelayMs? }) → { write(table, row, {lockReason?}) → stored row, remove(table, pk, {lockReason?}), flush(), start(), stop(), getStatus(), subscribe(listener) → unsubscribe }`. `LocalStore { get, getAll(table, {includeDeleted?}), put, enqueue, peekOutbox(limit), removeOutbox(ids), countOutbox?, getMeta, setMeta }`. `SyncStatus { state: idle|syncing|offline|error, lastSyncAt, pending, error }`. `SyncHttpError(status)` — throw from `post` for HTTP errors (401 → onAuthError). Also `RowWrite<T>, SYNC_BATCH, FLUSH_DELAY_MS, CURSOR_META_KEY, newId(), reschedule(mission) → [rescheduled, backlogCopy]`.
+
+DB (`db/schema.ts`): drizzle exports `days, missions, habits, habitLogs, anchors, settings, inbox, muraEvents, sessions (lastSeenAt), jobRuns, areas, goals, reviews, experiments, stuckEvents, rechargeItems, storyRefs, watchQueue, notes, files, pushSubscriptions, applications, stories, japaneseLog, changes, syncItems`. Migrations folder: `db/migrations` (drizzle migrator; `0001_notes_fts` is custom SQL).

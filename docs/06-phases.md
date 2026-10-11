@@ -38,8 +38,8 @@ Rules for every phase
 **Goal:** run every day from the app.
 
 Order (each builds on the previous):
-1. **core:** `todayIST`, `addDays`, full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
-2. **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
+1. 🟡 **core:** `todayIST`, `addDays`, full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
+2. 🟡 **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
 3. **api:** days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
 4. **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
 5. **web screens:** Night ritual wizard (all 8 steps, capacity bar, P1 validation, forge), Today, Inbox, Welcome back, Settings (basic), Cmd+K palette.
@@ -51,7 +51,7 @@ Order (each builds on the previous):
 
 ## v2 — Reviews, story, native extras (2 – 15 Nov)
 1. **db/api:** goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
-2. **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
+2. 🟡 **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
 3. **web:** Weekly Control Room (grid, sparkline, screen line, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review, Cycle page (goals ≤ 4, hell-yeah gate, areas).
 4. **story layer:** reference pack import (validate ≤ 160 chars, moment enum), StoryToast on both clients, mute, seasonal theme, watch queue rules.
 5. **mobile native:** share intent → inbox; quick actions (Start focus, Capture); Android widget (P1 + Start/Done); **usage stats** custom module to prefill screen minutes (Usage access permission flow; manual fallback); ongoing focus notification.
