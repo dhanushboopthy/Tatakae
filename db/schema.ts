@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
 
 // Drizzle schema for SQLite (better-sqlite3 on the Oracle VM). Column names match docs/07-data-and-api.md.
 // Conventions: ULID text ids, IST date strings, updated_at on every row, soft delete via deleted_at.
@@ -38,7 +38,7 @@ export const missions = sqliteTable("missions", {
   actualMin: integer("actual_min"),
   rescheduleCount: integer("reschedule_count").notNull().default(0),
   ...meta,
-});
+}, (t) => ({ dayDateIdx: index("missions_day_date_idx").on(t.dayDate) }));
 
 export const habits = sqliteTable("habits", {
   id: text("id").primaryKey(),
@@ -96,6 +96,7 @@ export const sessions = sqliteTable("sessions", {
   deviceName: text("device_name").notNull(), // "laptop-1", "laptop-2", "phone" — Settings → Devices
   createdAt: text("created_at").notNull(),
   expiresAt: text("expires_at").notNull(),
+  lastSeenAt: text("last_seen_at"),     // Settings → Devices ("last seen")
   ...meta,
 });
 
@@ -109,7 +110,6 @@ export const jobRuns = sqliteTable("job_runs", {
 });
 
 // ===================== v2 =====================
-// TODO(v2): fill columns per docs/07-data-and-api.md.
 export const areas = sqliteTable("areas", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -205,7 +205,7 @@ export const watchQueue = sqliteTable("watch_queue", {
 });
 
 // ===================== v3 =====================
-// TODO(v3): notes + FTS5 virtual table created in raw SQL migration.
+// notes_fts (FTS5) + its triggers live in the hand-written migration 0001_notes_fts.sql.
 export const notes = sqliteTable("notes", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -240,4 +240,55 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", { // v4
   ...meta,
 });
 
-// TODO(v3): applications, stories, japanese_log
+/** Job applications tracker (v3, REST only). */
+export const applications = sqliteTable("applications", {
+  id: text("id").primaryKey(),
+  company: text("company").notNull(),
+  role: text("role").notNull(),
+  status: text("status").notNull().default("applied"), // wishlist | applied | interview | offer | rejected | withdrawn
+  appliedOn: text("applied_on"),       // IST date
+  url: text("url"),
+  source: text("source"),              // referral, LinkedIn, …
+  nextStep: text("next_step"),
+  nextStepOn: text("next_step_on"),    // IST date
+  notes: text("notes"),
+  ...meta,
+});
+
+/** Interview stories in STAR form (v3, REST only). */
+export const stories = sqliteTable("stories", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  situation: text("situation"),
+  task: text("task"),
+  action: text("action"),
+  result: text("result"),
+  tags: text("tags"),                  // JSON array
+  goalId: text("goal_id"),
+  ...meta,
+});
+
+/** Japanese practice log (v3, REST only). */
+export const japaneseLog = sqliteTable("japanese_log", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),        // IST date
+  minutes: integer("minutes").notNull(),
+  kind: text("kind").notNull(),        // anki | reading | listening | speaking | writing
+  note: text("note"),
+  ...meta,
+}, (t) => ({ dateIdx: index("japanese_log_date_idx").on(t.date) }));
+
+// ===================== sync bookkeeping (never synced) =====================
+/** Server change log: every server write appends (tbl, pk). Sync cursor = String(seq). */
+export const changes = sqliteTable("changes", {
+  seq: integer("seq").primaryKey({ autoIncrement: true }),
+  tbl: text("tbl").notNull(),
+  pk: text("pk").notNull(),
+  at: text("at").notNull(),
+}, (t) => ({ tblPkIdx: index("changes_tbl_pk_idx").on(t.tbl, t.pk) }));
+
+/** Idempotency: outbox item ids already processed by /sync. */
+export const syncItems = sqliteTable("sync_items", {
+  id: text("id").primaryKey(),
+  at: text("at").notNull(),
+});
