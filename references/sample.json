@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "refs": [
+    {
+      "title": "Example Series",
+      "medium": "series",
+      "character": "Example Character",
+      "lesson": "Small, boring reps done daily beat a dramatic effort done once.",
+      "moment": "minimum_done",
+      "yourLine": "Minimum counts. Show up again tomorrow."
+    },
+    {
+      "title": "Example Film",
+      "medium": "film",
+      "character": null,
+      "lesson": "Coming back after a fall is the whole story, not a footnote.",
+      "moment": "comeback",
+      "yourLine": "Restart with P1 only."
+    }
+  ]
+}

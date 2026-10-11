@@ -1,0 +1,38 @@
+# Runs on the Oracle VM at /opt/tatakae. Images are built by GitHub Actions (linux/arm64) and pulled from GHCR.
+services:
+  web:
+    image: ghcr.io/${GH_OWNER}/tatakae-web:${TAG:-latest}
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - caddy_data:/data          # TLS certs
+      - caddy_config:/config
+    depends_on: [api]
+
+  api:
+    image: ghcr.io/${GH_OWNER}/tatakae-api:${TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /data/tatakae.db
+      FILES_DIR: /data/files
+    volumes:
+      - /srv/tatakae/data:/data    # on the block volume
+    expose: ["8787"]
+
+  litestream:                      # continuous SQLite replication → Object Storage
+    image: litestream/litestream:0.3
+    restart: unless-stopped
+    command: replicate
+    env_file: .env
+    volumes:
+      - /srv/tatakae/data:/data
+      - ./litestream.yml:/etc/litestream.yml:ro
+    depends_on: [api]
+
+volumes:
+  caddy_data:
+  caddy_config:

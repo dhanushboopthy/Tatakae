@@ -1,0 +1,36 @@
+node_modules/
+dist/
+build/
+.expo/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# local data / secrets — never commit
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+deploy/.env
+references/*.local.json
+scripts/notion-import/export/
+scripts/notion-import/import.json
+
+# terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform.lock.hcl.bak
+
+# android / expo native output
+apps/mobile/android/
+apps/mobile/ios/
+*.keystore
+*.jks
+
+# Claude Code local settings
+.claude/settings.local.json

@@ -1,0 +1,7 @@
+-- TODO(v1): seed defaults
+-- INSERT INTO settings (key, value, editable_from, updated_at) VALUES ('scoring', '{...}', 'even_sunday', datetime('now'));
+-- INSERT INTO settings (key, value, updated_at) VALUES ('wake_time', '"06:30"', datetime('now'));
+-- INSERT INTO settings (key, value, updated_at) VALUES ('ritual_time', '"21:30"', datetime('now'));
+-- INSERT INTO settings (key, value, updated_at) VALUES ('focus_default', '50', datetime('now'));
+-- INSERT INTO settings (key, value, updated_at) VALUES ('story_enabled', 'true', datetime('now'));
+-- INSERT INTO recharge_items (id, name, kind, updated_at) VALUES ... walk, music, call, stretch, sketch

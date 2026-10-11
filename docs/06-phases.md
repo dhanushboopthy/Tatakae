@@ -1,0 +1,80 @@
+# 06 · Phases — implementation plan
+
+Rules for every phase
+- **Weekly build cap: 6 hours.** Build work is never a weekday P1 in TATAKAE itself.
+- Work top-to-bottom; each task is one small PR (Conventional Commits).
+- A phase ends only when its **gate** is met. Don't start the next phase early.
+- Each task's definition of done: typecheck + tests green, works offline for the write path it touches, 44 px targets, no red/streak/XP, docs/CHANGELOG updated.
+
+| Phase | Dates | Theme | Gate |
+|---|---|---|---|
+| 0 | 12–18 Oct 2026 | Foundations: infra, auth, deploy, both clients log in | Logged in over HTTPS on 2 laptops + phone app; push to `main` redeploys |
+| v1 | 19 Oct – 1 Nov | Daily loop | 7 consecutive days in the app only |
+| v2 | 2 – 15 Nov | Reviews, story layer, phone native extras, Notion import #1 | Sunday 15 Nov review done in the app |
+| v3 | 16 Nov – 13 Dec | Notes / second brain, Notion import #2 | One week without opening Notion |
+| v4 | 14 Dec 2026 – 3 Jan 2027 | Hardening, releases, restore drill | Notion archived 3 Jan; restore rehearsed |
+
+---
+
+## Phase 0 — Foundations (12–18 Oct)
+**Goal:** a deployed, secured, empty app reachable from all three devices.
+
+| # | Task | Area | Done when |
+|---|---|---|---|
+| 0.1 | `pnpm install`, typecheck/test pass; `.npmrc` decision for Expo | repo | CI green |
+| 0.2 | OCI account (home region Mumbai/Hyderabad); decide Pay-As-You-Go upgrade + ₹1 budget alert | infra | Documented in DECISIONS |
+| 0.3 | Terraform: VCN, subnet, security list (80/443), A1 2 OCPU/12 GB arm64, reserved IP, block volume, backup bucket | infra | `terraform apply` succeeds |
+| 0.4 | cloud-init/bootstrap: Docker, iptables 80/443, ufw, fail2ban, unattended-upgrades, Tailscale; close public 22 | infra | SSH only via tailnet |
+| 0.5 | Domain: claim `.me` via Student Pack, auto-renew off, A record → reserved IP | infra | `dig` resolves |
+| 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
+| 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
+| 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
+| 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
+| 0.10 | Web: Login screen, 401 handling, desktop install prompt | web | Installed on both laptops |
+| 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
+| **Gate** | Logged in on all 3 devices over HTTPS; a commit to `main` redeploys automatically | | |
+
+## v1 — Daily loop (19 Oct – 1 Nov)
+**Goal:** run every day from the app.
+
+Order (each builds on the previous):
+1. **core:** `todayIST`, `addDays`, full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
+2. **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
+3. **api:** days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
+4. **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
+5. **web screens:** Night ritual wizard (all 8 steps, capacity bar, P1 validation, forge), Today, Inbox, Welcome back, Settings (basic), Cmd+K palette.
+6. **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks.
+7. **mobile screens:** Morning, Today (chips, habits strip, days-shown-up), Focus (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
+8. **mobile notifications:** local schedule (morning, optional afternoon, ritual), reschedule on settings sync, permission asked after first Quick close/login.
+9. **polish:** empty states, copy, accessibility pass (contrast, labels, targets), dark theme.
+- **Gate:** 7 consecutive days: ritual on laptop, daily actions on phone, nothing in Notion.
+
+## v2 — Reviews, story, native extras (2 – 15 Nov)
+1. **db/api:** goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
+2. **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
+3. **web:** Weekly Control Room (grid, sparkline, screen line, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review, Cycle page (goals ≤ 4, hell-yeah gate, areas).
+4. **story layer:** reference pack import (validate ≤ 160 chars, moment enum), StoryToast on both clients, mute, seasonal theme, watch queue rules.
+5. **mobile native:** share intent → inbox; quick actions (Start focus, Capture); Android widget (P1 + Start/Done); **usage stats** custom module to prefill screen minutes (Usage access permission flow; manual fallback); ongoing focus notification.
+6. **Notion import #1:** Tasks → missions/backlog, Habits, Areas, Projects → goals, day cards → days (dry-run JSON first).
+- **Gate:** Sunday 15 Nov review completed in the app.
+
+## v3 — Notes (16 Nov – 13 Dec)
+1. notes table + FTS5 virtual table + triggers; files table; `/notes`, `/notes/search`, `/files` (multipart to disk + Object Storage copy).
+2. Web Notes: list, BlockNote editor, tags, goal links, can-explain / can-implement / misunderstood, search.
+3. Phone: capture-to-note and read-only note search (editing stays on laptop).
+4. applications, stories, japanese_log tables + simple screens.
+5. Notion import #2: Second Brain markdown → BlockNote JSON.
+- **Gate:** one full week without opening Notion.
+
+## v4 — Hardening (14 Dec – 3 Jan)
+1. Nightly JSON backup job + `/api/export`; `job_runs` shown in Settings → System.
+2. **Restore drill** on a fresh VM using `restore.sh` (Terraform → cloud-init → Litestream restore). Record time-to-restore.
+3. Signed release APK workflow on `mobile-v*` tags; `/api/app/version` + in-app "update available"; EAS Update channel for JS fixes.
+4. Web passkeys (WebAuthn) as primary login; password fallback.
+5. Optional laptop web push.
+6. Conflict UI (subtle "edited elsewhere" note), offline edge cases, Playwright smoke test for web, accessibility audit.
+7. Area alignment scores; monthly review polish.
+- **Gate:** Notion archived on 3 Jan 2027; restore rehearsed and documented.
+
+## Later (not scheduled)
+iOS build (needs paid Apple account), Wear OS tile, calendar read-only import, open-sourcing with an empty reference pack.

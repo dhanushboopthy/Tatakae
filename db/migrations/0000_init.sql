@@ -1,0 +1,4 @@
+-- Placeholder. Generate real migrations with: pnpm db:generate
+-- Applied automatically on API container start (drizzle migrator).
+-- TODO(v1): v1 tables + seed settings defaults (see packages/core DEFAULT_SCORING)
+-- TODO(v3): CREATE VIRTUAL TABLE notes_fts USING fts5(title, body, content='notes', content_rowid='rowid');

@@ -1,0 +1,12 @@
+#cloud-config
+# Ubuntu 24.04 aarch64 on VM.Standard.A1.Flex (2 OCPU / 12 GB = whole Always Free allowance).
+package_update: true
+packages: [ca-certificates, curl, ufw, fail2ban, unattended-upgrades, sqlite3]
+runcmd:
+  # TODO(phase0): install Docker Engine + compose plugin from docker.com apt repo
+  # TODO(phase0): mount block volume at /srv/tatakae (or use boot volume dir), mkdir data/files, chown 1000
+  # TODO(phase0): ufw default deny incoming; allow 80,443/tcp, 443/udp; SSH only via Tailscale (tailscale0)
+  # NOTE: Oracle Ubuntu images also ship iptables rules — open 80/443 there too (see deploy/scripts/bootstrap.sh)
+  # TODO(phase0): install tailscale, `tailscale up --ssh --authkey=...`
+  # TODO(phase0): mkdir /opt/tatakae, place docker-compose.yml, Caddyfile, litestream.yml
+  - echo "tatakae bootstrap done" > /var/log/tatakae-bootstrap.log
