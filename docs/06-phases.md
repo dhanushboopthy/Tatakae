@@ -29,7 +29,7 @@ Rules for every phase
 | 🟡 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
 | 🟡 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
 | 🟡 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
-| 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
+| 🟡 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
 | 0.10 | Web: Login screen, 401 handling, desktop install prompt | web | Installed on both laptops |
 | 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
 | **Gate** | Logged in on all 3 devices over HTTPS; a commit to `main` redeploys automatically | | |
@@ -40,7 +40,7 @@ Rules for every phase
 Order (each builds on the previous):
 1. 🟡 **core:** `todayIST`, `addDays`, full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
 2. 🟡 **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
-3. **api:** days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
+3. 🟡 **api:** days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
 4. **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
 5. **web screens:** Night ritual wizard (all 8 steps, capacity bar, P1 validation, forge), Today, Inbox, Welcome back, Settings (basic), Cmd+K palette.
 6. **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks.

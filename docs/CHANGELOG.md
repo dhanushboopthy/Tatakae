@@ -13,3 +13,5 @@
 - deploy: cloud-init template runs an idempotent `bootstrap.sh` (Docker, Oracle iptables, Tailscale SSH, ufw, fail2ban, unattended-upgrades, data volume at /srv/tatakae); Caddy CSP and immutable asset caching; compose health dependencies and uid 1000; Litestream daily snapshots; real `deploy.sh` (snapshot, health check, rollback), `restore.sh`, `hash-password.sh`.
 - ci: `deploy.yml` (checks → arm64 images to GHCR → Tailscale → deploy.sh → smoke test) and `mobile.yml` (signed release APK on `mobile-v*` tags).
 - docs: `docs/MANUAL-STEPS.md`, the ordered by-hand steps for Phase 0.
+- api (0.9): env validation with readable errors, migrations + default rows on boot, JSON errors, graceful shutdown; hashed session tokens with sliding expiry, signed web cookie / mobile bearer / API_TOKEN, login rate limit, `/session` login, logout, me, devices.
+- api (v1): generic row store with change log; days (score, write-off limit, forge), missions (plan lock 423, edit-locked → mura, reschedule), habits + logs, inbox processing, settings (even-Sunday guard), `POST /sync`; route tests (written, not yet run).

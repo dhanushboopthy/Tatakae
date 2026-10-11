@@ -73,6 +73,7 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - [x] infra: task 1 written, not applied (🟡): 0.3 Terraform, 0.4 cloud-init + bootstrap.sh, 0.6 Caddy CSP/caching, 0.7 Litestream/compose + restore.sh + hash-password.sh, 0.8 deploy.yml + deploy.sh + mobile.yml. 0.2 and 0.5 are manual → `docs/MANUAL-STEPS.md`.
 - [x] core: time, scoring, sync helpers + row schemas, settings defaults, story picker, sync client, tests (🟡 written, not run)
 - [x] core: db schema v1–v3 (+ changes, sync_items, sessions.last_seen_at), `0000_init` + `0001_notes_fts` migrations, seed.sql, db/migrate.ts (🟡 SQL applied cleanly to an in-memory SQLite as a syntax check only)
+- [x] api: 0.9 auth (env, db bootstrap, errors, sessions, auth middleware, rate limit, graceful shutdown) and v1 api (row store + change log, days, missions, habits, inbox, settings, sync) + route tests (🟡 written, not typechecked or run). See *API reference* below.
 
 ## Decisions log
 - D1: Git author is the existing git config (`dhanush-superdom <dhanush.boopathy@superdom.ai>`), which is a work email. It was left unchanged as instructed. Run `git config user.email` in this repo if you want your personal email instead.
@@ -104,6 +105,20 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - core: notes FTS is a standalone `notes_fts(note_id UNINDEXED, title, body)` fts5 table with `porter unicode61` tokenizer, kept in sync by insert/update/delete triggers; soft-deleted notes are dropped from the index.
 - core: `db/migrate.ts` loads better-sqlite3 via `createRequire` from apps/api (pnpm isolated linker means it is not resolvable from db/), resolves a relative `DATABASE_PATH` against the repo root, runs the drizzle migrator and then seed.sql.
 - core: v3 tables: `applications(company, role, status, applied_on, url, source, next_step, next_step_on, notes)`, `stories` (STAR: situation/task/action/result, tags JSON, goal_id), `japanese_log(date, minutes, kind, note)`. Not synced.
+- api: Env: `OWNER_EMAIL`, `OWNER_PASSWORD_HASH` and `SESSION_SECRET` get placeholder defaults only when `NODE_ENV=development` (login fails until a real hash is set; or use `DEV_BYPASS_AUTH=1`). Production also requires an `$argon2…` hash and a non-default secret. New optional vars: `MIGRATIONS_DIR`, `KEEP_WARM`.
+- api: The `session` context variable is `{ id, client, deviceName, expiresAt }` (adds `expiresAt` to the shared design). Logout and device revoke hard-delete the session row (sessions are never synced). The device id in `/session/devices` is the stored sha256 hash, never the token.
+- api: The rate limiter is in-memory per process and counts every `POST /session/login` (successful ones too), keyed by the first X-Forwarded-For hop.
+- api: Every REST and sync write goes through `rows.service.upsertRow`. It validates with core `rowSchemas` (unknown keys are dropped) and appends to `changes`. REST writes stamp `updatedAt = max(now, prev + 1 ms)`, so a REST write always wins LWW even against a device clock that runs ahead.
+- api: Sync runs one SQLite transaction per request, with a savepoint per item, so an unexpected error turns only that item into a conflict. Only applied item ids go into `sync_items`; conflicts are re-evaluated if retried. Invalid rows are conflicts carrying the server row (or null). A `delete` for a row the server never saw is an applied no-op.
+- api: A rejected forge request (P1 not ready) or a write-off over the limit, sent through sync, still stores the other fields. It answers with a conflict carrying the **stored row** (forgedAt null / previous kind), not null, so the client converges without losing the ritual answers. A forged day can't be un-forged: an incoming `forgedAt` is ignored once the server has one.
+- api: Pull: a non-numeric cursor, or one ahead of the log (e.g. after a restore), gives a full snapshot. Changes echo the client's own applied writes, which is harmless under LWW and is how the client learns the server-stamped `forgedAt`.
+- api: REST status codes: plan lock and the scoring guard → 423 (`plan_locked`, `scoring_locked`); write-off limit → 400 `write_off_limit`; forge validation → 400 `forge_invalid` with `detail.problems`; a missing reason for a write-off → 400 `write_off_reason`.
+- api: The write-off reason has no column. It is stored in `days.qDrift` unless the same request sets `qDrift`.
+- api: `PUT /settings/scoring` merges the partial value over the stored one. Through sync, unknown setting keys are accepted (forward-compatible), known keys are validated, and `editableFrom` is always server-owned.
+- api: Inbox → note inserts into `notes` (REST-only, not synced, so it bypasses the change log), with one BlockNote paragraph per line.
+- api: `apps/api/tsup.config.ts` bundles `@tatakae/core` into `dist/server.js` (`noExternal`). Core ships TS source (`main: src/index.ts`), which plain node in the container cannot import.
+- api: keepWarm stays a no-op. `KEEP_WARM=1` only logs a one-time reminder to upgrade the account to Pay-As-You-Go. Migrations folder = `MIGRATIONS_DIR`, else walk up from the module to the first `db/migrations/meta/_journal.json`. ZodErrors are detected by `name`, in case core and api resolve different zod copies.
+- api: Not built: `/api/bootstrap` (clients use `POST /sync` with a null cursor) and the v2/v3 routes (still 501 stubs).
 
 ## Core API reference (`@tatakae/core`)
 _Signatures only; see JSDoc in `packages/core/src`. Keep adding Progress / Decisions entries in their sections above, not here._
@@ -125,3 +140,63 @@ Story: `STORY_CHANCE, NO_REPEAT_DAYS, pickStory(refs, moment, recentIds, rand?) 
 Sync client: `createSyncClient({ store, client, post, onChange(tables), onAuthError(), onConflict?, now?, flushDelayMs? }) → { write(table, row, {lockReason?}) → stored row, remove(table, pk, {lockReason?}), flush(), start(), stop(), getStatus(), subscribe(listener) → unsubscribe }`. `LocalStore { get, getAll(table, {includeDeleted?}), put, enqueue, peekOutbox(limit), removeOutbox(ids), countOutbox?, getMeta, setMeta }`. `SyncStatus { state: idle|syncing|offline|error, lastSyncAt, pending, error }`. `SyncHttpError(status)` — throw from `post` for HTTP errors (401 → onAuthError). Also `RowWrite<T>, SYNC_BATCH, FLUSH_DELAY_MS, CURSOR_META_KEY, newId(), reschedule(mission) → [rescheduled, backlogCopy]`.
 
 DB (`db/schema.ts`): drizzle exports `days, missions, habits, habitLogs, anchors, settings, inbox, muraEvents, sessions (lastSeenAt), jobRuns, areas, goals, reviews, experiments, stuckEvents, rechargeItems, storyRefs, watchQueue, notes, files, pushSubscriptions, applications, stories, japaneseLog, changes, syncItems`. Migrations folder: `db/migrations` (drizzle migrator; `0001_notes_fts` is custom SQL).
+
+## API reference (`apps/api`, all under `/api`)
+_JSON in and out, with camelCase rows exactly as in core's row schemas (real booleans, `updatedAt`, `deletedAt`)._
+- **Errors:** `{ error: code, message, detail? }`. A zod failure is 400 `invalid_input` with `detail` = issues.
+- **401:** the body is `{ error: "unauthorized" }`. Clients should treat it as logged out.
+- **Auth:** web sends the `tatakae_session` cookie (fetch with `credentials: "include"`). Mobile sends `Authorization: Bearer <token>`. Scripts send `Bearer <API_TOKEN>`.
+
+**Public**
+- `GET /health` → `{ ok, at }`
+- `POST /session/login` `{ email, password (≥ 8), client: "web"|"mobile", deviceName (1–40) }`
+  - web → Set-Cookie, `{ email, client, deviceName, expiresAt }`
+  - mobile → `{ token, expiresAt }`
+  - bad credentials → 401 `invalid_credentials`; over 10 attempts / 15 min / IP → 429 with `Retry-After`
+
+**Session (auth)**
+- `GET /session/me` → `{ email, client, deviceName, expiresAt }`. These are null for API_TOKEN or dev bypass. The web cookie is re-set when the expiry slides.
+- `POST /session/logout` → `{ ok }`. Deletes the session and clears the cookie.
+- `GET /session/devices` → `{ devices: [{ id, client, deviceName, createdAt, lastSeenAt, expiresAt, current }] }`
+- `DELETE /session/devices/:id` → `{ ok }` (404 if unknown)
+
+**Days**: every route returns a DayView `{ day, missions, score: DayScore, yesterdayMissed, firstUseDate }`. The day is synthesised (epoch `updatedAt`) if unsaved, and missions are live ones ordered P1, P2, P3, side.
+- `GET /days/:date`
+- `PUT /days/:date`: body is `dayPatch` + `reason?`. Switching to `write_off` needs `reason` → 400 `write_off_reason`; a third in a month → 400 `write_off_limit`. `forgedAt` is ignored.
+- `POST /days/:date/forge`: 400 `forge_invalid` `{ detail: { problems: ForgeProblem[] } }`. Idempotent once forged.
+
+**Missions**: on a forged day, a locked change without a reason → 423 `plan_locked`.
+- `GET /missions?date=YYYY-MM-DD` | `?backlog=1` → `{ missions }`
+- `POST /missions`: body is `missionInput` + `id?` + `reason?` → 201 `{ mission, muraEvent }`. Status is `backlog` when `dayDate` is null or slot is backlog, else `open`. A duplicate id → 409.
+- `PATCH /missions/:id` `missionPatch` → `{ mission, muraEvent: null }`
+- `POST /missions/:id/edit-locked` `{ reason, patch }` → `{ mission, muraEvent }`. `muraEvent` is null if nothing locked changed.
+- `DELETE /missions/:id?reason=…` → `{ mission, muraEvent }` (soft delete)
+- `POST /missions/:id/reschedule` → `{ mission, backlog }`. 409 if already rescheduled, 400 for backlog items.
+
+**Habits**
+- `GET /habits?date=` → `{ habits, logs }`. `date` defaults to today IST; returns all live habits, including inactive ones.
+- `POST /habits`: `habitInput` + `id?` → 201 `{ habit }`
+- `PATCH /habits/:id`: `habitPatch` → `{ habit }`
+- `DELETE /habits/:id` → `{ habit }`
+- `PUT /habits/:id/logs/:date` `{ done }` → `{ log }`
+
+**Inbox**
+- `GET /inbox` → `{ items }` (unprocessed, oldest first)
+- `POST /inbox` `{ text, id? }` → 201 `{ item }`
+- `PATCH /inbox/:id` `{ text?, processed? }` → `{ item }`
+- `PATCH /inbox/:id` (process) `{ to: "mission", mission?: { title?, dayDate?, slot?, points?, minimum?, ifThen?, goalId?, estMin? }, reason? }` | `{ to: "note", title? }` | `{ to: "discard" }` → `{ item, mission?, muraEvent?, noteId? }`
+  - The item becomes `processed`; discard also soft-deletes it.
+  - The mission defaults to title = the text, in the backlog.
+
+**Settings**
+- `GET /settings` → `ResolvedSettings` `{ scoring: {...full}, wake_time, ritual_time, focus_default, story_enabled, haptics_enabled, afternoon_nudge }`
+- `PUT /settings/:key` `{ value }` → `{ key, value }`
+  - unknown key → 404, invalid value → 400 `invalid_setting`
+  - `scoring` is a partial merged over the stored value, and outside an even-ISO-week Sunday (IST) → 423 `scoring_locked`
+
+**Sync**
+- `POST /sync` `syncRequest { client, cursor, items ≤ 500 }` → `syncResponse { applied, conflicts: [{ id, server | null }], changes: [{ table, row }], cursor }`
+  - Full snapshot when the cursor is null.
+  - Every item ends up in `applied` or `conflicts`.
+  - Conflicts: LWW loss or tie, an invalid row, a locked mission change without `meta.lockReason`, the scoring guard, and a rejected forge or write-off (the latter two carry the stored row).
+  - Plain REST writes also show up in later pulls.
