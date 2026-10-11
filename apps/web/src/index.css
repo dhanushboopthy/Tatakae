@@ -2,6 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens and rationale: docs/10-design-system.md */
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ink font-sans text-base leading-normal text-paper antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid #f2a33a;
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: #2e2215;
+    color: #ececf1;
+  }
+  h1 {
+    @apply text-2xl font-semibold;
+  }
+  h2 {
+    @apply text-lg font-semibold;
+  }
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
+}
+
+@layer components {
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .card {
+    @apply rounded-card border border-line bg-ink-2 p-4;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-muted;
+  }
+  .input {
+    @apply min-h-tap w-full rounded-control border border-line-strong bg-ink-3 px-3 text-paper placeholder:text-muted;
+  }
+  textarea.input {
+    @apply py-2;
+  }
+  .btn {
+    @apply inline-flex min-h-tap min-w-tap items-center justify-center gap-2 rounded-control px-4 text-base font-medium transition-colors duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-ember text-ink hover:bg-[#f5b45c];
+  }
+  .btn-secondary {
+    @apply btn border border-line-strong bg-ink-3 text-paper hover:bg-ink-2;
+  }
+  .btn-ghost {
+    @apply btn text-paper hover:bg-ink-3;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-ink;
+  }
+  .kbd {
+    @apply rounded border border-line-strong px-1.5 text-xs text-muted;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
