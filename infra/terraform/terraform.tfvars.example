@@ -1,5 +1,24 @@
-region              = "ap-mumbai-1"
-compartment_id      = "ocid1.tenancy.oc1..xxxx"
-availability_domain = "xxxx:AP-MUMBAI-1-AD-1"
-ssh_public_key      = "ssh-ed25519 AAAA..."
-admin_cidr          = "203.0.113.10/32"
+# cp terraform.tfvars.example terraform.tfvars   (terraform.tfvars is git-ignored; never commit it)
+
+region             = "ap-mumbai-1" # or "ap-hyderabad-1": your home region
+oci_config_profile = "DEFAULT"
+tenancy_ocid       = "ocid1.tenancy.oc1..xxxx"
+# compartment_id   = "ocid1.compartment.oc1..xxxx"   # default: the tenancy (root compartment)
+# availability_domain = "xxxx:AP-MUMBAI-1-AD-1"      # default: first AD
+
+ssh_public_key   = "ssh-ed25519 AAAA... you@laptop"
+admin_cidr       = "203.0.113.10/32" # curl -s https://ifconfig.me → add /32
+allow_public_ssh = true              # set false once Tailscale SSH works, then apply again
+
+tailscale_auth_key = "tskey-auth-xxxx" # one-off, pre-approved, tagged tag:server
+tailscale_hostname = "tatakae"
+
+# Budget alert (after the Pay-As-You-Go upgrade). Amount is in your tenancy currency.
+enable_budget      = true
+budget_amount      = 1
+budget_alert_email = "you@example.com"
+
+# S3 credentials for Litestream. Leave false and create the key in the console (keeps the secret out of state),
+# or set true + user_ocid and read it with: terraform output -raw s3_secret_access_key
+create_s3_key = false
+# user_ocid   = "ocid1.user.oc1..xxxx"
