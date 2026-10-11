@@ -5,26 +5,45 @@
 {$DOMAIN} {
 	encode zstd gzip
 
-	# Security headers
+	# Security headers (every response, API included)
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
-		Permissions-Policy "camera=(), microphone=(), geolocation=()"
-		# TODO(phase0): Content-Security-Policy once asset hosts are known
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
+		# Same-origin React SPA: scripts, workers, API calls and the manifest all come from this origin.
+		# No inline scripts allowed; keep it that way (Vite emits none). Inline styles are allowed for
+		# React style props and editor libraries. data:/blob: images cover icons, previews and uploads.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+		-Server
 	}
 
 	handle /api/* {
 		reverse_proxy api:8787
 	}
 
-	# Service worker must never be cached long
-	@sw path /sw.js /manifest.webmanifest
-	header @sw Cache-Control "no-cache"
+	# Hashed build output: cache forever. No SPA fallback here, so a stale chunk name gets a real 404
+	# instead of index.html cached as "immutable".
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
 
+	# Everything else (index.html, sw.js, manifest.webmanifest, registerSW.js, icons, SPA routes) must be
+	# revalidated on every load, so a deploy reaches clients and the service worker never goes stale.
 	handle {
 		root * /srv
+		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
+	}
+
+	# Errors must never inherit the immutable header from /assets/*.
+	handle_errors {
+		header Cache-Control "no-store"
+		respond "{err.status_code} {err.status_text}"
 	}
 }
