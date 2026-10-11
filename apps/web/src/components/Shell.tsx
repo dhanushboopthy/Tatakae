@@ -1,7 +1,15 @@
 import { Outlet } from "react-router-dom";
+import { AuthGate } from "./AuthGate";
+import { InstallBanner } from "./InstallBanner";
 
-/** Laptop layout: left sidebar (Today, Ritual, Inbox, Review, Cycle, Notes, Settings) + CommandPalette. Narrow screens must not break but are not a target. */
+/** Laptop layout: auth gate + install offer. Sidebar and Cmd/Ctrl+K arrive with the v1 shell. */
 export function Shell() {
-  // TODO(v1)
-  return <Outlet />;
+  return (
+    <AuthGate>
+      <div className="mx-auto max-w-wide px-4 py-6">
+        <InstallBanner />
+        <Outlet />
+      </div>
+    </AuthGate>
+  );
 }
