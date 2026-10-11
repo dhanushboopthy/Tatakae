@@ -51,11 +51,12 @@ export function isSyncTable(table: string): table is SyncTable {
 }
 
 /** Stable string key of a row: `id`, or `date` (days), `key` (settings), `habitId|date`, `title` (watch_queue). */
-export function primaryKeyOf(table: SyncTable, row: Record<string, unknown>): string {
+export function primaryKeyOf(table: SyncTable, row: object): string {
   const fields: readonly string[] = SYNC_TABLE_PK[table];
+  const rec = row as Record<string, unknown>;
   return fields
     .map((field) => {
-      const v = row[field];
+      const v = rec[field];
       if (typeof v !== "string" || v === "") throw new Error(`${table}: missing primary key field ${field}`);
       return v;
     })
@@ -114,12 +115,12 @@ export const FREE_MISSION_FIELDS = ["status", "resumeNote", "actualMin", "estMin
  */
 export function isServerAuthoritative(
   table: string,
-  row: Record<string, unknown>,
+  row: object,
   forgedDates?: ReadonlySet<string> | readonly string[],
 ): boolean {
   if (table === "days") return true;
   if (table !== "missions") return false;
-  const dayDate = row["dayDate"];
+  const dayDate = (row as Record<string, unknown>)["dayDate"];
   if (typeof dayDate !== "string") return false;
   if (!forgedDates) return true;
   return "has" in forgedDates ? forgedDates.has(dayDate) : forgedDates.includes(dayDate);

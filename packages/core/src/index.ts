@@ -5,3 +5,4 @@ export * from "./settings";
 export * from "./time";
 export * from "./story";
 export * from "./sync";
+export * from "./syncClient";
