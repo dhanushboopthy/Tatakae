@@ -1,0 +1,96 @@
+name: mobile
+
+# Tag mobile-vX.Y.Z → signed release APK → GitHub Release (download it on the phone and install).
+#   git tag mobile-v0.1.0 && git push origin mobile-v0.1.0
+# Keep `version` in apps/mobile/app.config.ts in step with the tag. Secrets: docs/MANUAL-STEPS.md.
+on:
+  push:
+    tags: ["mobile-v*"]
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # create the release
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXPO_PUBLIC_API_URL: https://${{ vars.DOMAIN }} # inlined into the JS bundle at build time
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4 # caches Gradle
+
+      - name: Check config
+        env:
+          DOMAIN: ${{ vars.DOMAIN }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$DOMAIN" || { echo "::error::Repository variable DOMAIN is not set"; exit 1; }
+          test -n "$KEYSTORE_B64" || { echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set"; exit 1; }
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Expo prebuild (android)
+        working-directory: apps/mobile
+        run: npx expo prebuild -p android --clean --no-install
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      # The generated android/ project signs release builds with the debug key. The injected signing
+      # properties (the same ones Android Studio's "Generate Signed APK" uses) override that without
+      # editing build.gradle, so it survives `prebuild --clean`.
+      - name: Build signed release APK
+        working-directory: apps/mobile/android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Verify signature and name the APK
+        id: apk
+        run: |
+          apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          test -f "$apk"
+          apksigner=$(ls -1 "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          certs=$("$apksigner" verify --print-certs "$apk")
+          echo "$certs"
+          if grep -q "CN=Android Debug" <<<"$certs"; then
+            echo "::error::APK is signed with the debug key"; exit 1
+          fi
+          out="tatakae-${GITHUB_REF_NAME#mobile-}.apk"
+          cp "$apk" "$out"
+          echo "file=$out" >> "$GITHUB_OUTPUT"
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Tatakae ${{ github.ref_name }}
+          files: ${{ steps.apk.outputs.file }}
+          generate_release_notes: true
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"

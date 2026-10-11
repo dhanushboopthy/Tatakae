@@ -1,0 +1,123 @@
+name: deploy
+
+# Push to main → check → build arm64 images → GHCR → join the tailnet → copy compose files → deploy.sh <sha>
+# → smoke test over the public URL. See docs/08-operations.md and docs/MANUAL-STEPS.md for secrets.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "apps/mobile/**"
+      - "infra/**"
+      - "references/**"
+      - ".github/workflows/mobile.yml"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+    inputs:
+      skip_checks:
+        description: "Skip typecheck/tests (emergency redeploy only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never interrupt a deploy halfway
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_checks) }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  build:
+    needs: check
+    if: ${{ !cancelled() && (needs.check.result == 'success' || needs.check.result == 'skipped') }}
+    runs-on: ubuntu-24.04-arm # native arm64 for the Ampere A1 VM, no QEMU
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/tatakae-${{ matrix.app }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  deploy:
+    needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://${{ vars.DOMAIN }}
+    env:
+      VM: ${{ secrets.VM_USER }}@${{ secrets.VM_TAILNET_HOST }}
+      SSH_OPTS: -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy
+
+      - name: Join tailnet
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Copy compose files and scripts
+        run: |
+          ssh $SSH_OPTS "$VM" 'mkdir -p /opt/tatakae/scripts'
+          scp $SSH_OPTS deploy/docker-compose.yml deploy/litestream.yml "$VM:/opt/tatakae/"
+          scp $SSH_OPTS deploy/scripts/*.sh "$VM:/opt/tatakae/scripts/"
+          ssh $SSH_OPTS "$VM" 'chmod 755 /opt/tatakae/scripts/*.sh'
+
+      - name: Deploy ${{ github.sha }}
+        run: ssh $SSH_OPTS "$VM" "/opt/tatakae/scripts/deploy.sh '${{ github.sha }}'"
+
+      - name: Smoke test
+        run: |
+          curl -fsS --retry 12 --retry-delay 5 --retry-all-errors --max-time 10 \
+            "https://${{ vars.DOMAIN }}/api/health"
+          echo
