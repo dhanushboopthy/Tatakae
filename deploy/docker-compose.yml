@@ -1,37 +1,56 @@
 # Runs on the Oracle VM at /opt/tatakae. Images are built by GitHub Actions (linux/arm64) and pulled from GHCR.
+# /opt/tatakae/.env provides both ${...} interpolation here and the containers' environment.
+# deploy.sh exports TAG=<git sha>; without it, TAG from .env (default latest) is used.
+name: tatakae
+
 services:
-  web:
-    image: ghcr.io/${GH_OWNER}/tatakae-web:${TAG:-latest}
+  web: # Caddy: TLS, static PWA, /api reverse proxy (Caddyfile is baked into the image)
+    image: ghcr.io/${GH_OWNER:?GH_OWNER missing in .env}/tatakae-web:${TAG:-latest}
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
-      DOMAIN: ${DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
+      DOMAIN: ${DOMAIN:?DOMAIN missing in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL missing in .env}
     volumes:
-      - caddy_data:/data          # TLS certs
+      - caddy_data:/data # TLS certificates; keep across deploys (Let's Encrypt rate limits)
       - caddy_config:/config
-    depends_on: [api]
+    depends_on:
+      api:
+        condition: service_healthy
 
   api:
     image: ghcr.io/${GH_OWNER}/tatakae-api:${TAG:-latest}
     restart: unless-stopped
+    init: true # forward SIGTERM properly to node
+    user: "1000:1000" # `node` in the image; /srv/tatakae/data is chowned to 1000 by bootstrap.sh
     env_file: .env
     environment:
       DATABASE_PATH: /data/tatakae.db
       FILES_DIR: /data/files
     volumes:
-      - /srv/tatakae/data:/data    # on the block volume
+      - /srv/tatakae/data:/data # on the block volume
     expose: ["8787"]
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
 
-  litestream:                      # continuous SQLite replication → Object Storage
+  litestream: # continuous SQLite replication → Object Storage
     image: litestream/litestream:0.3
     restart: unless-stopped
+    user: "1000:1000" # same owner as the database files, so restores and WAL files stay writable by the api
     command: replicate
     env_file: .env
     volumes:
       - /srv/tatakae/data:/data
       - ./litestream.yml:/etc/litestream.yml:ro
-    depends_on: [api]
+    depends_on:
+      api: # the api creates and migrates the database on boot
+        condition: service_healthy
 
 volumes:
   caddy_data:

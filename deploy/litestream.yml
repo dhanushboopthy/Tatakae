@@ -1,3 +1,6 @@
+# Continuous SQLite replication to OCI Object Storage (S3-compatible API).
+# Litestream 0.3 expands $VAR / ${VAR} from the environment (compose passes /opt/tatakae/.env).
+# Restore: deploy/scripts/restore.sh
 dbs:
   - path: /data/tatakae.db
     replicas:
@@ -8,5 +11,8 @@ dbs:
         path: litestream/tatakae
         access-key-id: ${S3_ACCESS_KEY_ID}
         secret-access-key: ${S3_SECRET_ACCESS_KEY}
-        force-path-style: true
+        force-path-style: true # required by OCI's S3 compatibility API
+        # A fresh snapshot every day keeps restores fast (otherwise only one per retention period, and a
+        # restore would replay up to 30 days of WAL). Snapshots and WAL older than 30 days are deleted.
+        snapshot-interval: 24h
         retention: 720h
