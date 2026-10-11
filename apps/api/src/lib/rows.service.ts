@@ -105,6 +105,23 @@ function asRecord(row: unknown): Record<string, unknown> {
   return row as Record<string, unknown>;
 }
 
+/**
+ * updatedAt for a server-side (REST) write: now, but always strictly after the previous value so
+ * the write wins LWW on every client even if a device clock ran ahead.
+ */
+export function bumpUpdatedAt(prev: string | null | undefined, now: Date = new Date()): string {
+  const prevMs = prev ? Date.parse(prev) : Number.NaN;
+  const ms = Number.isNaN(prevMs) ? now.getTime() : Math.max(now.getTime(), prevMs + 1);
+  return new Date(ms).toISOString();
+}
+
+/** Drop keys whose value is undefined (zod partials), so spreading a patch never erases fields. */
+export function withoutUndefined<T extends object>(obj: T): { [K in keyof T]?: Exclude<T[K], undefined> } {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) if (v !== undefined) out[k] = v;
+  return out as { [K in keyof T]?: Exclude<T[K], undefined> };
+}
+
 /** Current row by primary key (see core primaryKeyOf), soft-deleted rows included. */
 export function getRow<T extends SyncTable>(db: Db, table: T, pk: string): Row<T> | null {
   const parts = splitPrimaryKey(table, pk);
