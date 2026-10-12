@@ -70,7 +70,7 @@ If two consecutive notifications are ignored, ask once whether to change the tim
 Text 4.5:1, UI and chart marks 3:1 (check the grey!), targets ≥ 44 px/dp, visible focus rings, full keyboard on web, screen-reader labels on chips and charts, every chart has a one-line text summary, `prefers-reduced-motion` / OS reduce-motion respected, dynamic type on phone.
 
 ## Story layer UX
-One line in a toast after a completion (~1/3 chance), text only: "<Character>, <Title> — <your paraphrase>" + optional "your line". Tap to dismiss; long-press to mute that reference. Never in notifications, never on Morning. Seasonal rotation per 12-week cycle.
+One line in a toast after a completion (~1/3 chance): the title's picture (48 px, when the owner added one in Settings → Story; else the sparkle icon), then "<Character>, <Title> — <line>" + optional "your line". Tap to dismiss; long-press to mute that reference. Never in notifications, never on Morning. Seasonal rotation per 12-week cycle.
 
 ## Anti-patterns (reject in review)
 Red misses · streak counters · XP/levels/coins · more than 3 missions · auto-scheduling · guilt notifications · story on every tick · modal chains longer than 2 · required fields on capture · hard locks.

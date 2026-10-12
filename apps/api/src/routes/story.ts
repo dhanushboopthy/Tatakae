@@ -9,7 +9,7 @@ import { idParam, parseBody, parseQuery } from "../lib/validate";
 
 // Phase v2. Story layer: refs import / list / mute, next pick, reward watch queue.
 //   GET    /                 → { items }  (live refs)
-//   POST   /import           storyPack → { added, skipped }   (paraphrase only, lesson ≤ 160 chars)
+//   POST   /import           storyPack → { added, skipped }   (one short line each, lesson ≤ 160 chars)
 //   PATCH  /:id              storyRefPatch (muted, text) → { item }
 //   GET    /next?moment=     → { story | null }  (1 in 3, no repeat in 14 days, off when story_enabled is false)
 //   GET    /watch            → { items }

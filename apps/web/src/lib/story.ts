@@ -1,7 +1,7 @@
 import { nowIso, pickStory, readSettings, recentlyShownIds, type StoryMoment, type StoryRef } from "@tatakae/core";
 import { store, write } from "../sync/engine";
 
-// Story layer (docs/02, docs/05): after a completion, ~1 in 3 chance of one paraphrased line.
+// Story layer (docs/02, docs/05): after a completion, ~1 in 3 chance of one line from the owner's pack.
 // Never on the morning screen, never twice in 14 days, muted refs skipped, off when story_enabled is false.
 // Screens call announceMoment(); the StoryToastHost in the Shell shows the pick.
 

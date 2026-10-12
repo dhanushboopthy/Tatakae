@@ -24,7 +24,7 @@ pnpm db:generate          # drizzle-kit migrations from db/schema.ts
 - Scoring, time ("today" = `todayIST()`, 04:00 IST boundary), story picking and sync merge come **only** from `@tatakae/core`.
 - All writes go through the outbox (optimistic) on both clients. Server is authoritative on plan lock.
 - `packages/core` must stay pure TS (no Node, DOM or React Native APIs).
-- Story layer: paraphrased text only, no art/quotes/franchise branding. Real packs are `references/*.local.json` (never commit).
+- Story layer: the repo ships no franchise content (no art, quotes or branding in code, docs or icons). The owner's private pack (`references/*.local.json`, never commit) may hold short lines ≤ 160 chars; their pictures (`references/pictures/`, never commit) are uploaded to their own server and mapped in the `story_pictures` setting.
 - Secrets never in the repo or images.
 - New dependencies: state why in the PR; ask first if not listed in `docs/04-tech-stack.md`.
 

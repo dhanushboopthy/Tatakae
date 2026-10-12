@@ -202,7 +202,7 @@ export const storyRefs = sqliteTable("story_refs", {
   title: text("title").notNull(),
   medium: text("medium").notNull(),
   character: text("character"),
-  lesson: text("lesson").notNull(),   // paraphrased only
+  lesson: text("lesson").notNull(),   // one short line from the owner's private pack
   moment: text("moment").notNull(),
   yourLine: text("your_line"),
   muted: integer("muted", { mode: "boolean" }).notNull().default(false),

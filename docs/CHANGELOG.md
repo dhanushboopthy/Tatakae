@@ -29,4 +29,5 @@
 - Local Docker run: `deploy/docker-compose.local.yml`, `deploy/Caddyfile.local`, `scripts/local-up.sh` (first free port from 8080), `.dockerignore`.
 - Calendar: drag to create, resize, live move preview, Day view. Focus timer: in the nav rail; length from the mission's plan or any 5–240 minutes (no fixed presets). Thirukkural 619 on login, shutdown and welcome back.
 - Thirukkural for each calm moment (13 Kurals; 619 stays on Login): shutdown, restart, capacity, welcome back, focus complete, stuck, inbox, cycle, reviews, notes, Japanese (docs/05 § Copy).
+- Story pictures: `story_pictures` setting (title → file id), Settings → Story → Pictures (upload per title), picture as the story card's icon. Private pack rules relaxed (owner, 12 Oct 2026): short lines allowed; pack and pictures stay git-ignored (`references/pictures/`).
 - Night ritual restart: `POST /days/:date/restart` + a high-friction flow on "Shutdown complete" (reason, 15 s pause, typed word, 3 s hold; once per plan, 2 per week; logged for Sunday).
