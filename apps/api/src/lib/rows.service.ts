@@ -27,6 +27,7 @@ export const TABLES = {
   settings: schema.settings,
   inbox: schema.inbox,
   mura_events: schema.muraEvents,
+  focus_sessions: schema.focusSessions,
   stuck_events: schema.stuckEvents,
   recharge_items: schema.rechargeItems,
   areas: schema.areas,
