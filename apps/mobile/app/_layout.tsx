@@ -10,6 +10,9 @@ import { getToken, onAuthChange, setExpiresAt, type AuthState } from "../src/aut
 import { apiGet, ApiError } from "../src/api/client";
 import { colors } from "../src/theme";
 
+/** Deep links (notification taps) into a modal still get the tabs underneath. */
+export const unstable_settings = { initialRouteName: "(tabs)" };
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: Infinity, retry: false, networkMode: "always" } },
 });
@@ -87,6 +90,11 @@ function AuthGate() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ink }, animation: "fade" }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="morning" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="welcome-back" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="quick-close" options={{ presentation: "modal" }} />
+        <Stack.Screen name="stuck/[missionId]" options={{ presentation: "modal" }} />
+        <Stack.Screen name="recharge" options={{ presentation: "modal" }} />
       </Stack>
       {auth === "loading" ? <View style={[StyleSheet.absoluteFill, styles.cover]} /> : null}
     </View>
