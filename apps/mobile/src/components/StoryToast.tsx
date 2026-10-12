@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text } from "react-native";
-import { colors, radius, space, text, type } from "../theme";
+import { colors, legacyRadius, space, text, type } from "../theme";
 
 export interface StoryLine {
   id: string;
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink2,
     borderColor: colors.line,
     borderWidth: 1,
-    borderRadius: radius.card,
+    borderRadius: legacyRadius.card,
     padding: space(2),
     gap: 4,
     shadowColor: "#000",

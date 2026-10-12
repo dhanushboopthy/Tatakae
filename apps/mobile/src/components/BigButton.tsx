@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, minTarget, radius, space, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, type } from "../theme";
 
 export type BigButtonVariant = "primary" | "secondary" | "quiet" | "danger";
 
@@ -69,7 +69,7 @@ export function BigButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.control,
+    borderRadius: legacyRadius.control,
     paddingHorizontal: space(2),
     alignItems: "center",
     justifyContent: "center",

@@ -22,11 +22,11 @@ export function IfThenTemplates(props: { onPick: (t: string) => void }) {
   if (templates.length === 0) return null;
   return (
     <div className="mt-2">
-      <p className="mb-1 text-sm text-muted">From earlier plans</p>
+      <p className="mb-1 text-sm text-legacy-muted">From earlier plans</p>
       <ul className="flex flex-wrap gap-2">
         {templates.map((t) => (
           <li key={t}>
-            <button type="button" className="min-h-tap rounded-full border border-line-strong px-3 text-left text-sm hover:bg-ink-3" onClick={() => props.onPick(t)}>
+            <button type="button" className="min-h-tap rounded-full border border-legacy-line-strong px-3 text-left text-sm hover:bg-legacy-ink-3" onClick={() => props.onPick(t)}>
               {t}
             </button>
           </li>

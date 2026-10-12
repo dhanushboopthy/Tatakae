@@ -66,12 +66,12 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
   return (
     <article
       aria-labelledby={`m-${m.id}`}
-      className={`card ${prominent ? "border-l-4 border-l-ember p-6" : ""} ${rescheduled ? "opacity-70" : ""}`}
+      className={`card ${prominent ? "border-l-4 border-l-legacy-ember p-6" : ""} ${rescheduled ? "opacity-70" : ""}`}
     >
       <header className="flex items-start gap-3">
         <div className="flex-1">
-          <p className="flex items-center gap-2 text-sm text-muted">
-            <span className={prominent ? "font-semibold text-ember" : "font-medium"}>{SLOT_LABEL[m.slot]}</span>
+          <p className="flex items-center gap-2 text-sm text-legacy-muted">
+            <span className={prominent ? "font-semibold text-legacy-ember" : "font-medium"}>{SLOT_LABEL[m.slot]}</span>
             {m.slot !== "side" && m.points != null && m.points !== 1 && <span className="tnum">· {m.points} points</span>}
             {m.slot === "side" && <span>· unscored</span>}
             {forged && (
@@ -96,13 +96,13 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
         <dl className="mt-3 grid gap-1 text-sm">
           {m.minimum && (
             <div className="flex gap-2">
-              <dt className="text-muted">Minimum</dt>
+              <dt className="text-legacy-muted">Minimum</dt>
               <dd>{m.minimum}</dd>
             </div>
           )}
           {m.ifThen && (
             <div className="flex gap-2">
-              <dt className="text-muted">If-then</dt>
+              <dt className="text-legacy-muted">If-then</dt>
               <dd>{m.ifThen}</dd>
             </div>
           )}
@@ -125,7 +125,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
           }}
         />
       ) : rescheduled ? (
-        <p className="mt-3 text-sm text-muted">{STATUS_LABEL.rescheduled} — a copy waits in your backlog.</p>
+        <p className="mt-3 text-sm text-legacy-muted">{STATUS_LABEL.rescheduled} — a copy waits in your backlog.</p>
       ) : (
         <>
           <div className="mt-4">
@@ -152,9 +152,9 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
             </form>
           ) : m.resumeNote ? (
             <p className="mt-4 text-sm">
-              <span className="text-muted">Resume: </span>
+              <span className="text-legacy-muted">Resume: </span>
               {m.resumeNote}{" "}
-              <button type="button" className="min-h-tap text-muted underline underline-offset-4" onClick={openNote}>
+              <button type="button" className="min-h-tap text-legacy-muted underline underline-offset-4" onClick={openNote}>
                 edit
               </button>
             </p>

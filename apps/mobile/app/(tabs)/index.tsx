@@ -28,6 +28,10 @@ import { BigButton } from "../../src/components/BigButton";
 import { tapDone } from "../../src/haptics";
 import { colors, minTarget, space, text, ui } from "../../src/theme";
 
+// TODO(v1, docs/10 + docs/11): Header: greeting + date title, "+" (capture → /capture modal) and bell circles; WeekStrip;
+// count chips (Done/Minimum/Open); P1HeroCard (lime Start arrow); P2 lavender + P3 lime-soft MissionCards; habits pills;
+// 2 MetricCards (today score, days shown up). No streak.
+
 /** Redirect at most once per app session per date and target, so Back never loops. */
 const redirected = new Set<string>();
 

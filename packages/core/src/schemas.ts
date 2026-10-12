@@ -64,6 +64,7 @@ export const missionRow = z.object({
   goalId: z.string().nullable(),
   estMin: z.number().int().positive().nullable(),
   actualMin: z.number().int().nonnegative().nullable(),
+  plannedStart: hhmm.nullable().optional(), // v2 week planner
   rescheduleCount: z.number().int().nonnegative(),
   ...rowMeta,
 }) satisfies RowSchema<Mission>;
@@ -141,6 +142,8 @@ export const areaRow = z.object({
   standard: optText(300),
   why: optText(500),
   alignmentScore: z.number().int().min(0).max(10).nullable(),
+  color: optText(30).optional(), // sage | rose | butter | sky | lime-soft | lavender-soft
+  icon: optText(60).optional(),  // lucide name, see icons.ts
   ...rowMeta,
 }) satisfies RowSchema<Area>;
 
@@ -155,6 +158,7 @@ export const goalRow = z.object({
   nextAction: optText(300),
   why: optText(500),
   hellYeah: z.boolean(),
+  targetPoints: z.number().int().positive().nullable().optional(), // ring progress
   start: isoDate.nullable(),
   end: isoDate.nullable(),
   ...rowMeta,

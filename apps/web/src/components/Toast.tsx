@@ -48,13 +48,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {item && (
           <div
             key={item.id}
-            className="pointer-events-auto flex max-w-md items-center gap-3 rounded-card border border-line bg-ink-2 py-2 pl-4 pr-2 shadow-overlay"
+            className="pointer-events-auto flex max-w-md items-center gap-3 rounded-legacy-card border border-legacy-line bg-legacy-ink-2 py-2 pl-4 pr-2 shadow-overlay"
           >
             <p className="flex-1 text-sm">{item.message}</p>
             {item.action && (
               <button
                 type="button"
-                className="btn-ghost text-sm text-ember"
+                className="btn-ghost text-sm text-legacy-ember"
                 onClick={() => {
                   item.action?.onClick();
                   clear();

@@ -22,11 +22,12 @@ Stop and wait for me.
 
 ## 2. Design-system prompt (once, before UI work in v1)
 ```
-Use the ui-ux-pro-max skill and the frontend-design skill.
-Constraints: docs/05-ui-ux.md (dark-first, tokens ink/paper/muted/ember/jade, grey misses, no red except destructive, 44px targets, calm/minimal, productivity app for one power user, React + Tailwind on web, React Native on phone).
-1. Propose 2 design-system directions that respect the tokens (type pairing, spacing scale, radius, elevation, motion, chart style). Show contrast ratios for every text/background and UI pair; the grey must pass 3:1.
-2. After I pick one, write it to docs/10-design-system.md and implement tokens in apps/web/tailwind.config.js and apps/mobile/src/theme.ts — tokens only, no screens.
-Run tatakae-guardrails on the result.
+Open every image in docs/design/references/, read the mockups in docs/design/mockups/ (target look), and read docs/10-design-system.md, docs/11-dashboards-charts-calendar.md and docs/05-ui-ux.md.
+Use the ui-ux-pro-max skill (stacks: React + Tailwind, React Native) and the frontend-design skill.
+1. Check 10-design-system.md against the references: list anything in the references I'd likely want that the spec misses, and any token that fails WCAG 2.2 AA (show ratios). Don't change the direction.
+2. Build a static "kitchen sink" page in apps/web (route /dev/design, dev-only) and a matching screen in apps/mobile (/dev-design, dev-only) showing every token and component from docs/10 §5 and docs/11 with fake data: P1HeroCard, MissionCard variants, StatusChips, DayCircle states, MonthCalendar, WeekStrip, MetricCard/Scoreboard, HatchedStackBar, StripeTrend, Sparkline, SegmentGauge, RingProgress, BlockBarChart, HabitHeatGrid, PillBar, CapacityBar, FocusRing, WeekPlanner + TimeRail (web), BottomNav, every icon from core ICONS, light + dark.
+3. Then compose phone Today, Calendar and Week, and web Dashboard and Calendar to match docs/design/mockups/ (and docs/10 §6), with fake data, and give me screenshots (webapp-testing for web; Expo dev build for phone).
+Run tatakae-guardrails. Stop for my feedback before wiring real data.
 ```
 
 ## 3. Phase prompt (reuse for every phase: 0, v1, v2, v3, v4)

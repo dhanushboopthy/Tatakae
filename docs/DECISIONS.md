@@ -16,5 +16,6 @@
 11. **Night ritual is laptop-only;** the phone gets a 45-second Quick close fallback.
 12. **Phone notifications are local,** not server push.
 13. **Skills:** anthropics/skills, ui-ux-pro-max, superpowers, expo, vercel react skills, hashicorp terraform + 3 project skills (docs/09).
+14. **Visual direction "Soft Bento"** from user references (docs/10-design-system.md): light by day, dark at night; ink text on accent fills (references used white text that fails contrast); red removed from deltas.
 
 Full plan: https://claude.ai/code/artifact/f1fb71f2-d965-4018-9858-308733db30e5

@@ -13,6 +13,7 @@ import { Cycle } from "./routes/Cycle";
 import { Notes } from "./routes/Notes";
 import { Settings } from "./routes/Settings";
 import { Login } from "./routes/Login";
+import { Calendar } from "./routes/Calendar";
 
 /** "/" decides: lapse → /welcome-back, before P1 started → /morning, after 21:00 → /ritual, else /today. */
 function Home() {
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
       { path: "/today", element: <Today /> },              // v1
       { path: "/focus", element: <Focus /> },              // v1
       { path: "/ritual", element: <NightRitual /> },       // v1
+      { path: "/calendar", element: <Calendar /> },        // v1 month, v2 week planner
       { path: "/inbox", element: <Inbox /> },              // v1
       { path: "/capture", element: <Capture /> },          // v1 (share target)
       { path: "/welcome-back", element: <WelcomeBack /> }, // v1

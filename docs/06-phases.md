@@ -38,21 +38,22 @@ Rules for every phase
 **Goal:** run every day from the app.
 
 Order (each builds on the previous):
-1. 🟡 **core:** `todayIST`, `addDays`, full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
+1. 🟡 **core:** `todayIST`, `addDays`, `stats.ts` v1 functions (calendarState, monthGrid, pointBreakdown, scoreboard, summarizeWeek — stubs only so far), full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
 2. 🟡 **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
-3. 🟡 **api:** days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
+3. 🟡 **api:** `/stats/scoreboard`, `/stats/calendar`, `/stats/series`, `/stats/week` (points), `/focus` (stubs only so far); days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
 4. **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
-5. **web screens:** Night ritual wizard (all 8 steps, capacity bar, P1 validation, forge), Today, Inbox, Welcome back, Settings (basic), Cmd+K palette.
+5. **web screens:** Night ritual wizard (all 8 steps, CapacityBar, P1 validation, forge), **bento Dashboard** (P1 hero, score box, screen StripeTrend, inbox box), **Calendar month view**, Inbox, Welcome back, Settings (basic), Cmd+K palette.
 6. **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks.
-7. **mobile screens:** Morning, Today (chips, habits strip, days-shown-up), Focus (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
+7. **mobile screens:** Morning, Today (week strip, chips, P1 hero, 2 scoreboard boxes), **Calendar tab** (month DayCircles, 4 scoreboard boxes, Day sheet), Focus (FocusRing, logs focus_sessions) (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
 8. **mobile notifications:** local schedule (morning, optional afternoon, ritual), reschedule on settings sync, permission asked after first Quick close/login.
 9. **polish:** empty states, copy, accessibility pass (contrast, labels, targets), dark theme.
 - **Gate:** 7 consecutive days: ritual on laptop, daily actions on phone, nothing in Notion.
 
 ## v2 — Reviews, story, native extras (2 – 15 Nov)
-1. **db/api:** goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
+0. **design:** `/dev/design` kitchen-sink pages (web + phone) with every component from docs/10 §5 and docs/11 — done before step 3.
+1. **db/api:** `/stats/month`, `/stats/cycle`, `/stats/habits`, missions.planned_start, areas.color/icon, goals.target_points; goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
 2. 🟡 **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
-3. **web:** Weekly Control Room (grid, sparkline, screen line, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review, Cycle page (goals ≤ 4, hell-yeah gate, areas).
+3. **web:** Week planner calendar (TimeRail, AreaBlocks, drag backlog), Weekly Control Room (HatchedStackBar, Sparkline, StripeTrend, PillBar stuck, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review (BlockBarChart marks + area minutes, HabitHeatGrid), Cycle page (SegmentGauge, RingProgress, goals ≤ 4, hell-yeah gate, areas with color + icon). Phone: Week view (HatchedStackBar) and read-only Cycle.
 4. **story layer:** reference pack import (validate ≤ 160 chars, moment enum), StoryToast on both clients, mute, seasonal theme, watch queue rules.
 5. **mobile native:** share intent → inbox; quick actions (Start focus, Capture); Android widget (P1 + Start/Done); **usage stats** custom module to prefill screen minutes (Usage access permission flow; manual fallback); ongoing focus notification.
 6. **Notion import #1:** Tasks → missions/backlog, Habits, Areas, Projects → goals, day cards → days (dry-run JSON first).

@@ -49,6 +49,7 @@ export interface Mission extends RowMeta {
   goalId: string | null;
   estMin: number | null;
   actualMin: number | null;
+  plannedStart?: string | null; // HH:MM, v2 week planner
   rescheduleCount: number;
 }
 
@@ -117,6 +118,8 @@ export interface Area extends RowMeta {
   standard: string | null;
   why: string | null;
   alignmentScore: number | null;
+  color?: string | null; // sage | rose | butter | sky | lime-soft | lavender-soft
+  icon?: string | null;  // lucide name, see icons.ts
 }
 
 export interface Goal extends RowMeta {
@@ -130,6 +133,7 @@ export interface Goal extends RowMeta {
   nextAction: string | null;
   why: string | null;
   hellYeah: boolean;
+  targetPoints?: number | null; // ring progress
   start: ISODate | null;
   end: ISODate | null;
 }

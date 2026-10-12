@@ -73,7 +73,7 @@ export function NightRitual() {
   const [justForged, setJustForged] = useState(false);
 
   if (!todayQ.data || !tomorrowQ.data || !settings || !anchors) {
-    return <p className="text-muted">Opening the ritual…</p>;
+    return <p className="text-legacy-muted">Opening the ritual…</p>;
   }
 
   if (tomorrowQ.data.forged) return <ShutdownComplete fresh={justForged} />;
@@ -84,9 +84,9 @@ export function NightRitual() {
 
   return (
     <div className="mx-auto max-w-read">
-      <div className="rounded-card border border-line bg-ritual p-6 md:p-8">
+      <div className="rounded-legacy-card border border-legacy-line bg-legacy-ritual p-6 md:p-8">
         <header className="mb-6">
-          <p className="text-sm text-muted">Night ritual · about five minutes</p>
+          <p className="text-sm text-legacy-muted">Night ritual · about five minutes</p>
           <ProgressDots step={step} reached={state.reached} onGo={(i) => update({ step: i })} />
         </header>
 
@@ -153,7 +153,7 @@ function ProgressDots(props: { step: number; reached: number; onGo: (i: number) 
                 <span
                   aria-hidden="true"
                   className={`block rounded-full ${
-                    current ? "h-3 w-3 bg-ember" : done ? "h-2.5 w-2.5 bg-paper" : "h-2.5 w-2.5 border border-line-strong"
+                    current ? "h-3 w-3 bg-legacy-ember" : done ? "h-2.5 w-2.5 bg-legacy-paper" : "h-2.5 w-2.5 border border-legacy-line-strong"
                   }`}
                 />
               </button>
@@ -162,7 +162,7 @@ function ProgressDots(props: { step: number; reached: number; onGo: (i: number) 
         })}
       </ol>
       <h1 className="mt-2" aria-live="polite">
-        <span className="tnum text-muted">{props.step + 1}/8 · </span>
+        <span className="tnum text-legacy-muted">{props.step + 1}/8 · </span>
         {STEPS[props.step]}
       </h1>
     </div>
@@ -190,7 +190,7 @@ function StepForm(props: {
   return (
     <form onSubmit={submit} className="space-y-6">
       {props.children}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-legacy-line pt-4">
         {props.onBack ? (
           <button type="button" className="btn-ghost" onClick={props.onBack}>
             Back
@@ -201,7 +201,7 @@ function StepForm(props: {
         <div className="flex items-center gap-2">
           {props.extra}
           <button type="submit" className="btn-primary" disabled={busy}>
-            {props.nextLabel ?? "Next"} <span className="kbd border-ink/40 text-ink">Enter</span>
+            {props.nextLabel ?? "Next"} <span className="kbd border-legacy-ink/40 text-legacy-ink">Enter</span>
           </button>
         </div>
       </div>
@@ -223,13 +223,13 @@ function CloseToday({ day, onNext }: { day: DayView; onNext: () => void }) {
       }}
     >
       {missions.length === 0 ? (
-        <p className="text-muted">Nothing was planned today. That's fine — tomorrow starts tonight.</p>
+        <p className="text-legacy-muted">Nothing was planned today. That's fine — tomorrow starts tonight.</p>
       ) : (
         <ul className="space-y-4">
           {missions.map((m) => (
-            <li key={m.id} className="rounded-card border border-line bg-ritual-2 p-4">
+            <li key={m.id} className="rounded-legacy-card border border-legacy-line bg-legacy-ritual-2 p-4">
               <p className="mb-3">
-                <span className="text-sm text-muted">{m.slot === "side" ? "Side quest" : m.slot} · </span>
+                <span className="text-sm text-legacy-muted">{m.slot === "side" ? "Side quest" : m.slot} · </span>
                 <span className="font-medium">{m.title}</span>
               </p>
               <StatusChips value={m.status} onChange={(s) => void setStatus(m, s)} label={m.title} />
@@ -250,7 +250,7 @@ function CloseToday({ day, onNext }: { day: DayView; onNext: () => void }) {
           onChange={(e) => setScreen(e.target.value.replace(/[^\d]/g, ""))}
           aria-describedby="screen-hint"
         />
-        <p id="screen-hint" className="mt-1 text-sm text-muted">
+        <p id="screen-hint" className="mt-1 text-sm text-legacy-muted">
           Phone's digital wellbeing has the number. Up to 120 is free.
         </p>
       </div>
@@ -323,7 +323,7 @@ function Questions({ day, onNext, onBack }: { day: DayView; onNext: () => void; 
               type="button"
               aria-pressed={qP1 === a}
               onClick={() => setQP1(a)}
-              className={`min-h-tap rounded-full border px-4 text-sm ${qP1 === a ? "border-paper bg-ink-3" : "border-line-strong hover:bg-ink-3"}`}
+              className={`min-h-tap rounded-full border px-4 text-sm ${qP1 === a ? "border-legacy-paper bg-legacy-ink-3" : "border-legacy-line-strong hover:bg-legacy-ink-3"}`}
             >
               {a}
             </button>
@@ -366,10 +366,10 @@ function CloseLoops({ day, onNext, onBack }: { day: DayView; onNext: () => void;
       }}
     >
       {open.length === 0 ? (
-        <p className="text-muted">No open loops. Everything from today is closed.</p>
+        <p className="text-legacy-muted">No open loops. Everything from today is closed.</p>
       ) : (
         <>
-          <p className="text-sm text-muted">For each unfinished mission: where should you pick up next time?</p>
+          <p className="text-sm text-legacy-muted">For each unfinished mission: where should you pick up next time?</p>
           {open.map((m, i) => (
             <div key={m.id}>
               <label htmlFor={`loop-${m.id}`} className="label">
@@ -413,7 +413,7 @@ function Capacity(props: {
           Tomorrow's anchors
         </h2>
         {props.anchors.length === 0 ? (
-          <p className="text-sm text-muted">
+          <p className="text-sm text-legacy-muted">
             No fixed blocks tomorrow. <Link to="/settings#anchors" className="underline underline-offset-4">Add anchors in Settings</Link>.
           </p>
         ) : (
@@ -421,7 +421,7 @@ function Capacity(props: {
             {props.anchors.map((a) => (
               <li key={a.id} className="flex justify-between gap-4 text-sm">
                 <span>{a.name}</span>
-                <span className="tnum text-muted">
+                <span className="tnum text-legacy-muted">
                   {a.startTime}–{a.endTime}
                 </span>
               </li>
@@ -442,7 +442,7 @@ function Capacity(props: {
           onChange={(e) => setFree(e.target.value.replace(/[^\d]/g, ""))}
           aria-describedby="free-hint"
         />
-        <p id="free-hint" className="mt-1 text-sm text-muted">
+        <p id="free-hint" className="mt-1 text-sm text-legacy-muted">
           Suggested {suggested} min: wake {props.settings.wake_time} to ritual {props.settings.ritual_time}, minus anchors.
         </p>
       </div>
@@ -527,14 +527,14 @@ function PickThree(props: { tomorrow: DayView; settings: ResolvedSettings; freeM
 
   return (
     <StepForm onBack={props.onBack} onSubmit={onSubmit}>
-      <p className="text-sm text-muted">Three at most, ranked. P1 is the one that makes tomorrow a win.</p>
+      <p className="text-sm text-legacy-muted">Three at most, ranked. P1 is the one that makes tomorrow a win.</p>
       {RANKED.map((slot) => {
         const d = drafts[slot] ?? draftFrom(undefined);
         const isP1 = slot === "P1";
         const id = (k: string) => `pick-${slot}-${k}`;
         return (
-          <fieldset key={slot} className={`rounded-card border bg-ritual-2 p-4 ${isP1 ? "border-ember" : "border-line"}`}>
-            <legend className={`px-1 text-sm font-semibold ${isP1 ? "text-ember" : "text-muted"}`}>
+          <fieldset key={slot} className={`rounded-legacy-card border bg-legacy-ritual-2 p-4 ${isP1 ? "border-legacy-ember" : "border-legacy-line"}`}>
+            <legend className={`px-1 text-sm font-semibold ${isP1 ? "text-legacy-ember" : "text-legacy-muted"}`}>
               {slot}
               {isP1 ? " · needs a Minimum and an if-then" : " · optional"}
             </legend>
@@ -636,7 +636,7 @@ function PickThree(props: { tomorrow: DayView; settings: ResolvedSettings; freeM
                 </div>
               </div>
               {(d.source || d.title) && (
-                <button type="button" className="btn-ghost text-sm text-muted" onClick={() => set(slot, draftFrom(undefined))}>
+                <button type="button" className="btn-ghost text-sm text-legacy-muted" onClick={() => set(slot, draftFrom(undefined))}>
                   Clear {slot}
                 </button>
               )}
@@ -717,26 +717,26 @@ function Shutdown(props: { tomorrow: DayView; onBack: () => void; onFixPlan: () 
       <section aria-labelledby="plan-title" className="space-y-3">
         <h2 id="plan-title">Tomorrow</h2>
         {slots.P1 ? (
-          <div className="rounded-card border border-ember bg-ritual-2 p-4">
-            <p className="text-sm font-semibold text-ember">P1</p>
+          <div className="rounded-legacy-card border border-legacy-ember bg-legacy-ritual-2 p-4">
+            <p className="text-sm font-semibold text-legacy-ember">P1</p>
             <p className="text-p1">{slots.P1.title}</p>
             <p className="mt-2 text-sm">
-              <span className="text-muted">Minimum </span>
+              <span className="text-legacy-muted">Minimum </span>
               {slots.P1.minimum}
             </p>
             <p className="text-sm">
-              <span className="text-muted">If-then </span>
+              <span className="text-legacy-muted">If-then </span>
               {slots.P1.ifThen}
             </p>
           </div>
         ) : (
-          <p className="text-muted">No P1 yet.</p>
+          <p className="text-legacy-muted">No P1 yet.</p>
         )}
         <ul className="space-y-1">
           {(["P2", "P3", "side"] as const).map((s) =>
             slots[s] ? (
               <li key={s} className="text-sm">
-                <span className="text-muted">{s === "side" ? "Side quest" : s} · </span>
+                <span className="text-legacy-muted">{s === "side" ? "Side quest" : s} · </span>
                 {slots[s]?.title}
               </li>
             ) : null,
@@ -755,7 +755,7 @@ function Shutdown(props: { tomorrow: DayView; onBack: () => void; onFixPlan: () 
         </div>
       )}
 
-      <div className="space-y-4 border-t border-line pt-6">
+      <div className="space-y-4 border-t border-legacy-line pt-6">
         <HoldButton label="Hold to lock tomorrow" onComplete={() => void lock()} disabled={busy} />
         <form
           onSubmit={(e) => {
@@ -830,9 +830,9 @@ function HoldButton(props: { label: string; onComplete: () => void; disabled?: b
       }}
       onContextMenu={(e) => e.preventDefault()}
       aria-describedby="hold-hint"
-      className="relative flex min-h-[56px] w-full select-none items-center justify-center overflow-hidden rounded-control border border-ember bg-ember-soft text-lg font-semibold text-paper disabled:opacity-50"
+      className="relative flex min-h-[56px] w-full select-none items-center justify-center overflow-hidden rounded-control border border-legacy-ember bg-legacy-ember-soft text-lg font-semibold text-legacy-paper disabled:opacity-50"
     >
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 bg-ember/40" style={{ width: `${progress * 100}%` }} />
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 bg-legacy-ember/40" style={{ width: `${progress * 100}%` }} />
       <span className="relative">Shutdown complete — {props.label.toLowerCase()}</span>
       <span id="hold-hint" className="sr-only">
         Press and hold for one and a half seconds.
@@ -846,7 +846,7 @@ function ShutdownComplete({ fresh }: { fresh: boolean }) {
     <div className="mx-auto flex min-h-[60vh] max-w-read flex-col items-start justify-center gap-4">
       <h1 className="text-p1">Shutdown complete.</h1>
       <p className="text-xl">Phone outside the room.</p>
-      <p className="text-muted">
+      <p className="text-legacy-muted">
         {fresh ? "Tomorrow is locked. Sleep well." : "Tomorrow is already locked. Changing it needs a reason, from Today."}
       </p>
       <Link to="/today" className="btn-secondary mt-4">

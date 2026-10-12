@@ -104,6 +104,8 @@ function AuthGate() {
         <Stack.Screen name="quick-close" options={{ presentation: "modal" }} />
         <Stack.Screen name="stuck/[missionId]" options={{ presentation: "modal" }} />
         <Stack.Screen name="recharge" options={{ presentation: "modal" }} />
+        <Stack.Screen name="capture" options={{ presentation: "modal" }} />
+        <Stack.Screen name="day/[date]" />
       </Stack>
       {auth === "loading" ? <View style={[StyleSheet.absoluteFill, styles.cover]} /> : null}
     </View>

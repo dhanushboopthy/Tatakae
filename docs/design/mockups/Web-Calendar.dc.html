@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TATAKAE week planner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F1F1EF}a{color:#1C1C1E}a:hover{color:#66666B}</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 1000px; background: #F1F1EF; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #1C1C1E; padding: 24px; font-variant-numeric: tabular-nums">
+<div style="max-width: 1392px; margin: 0 auto; background: #FAF4E8; border-radius: 32px; padding: 24px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<h1 style="margin: 0; font-size: 40px; font-weight: 500; letter-spacing: -0.02em">Calendar</h1>
+<button type="button" style="height: 44px; padding: 0 18px; border-radius: 22px; border: none; background: #262626; color: #FFFFFF; font: 600 14px 'Plus Jakarta Sans', sans-serif">19 – 25 Oct 2026</button>
+</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; font-size: 14px; font-weight: 500; text-decoration: none">Day</a>
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 22px; background: #CDE37A; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none">Week</a>
+<a href="#" style="height: 44px; padding: 0 18px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; font-size: 14px; font-weight: 500; text-decoration: none">Month</a>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<span style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 600">Focus this week <span style="font-size: 18px">340 min</span></span>
+<span style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 600">Planned vs capacity <span style="font-size: 18px">74%</span><span style="font-size: 12px; color: #66666B; font-weight: 500">under 80</span></span>
+<span style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M10 2v2M14 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/></svg>Rest day Sun</span>
+<span style="display: flex; align-items: center; gap: 14px; margin-left: auto; font-size: 13px; color: #66666B; font-weight: 500; flex-wrap: wrap">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #A3B56B"></span>Career</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #F4D978"></span>Japanese</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #F7A8D3"></span>Health</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #B9CBF0"></span>Freelance</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; border: 2px dashed #66666B; box-sizing: border-box"></span>Planned</span>
+</span>
+</div>
+
+<div style="overflow-x: auto; background: #FFFFFF; border-radius: 28px; padding: 16px 16px 20px">
+<div style="min-width: 900px">
+<div style="display: grid; grid-template-columns: 64px repeat(7, minmax(0, 1fr)); gap: 8px; padding-bottom: 10px; text-align: center; font-size: 13px; font-weight: 600">
+<span></span>
+<span>Mon <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">19</span></span>
+<span>Tue <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">20</span></span>
+<span>Wed <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">21</span></span>
+<span style="background: #262626; color: #FFFFFF; border-radius: 14px; padding: 4px 0">Thu <span style="display: block; font-size: 12px; font-weight: 500">22 · today</span></span>
+<span>Fri <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">23</span></span>
+<span>Sat <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">24</span></span>
+<span>Sun <span style="display: block; font-size: 12px; color: #66666B; font-weight: 500">25</span></span>
+</div>
+
+<div style="position: relative; display: grid; grid-template-columns: 64px repeat(7, minmax(0, 1fr)); gap: 8px; height: 768px">
+<div style="position: relative; font-size: 12px; color: #66666B; font-weight: 500">
+<span style="position: absolute; top: 0">07:00</span><span style="position: absolute; top: 96px">09:00</span><span style="position: absolute; top: 192px">11:00</span><span style="position: absolute; top: 288px">13:00</span><span style="position: absolute; top: 384px">15:00</span><span style="position: absolute; top: 480px">17:00</span><span style="position: absolute; top: 576px">19:00</span><span style="position: absolute; top: 672px">21:00</span>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3">
+<div style="position: absolute; left: 4px; right: 4px; top: 0; height: 46px; border-radius: 12px; background: #F7A8D3; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Gym</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 60px; height: 40px; border-radius: 12px; background: #A3B56B; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P1 · Terraform</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 384px; border-radius: 12px; background: repeating-linear-gradient(45deg, #F4F4F2 0 6px, #ECECEA 6px 12px); padding: 8px; box-sizing: border-box; font-size: 12px; font-weight: 500; color: #66666B">Internship</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 576px; height: 36px; border-radius: 12px; background: #A3B56B; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">DSA</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 624px; height: 24px; border-radius: 10px; background: #F4D978; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Kana</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 24px; border-radius: 10px; background: #262626; color: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3">
+<div style="position: absolute; left: 4px; right: 4px; top: 60px; height: 40px; border-radius: 12px; background: #A3B56B; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P1 · Terraform</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 384px; border-radius: 12px; background: repeating-linear-gradient(45deg, #F4F4F2 0 6px, #ECECEA 6px 12px); padding: 8px; box-sizing: border-box; font-size: 12px; font-weight: 500; color: #66666B">Internship</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 576px; height: 32px; border-radius: 12px; background: #A3B56B; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">DSA</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 24px; border-radius: 10px; background: #262626; color: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3">
+<div style="position: absolute; left: 4px; right: 4px; top: 0; height: 46px; border-radius: 12px; background: #F7A8D3; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Gym</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 72px; height: 26px; border-radius: 10px; background: #A3B56B; padding: 4px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P1 · min</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 384px; border-radius: 12px; background: repeating-linear-gradient(45deg, #F4F4F2 0 6px, #ECECEA 6px 12px); padding: 8px; box-sizing: border-box; font-size: 12px; font-weight: 500; color: #66666B">Internship</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 624px; height: 24px; border-radius: 10px; background: #F4D978; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Kana</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 24px; border-radius: 10px; background: #262626; color: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3; background: #FCFCFA">
+<div style="position: absolute; left: 4px; right: 4px; top: 48px; height: 42px; border-radius: 12px; background: #A3B56B; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P1 · done 08:52</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 384px; border-radius: 12px; background: repeating-linear-gradient(45deg, #F4F4F2 0 6px, #ECECEA 6px 12px); padding: 8px; box-sizing: border-box; font-size: 12px; font-weight: 500; color: #66666B">Internship</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 576px; height: 36px; border-radius: 12px; border: 2px dashed #6E7F35; background: #FFFFFF; padding: 5px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P2 · DSA</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 624px; height: 26px; border-radius: 10px; border: 2px dashed #B38F12; background: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">P3 · Kana</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 26px; border-radius: 10px; border: 2px dashed #262626; background: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3">
+<div style="position: absolute; left: 4px; right: 4px; top: 0; height: 46px; border-radius: 12px; border: 2px dashed #C2508F; background: #FFFFFF; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Gym</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 384px; border-radius: 12px; background: repeating-linear-gradient(45deg, #F4F4F2 0 6px, #ECECEA 6px 12px); padding: 8px; box-sizing: border-box; font-size: 12px; font-weight: 500; color: #66666B">Internship</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 26px; border-radius: 10px; border: 2px dashed #262626; background: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3">
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 96px; border-radius: 12px; border: 2px dashed #4E6FB5; background: #FFFFFF; padding: 6px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Freelance · client build</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 696px; height: 26px; border-radius: 10px; border: 2px dashed #262626; background: #FFFFFF; padding: 3px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Ritual</div>
+</div>
+
+<div style="position: relative; border-left: 1px solid #E6E6E3; background: repeating-linear-gradient(0deg, transparent 0 47px, #F4F4F2 47px 48px)">
+<div style="position: absolute; left: 4px; right: 4px; top: 144px; height: 34px; border-radius: 12px; border: 2px dashed #6E66B8; background: #FFFFFF; padding: 5px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600">Weekly review</div>
+<div style="position: absolute; left: 4px; right: 4px; top: 300px; border-radius: 12px; border: 2px solid #8A8A90; padding: 10px 8px; box-sizing: border-box; font-size: 12px; font-weight: 600; text-align: center; color: #66666B">Rest day</div>
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 64px; right: 0; top: 112px; height: 2px; background: #262626"></div>
+<div aria-hidden="true" style="position: absolute; left: calc(64px + 3 * ((100% - 64px) / 7)); top: 107px; width: 12px; height: 12px; border-radius: 6px; background: #262626"></div>
+</div>
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #66666B">Focus happened before work on 4 of 4 weekdays; evenings are planned, not done yet. Now: 09:20.</p>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

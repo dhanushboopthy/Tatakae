@@ -50,7 +50,7 @@ export function Login() {
           <LogoMark size={40} />
           <div>
             <h1>Tatakae</h1>
-            <p className="text-sm text-muted">Plan the night before. Start strict. Show up.</p>
+            <p className="text-sm text-legacy-muted">Plan the night before. Start strict. Show up.</p>
           </div>
         </div>
 
@@ -97,13 +97,13 @@ export function Login() {
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
             />
-            <p id="device-hint" className="mt-1 text-sm text-muted">
+            <p id="device-hint" className="mt-1 text-sm text-legacy-muted">
               Shown in Settings → Devices, so you can sign this laptop out later.
             </p>
           </div>
 
           {error && (
-            <p id="login-error" role="alert" className="text-sm text-paper">
+            <p id="login-error" role="alert" className="text-sm text-legacy-paper">
               {error}
             </p>
           )}

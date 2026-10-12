@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Mission } from "@tatakae/core";
 import type { MissionEdit } from "../lib/hooks";
-import { colors, radius, space, text, ui } from "../theme";
+import { colors, legacyRadius, space, text, ui } from "../theme";
 import { BigButton } from "./BigButton";
 
 export interface LockReasonModalProps {
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: colors.ink2,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
+    borderTopLeftRadius: legacyRadius.card,
+    borderTopRightRadius: legacyRadius.card,
     borderColor: colors.line,
     borderWidth: 1,
     maxHeight: "90%",

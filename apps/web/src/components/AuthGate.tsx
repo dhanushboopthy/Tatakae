@@ -33,7 +33,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!session.data && !cached) {
     return (
       <main className="flex min-h-screen items-center justify-center" aria-busy="true">
-        <p className="text-muted">Opening…</p>
+        <p className="text-legacy-muted">Opening…</p>
       </main>
     );
   }

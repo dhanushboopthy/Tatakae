@@ -56,10 +56,10 @@ function StuckBody({ mission, onClose }: { mission: Mission; onClose: () => void
             key={c.blocker}
             type="button"
             onClick={() => void pick(c.blocker)}
-            className="flex min-h-[72px] flex-col items-start justify-center rounded-card border border-line-strong bg-ink-3 px-4 py-3 text-left hover:border-paper"
+            className="flex min-h-[72px] flex-col items-start justify-center rounded-legacy-card border border-legacy-line-strong bg-legacy-ink-3 px-4 py-3 text-left hover:border-legacy-paper"
           >
             <span className="font-medium">{c.title}</span>
-            <span className="text-sm text-muted">{c.body}</span>
+            <span className="text-sm text-legacy-muted">{c.body}</span>
           </button>
         ))}
       </div>
@@ -69,7 +69,7 @@ function StuckBody({ mission, onClose }: { mission: Mission; onClose: () => void
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {blocker === "fear" && (
-        <ul className="space-y-1 text-sm text-muted">
+        <ul className="space-y-1 text-sm text-legacy-muted">
           <li>How much will this matter in 10 minutes?</li>
           <li>In 10 months?</li>
           <li>In 10 years?</li>

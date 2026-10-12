@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, minTarget, radius, space, tnum, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, tnum, type } from "../theme";
 import { tapSelect } from "../haptics";
 
 export interface ChoiceProps<T extends string | number> {
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.control,
+    borderRadius: legacyRadius.control,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.ink3,

@@ -36,9 +36,21 @@ export const missions = sqliteTable("missions", {
   goalId: text("goal_id"),
   estMin: integer("est_min"),
   actualMin: integer("actual_min"),
+  plannedStart: text("planned_start"),     // v2, HH:MM for the week planner
   rescheduleCount: integer("reschedule_count").notNull().default(0),
   ...meta,
 }, (t) => ({ dayDateIdx: index("missions_day_date_idx").on(t.dayDate) }));
+
+export const focusSessions = sqliteTable("focus_sessions", { // v1 — week planner + focus minutes
+  id: text("id").primaryKey(),
+  missionId: text("mission_id"),
+  areaId: text("area_id"),
+  startedAt: text("started_at").notNull(),
+  endedAt: text("ended_at"),
+  plannedMin: integer("planned_min").notNull(),
+  completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+  ...meta,
+});
 
 export const habits = sqliteTable("habits", {
   id: text("id").primaryKey(),
@@ -116,6 +128,8 @@ export const areas = sqliteTable("areas", {
   standard: text("standard"),
   why: text("why"),
   alignmentScore: integer("alignment_score"),
+  color: text("color"),   // sage | rose | butter | sky | lime-soft | lavender-soft
+  icon: text("icon"),     // lucide name, see packages/core/src/icons.ts
   ...meta,
 });
 
@@ -130,6 +144,7 @@ export const goals = sqliteTable("goals", {
   nextAction: text("next_action"),
   why: text("why"),
   hellYeah: integer("hell_yeah", { mode: "boolean" }).notNull().default(false),
+  targetPoints: integer("target_points"), // ring progress
   start: text("start"),
   end: text("end"),
   ...meta,

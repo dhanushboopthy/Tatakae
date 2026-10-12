@@ -14,10 +14,12 @@
 | Duolingo: leniency (any lesson counts) grew 7-day+ streaks by > 40 % | Duolingo blog | Minimum = half credit |
 
 ## Information architecture
-**Phone (bottom tabs):** Today · Focus · **Capture** (centre, large) · Settings. Modals: Morning, Welcome back, Quick close, Stuck, Recharge.
-**Web (left sidebar):** Today · Ritual · Inbox · Review (Week / Month) · Cycle · Notes · Settings. Cmd/Ctrl+K command palette everywhere.
+**Phone (floating charcoal pill nav):** Today · Calendar · Focus · Settings; Capture = "+" circle in every header. Modals: Morning, Welcome back, Quick close, Stuck, Recharge.
+**Web (left icon rail):** Today (bento dashboard) · Calendar · Ritual · Inbox · Review (Week / Month) · Cycle · Notes · Settings. Cmd/Ctrl+K command palette everywhere.
 
 Routing rules (both clients): missed yesterday → Welcome back; before P1 started (until noon) → Morning (phone); after ritual time → Ritual prompt (web); otherwise Today.
+
+Dashboards, charts, calendar, scoreboard and icons: **[11-dashboards-charts-calendar.md](11-dashboards-charts-calendar.md)**.
 
 ## Phone screens
 | Screen | Must show | Must NOT show | Target |
@@ -46,12 +48,9 @@ Routing rules (both clients): missed yesterday → Welcome back; before P1 start
 `MissionCard`, `StatusChips` (Done / Minimum / Missed / Reschedule — icon + label, never colour alone), `P1Card`, `BigButton`, `CapacityBar`, `StuckSheet`, `StoryToast`, `HabitStrip`, `DayGrid`, `Sparkline`, `CommandPalette` (web).
 
 ## Visual system
-- Tokens (shared): `ink #0b0b0f` background (dark grey, not pure black), `paper #ececf1` text, `muted #8a8a96` misses, `ember #f2a33a` primary action, `jade #4fbf8f` done. **Red only for destructive actions.**
-- Status encoding: done = accent fill + check; minimum = accent 50 % + half icon; missed = grey + dash; rest/write-off = hollow outline.
-- Type: system/Inter, 16 px body min, 1.5 line height; P1 title 28–32 px.
-- Spacing: 8-pt grid; one accent colour per screen.
-- Motion: subtle; respect reduced motion; no confetti.
-- Optional warmer, dimmer palette during the night ritual.
+**See [10-design-system.md](10-design-system.md)** — "Soft Bento": light soft-grey canvas, white rounded cards (24–28 px), big tabular numbers, pill chips, circle icon buttons, **lime** (primary/done) and **lavender** (secondary/minimum) accents, charcoal P1 hero card and floating pill nav, pastel area colours, hatched bars, 12-segment cycle gauge, ring progress. Dark variant from ritual time to wake time; the night ritual is always dark. Reference images: `docs/design/references/`.
+
+Status encoding: done = lime + ✓; minimum = lavender + hatch + ◐; missed = grey (`missed`) + dash; rest/write-off = hollow ring. Text on coloured fills is always ink. **Red only for destructive actions.**
 
 ## Copy
 Calm, short, second person. No exclamation marks except inside story lines. Never "failed" → "not this time". Examples:
@@ -76,4 +75,4 @@ One line in a toast after a completion (~1/3 chance), text only: "<Character>, <
 Red misses · streak counters · XP/levels/coins · more than 3 missions · auto-scheduling · guilt notifications · story on every tick · modal chains longer than 2 · required fields on capture · hard locks.
 
 ## UI tooling
-Use the **ui-ux-pro-max** skill to generate/validate the design system (pick a calm dark style; keep the tokens above as the constraint) and **frontend-design** for distinctive, non-template web layouts. Use **web-design-guidelines** / **webapp-testing** to review web screens and **react-native-skills** + Expo skills for the phone. See 09-skills-and-workflow.md.
+Use the **ui-ux-pro-max** skill to generate/validate the design system (validate against 10-design-system.md) and **frontend-design** for distinctive, non-template web layouts. Use **web-design-guidelines** / **webapp-testing** to review web screens and **react-native-skills** + Expo skills for the phone. See 09-skills-and-workflow.md.

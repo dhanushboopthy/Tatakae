@@ -4,19 +4,21 @@ import { syncLabel, useInbox, useSyncStatus } from "../lib/hooks";
 import { platform } from "../lib/platform";
 import { AuthGate } from "./AuthGate";
 import { CommandPalette, openCommandPalette } from "./CommandPalette";
-import { ChartIcon, CommandIcon, CycleIcon, InboxIcon, LogoMark, MoonIcon, NoteIcon, SettingsIcon, SunIcon } from "./icons";
+import { CalendarIcon, ChartIcon, CommandIcon, CycleIcon, InboxIcon, LogoMark, MoonIcon, NoteIcon, SettingsIcon, SunIcon } from "./icons";
 import { InstallBanner } from "./InstallBanner";
 import { ToastProvider } from "./Toast";
 
 /**
- * Laptop layout: left sidebar (Today · Ritual · Inbox · Review (Week/Month) · Cycle · Notes · Settings),
+ * Laptop layout: left sidebar (Today · Calendar · Ritual · Inbox · Review (Week/Month) · Cycle · Notes · Settings),
  * sync status in the footer, Cmd/Ctrl+K palette everywhere. Narrow windows get a top bar instead.
+ * TODO(v1, docs/10): lucide icons in 48px circles (ref 05/06).
  */
 
 type NavIcon = ComponentType<{ size?: number; className?: string }>;
 
 const NAV: readonly { to: string; label: string; Icon: NavIcon }[] = [
   { to: "/today", label: "Today", Icon: SunIcon },
+  { to: "/calendar", label: "Calendar", Icon: CalendarIcon },
   { to: "/ritual", label: "Ritual", Icon: MoonIcon },
   { to: "/inbox", label: "Inbox", Icon: InboxIcon },
 ];
@@ -28,7 +30,7 @@ const NAV_AFTER: readonly { to: string; label: string; Icon: NavIcon }[] = [
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex min-h-tap items-center gap-3 rounded-control border-l-2 px-3 transition-colors duration-fast ease-out ${
-    isActive ? "border-ember bg-ink-3 font-medium text-paper" : "border-transparent text-muted hover:bg-ink-3 hover:text-paper"
+    isActive ? "border-legacy-ember bg-legacy-ink-3 font-medium text-legacy-paper" : "border-transparent text-legacy-muted hover:bg-legacy-ink-3 hover:text-legacy-paper"
   }`;
 
 function InboxCount() {
@@ -36,7 +38,7 @@ function InboxCount() {
   const n = data?.length ?? 0;
   if (n === 0) return null;
   return (
-    <span className="tnum ml-auto rounded-full border border-line-strong px-2 text-xs text-paper">
+    <span className="tnum ml-auto rounded-full border border-legacy-line-strong px-2 text-xs text-legacy-paper">
       {n}
       <span className="sr-only"> unprocessed</span>
     </span>
@@ -47,9 +49,9 @@ function SyncFooter() {
   const status = useSyncStatus();
   const label = syncLabel(status);
   const dot =
-    status.state === "syncing" ? "bg-ember" : status.state === "idle" && status.pending === 0 ? "bg-jade" : "bg-muted";
+    status.state === "syncing" ? "bg-legacy-ember" : status.state === "idle" && status.pending === 0 ? "bg-legacy-jade" : "bg-legacy-muted";
   return (
-    <p className="flex items-center gap-2 px-3 text-sm text-muted" role="status" aria-live="polite">
+    <p className="flex items-center gap-2 px-3 text-sm text-legacy-muted" role="status" aria-live="polite">
       <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
       <span className="truncate">{label}</span>
     </p>
@@ -61,11 +63,11 @@ export function Shell() {
   return (
     <AuthGate>
       <ToastProvider>
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-ink-2 focus:p-3">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-legacy-ink-2 focus:p-3">
           Skip to content
         </a>
         <div className="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
-          <aside className="border-b border-line bg-ink-2 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-b-0 md:border-r">
+          <aside className="border-b border-legacy-line bg-legacy-ink-2 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-b-0 md:border-r">
             <div className="flex items-center gap-3 px-4 py-4">
               <LogoMark size={28} />
               <span className="font-semibold">Tatakae</span>
@@ -79,7 +81,7 @@ export function Shell() {
                 </NavLink>
               ))}
               <div className="md:mt-2">
-                <p id="nav-review" className="hidden px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted md:block">
+                <p id="nav-review" className="hidden px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-legacy-muted md:block">
                   Review
                 </p>
                 <ul aria-labelledby="nav-review" className="flex gap-1 md:flex-col">
@@ -106,8 +108,8 @@ export function Shell() {
                 ))}
               </div>
             </nav>
-            <div className="hidden space-y-2 border-t border-line p-2 md:block">
-              <button type="button" onClick={openCommandPalette} className="btn-ghost w-full justify-start text-muted">
+            <div className="hidden space-y-2 border-t border-legacy-line p-2 md:block">
+              <button type="button" onClick={openCommandPalette} className="btn-ghost w-full justify-start text-legacy-muted">
                 <CommandIcon size={18} />
                 <span className="flex-1 text-left">Search or capture</span>
                 <span className="kbd">{mod} K</span>

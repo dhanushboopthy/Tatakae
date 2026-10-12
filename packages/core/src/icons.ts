@@ -1,0 +1,35 @@
+/** Single icon vocabulary for web (lucide-react) and phone (lucide-react-native). See docs/11 §6. */
+export const ICONS = {
+  today: "Sun",
+  calendar: "CalendarDays",
+  focus: "Timer",
+  capture: "Plus",
+  settings: "Settings2",
+  ritual: "Moon",
+  inbox: "Inbox",
+  review: "ChartColumn",
+  cycle: "Target",
+  notes: "NotebookPen",
+  open: "ArrowUpRight",
+  reminders: "Bell",
+  search: "Search",
+  done: "Check",
+  minimum: "Contrast",
+  missed: "Minus",
+  reschedule: "CornerUpRight",
+  stuck: "LifeBuoy",
+  recharge: "BatteryCharging",
+  habit: "Repeat",
+  screen: "Smartphone",
+  locked: "Lock",
+  rest: "Coffee",
+  writeOff: "Feather",
+  story: "Sparkles",
+  areaCareer: "Server",
+  areaHealth: "Dumbbell",
+  areaJapanese: "Languages",
+  areaFreelance: "Briefcase",
+} as const;
+
+export type IconKey = keyof typeof ICONS;
+export type LucideName = (typeof ICONS)[IconKey];

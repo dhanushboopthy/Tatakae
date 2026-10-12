@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { HabitToday } from "../lib/hooks";
-import { colors, minTarget, radius, space, text, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, text, type } from "../theme";
 import { tapLight } from "../haptics";
 
 export interface HabitStripProps {
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     paddingHorizontal: space(1.5),
-    borderRadius: radius.pill,
+    borderRadius: legacyRadius.pill,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.ink2,

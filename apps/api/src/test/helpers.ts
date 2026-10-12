@@ -94,6 +94,7 @@ export function mission(overrides: Partial<Mission> = {}): Mission {
     goalId: null,
     estMin: 50,
     actualMin: null,
+    plannedStart: null,
     rescheduleCount: 0,
     updatedAt: T0,
     deletedAt: null,

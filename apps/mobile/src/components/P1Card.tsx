@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { Mission } from "@tatakae/core";
-import { colors, radius, space, text, type } from "../theme";
+import { colors, legacyRadius, space, text, type } from "../theme";
 
 export interface P1CardProps {
   mission: Pick<Mission, "title" | "minimum" | "ifThen" | "resumeNote">;
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emberSoft,
     borderColor: colors.ember,
     borderWidth: 1,
-    borderRadius: radius.card,
+    borderRadius: legacyRadius.card,
     padding: space(2.5),
     gap: space(1.5),
   },

@@ -1,22 +1,17 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, type } from "../../src/theme";
+import { colors } from "../../src/theme";
 
 /** Text glyphs instead of an icon library; the label is always shown too. */
 function Glyph({ glyph, focused }: { glyph: string; focused: boolean }) {
   return <Text style={[styles.glyph, { color: focused ? colors.paper : colors.muted }]}>{glyph}</Text>;
 }
 
-function CaptureGlyph({ focused }: { focused: boolean }) {
-  return (
-    <View style={[styles.capture, focused && styles.captureFocused]}>
-      <Text style={styles.captureGlyph}>+</Text>
-    </View>
-  );
-}
-
-/** Bottom tabs: Today · Focus · Capture (centre, large) · Settings. Dark, 44dp+ targets. */
+/**
+ * Tabs: Today · Calendar · Focus · Settings. Capture is the "+" circle in each screen header (opens /capture modal).
+ * TODO(v1, docs/10 §5): floating charcoal pill nav — tabBar={(p) => <BottomNav {...p} />}, active tab = white circle.
+ */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   return (
@@ -46,19 +41,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: "Calendar",
+          tabBarAccessibilityLabel: "Calendar",
+          tabBarIcon: ({ focused }) => <Glyph glyph="▦" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="focus"
         options={{
           title: "Focus",
           tabBarAccessibilityLabel: "Focus timer",
           tabBarIcon: ({ focused }) => <Glyph glyph="◔" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="capture"
-        options={{
-          title: "Capture",
-          tabBarAccessibilityLabel: "Capture to inbox",
-          tabBarIcon: ({ focused }) => <CaptureGlyph focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -75,17 +70,4 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   glyph: { fontSize: 22, lineHeight: 26 },
-  capture: {
-    width: 52,
-    height: 52,
-    marginTop: -14,
-    borderRadius: 26,
-    backgroundColor: colors.ember,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.ink2,
-  },
-  captureFocused: { borderColor: colors.paper },
-  captureGlyph: { color: colors.ink, fontSize: type.h1 + 6, lineHeight: 32, fontWeight: "700" },
 });

@@ -14,7 +14,7 @@ export function HabitStrip({ date }: { date: ISODate }) {
         Habits
       </h2>
       {data.habits.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-sm text-legacy-muted">
           No habits yet. <Link to="/settings#habits" className="underline underline-offset-4">Add one in Settings</Link>.
         </p>
       ) : (
@@ -29,12 +29,12 @@ export function HabitStrip({ date }: { date: ISODate }) {
                   onClick={() => void logHabit(h.id, date, !done)}
                   title={h.minimum ? `Minimum: ${h.minimum}` : undefined}
                   className={`inline-flex min-h-tap items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-base ease-out ${
-                    done ? "border-paper bg-jade-soft" : "border-line-strong hover:bg-ink-3"
+                    done ? "border-legacy-paper bg-legacy-jade-soft" : "border-legacy-line-strong hover:bg-legacy-ink-3"
                   }`}
                 >
                   <span
                     aria-hidden="true"
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${done ? "border-jade bg-jade text-ink" : "border-line-strong"}`}
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${done ? "border-legacy-jade bg-legacy-jade text-legacy-ink" : "border-legacy-line-strong"}`}
                   >
                     {done && <CheckIcon size={14} strokeWidth={2.5} />}
                   </span>

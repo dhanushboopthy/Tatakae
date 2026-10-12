@@ -20,7 +20,7 @@ import { BigButton } from "../../src/components/BigButton";
 import { Choice } from "../../src/components/Choice";
 import { SLOT_LABEL } from "../../src/components/MissionCard";
 import { tapDone, tapTimerEnd } from "../../src/haptics";
-import { colors, minTarget, radius, space, text, tnum, type, ui } from "../../src/theme";
+import { colors, minTarget, legacyRadius, space, text, tnum, type, ui } from "../../src/theme";
 
 const KEEP_AWAKE_TAG = "tatakae-focus";
 const LENGTHS: readonly { value: FocusLength; label: string }[] = [
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: space(1.5),
     padding: space(1.5),
-    borderRadius: radius.card,
+    borderRadius: legacyRadius.card,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.ink2,

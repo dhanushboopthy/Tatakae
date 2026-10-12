@@ -13,6 +13,8 @@ Read in this order. Each file is self-contained; `CLAUDE.md` at the repo root ho
 | 07 | [07-data-and-api.md](07-data-and-api.md) | Tables, API routes, sync protocol |
 | 08 | [08-operations.md](08-operations.md) | Oracle VM, deploys, backups and restore, secrets, domain, runbooks |
 | 09 | [09-skills-and-workflow.md](09-skills-and-workflow.md) | Claude Code skills/plugins to install and how to work phase by phase |
+| 10 | [10-design-system.md](10-design-system.md) | "Soft Bento" visual system: tokens, type, components, screen compositions (refs in design/references/) |
+| 11 | [11-dashboards-charts-calendar.md](11-dashboards-charts-calendar.md) | Every dashboard, chart, calendar view, scoreboard box and icon, with data sources and phases |
 | — | [DECISIONS.md](DECISIONS.md) | Architecture decision log |
 | — | [DOMAIN.md](DOMAIN.md) | Domain options and the chosen plan |
 | — | [CHANGELOG.md](CHANGELOG.md) | What changed |

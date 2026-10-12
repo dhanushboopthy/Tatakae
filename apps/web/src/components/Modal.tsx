@@ -36,7 +36,7 @@ export function Modal(props: {
       onClick={(e) => {
         if (e.target === e.currentTarget) props.onClose(); // backdrop click
       }}
-      className={`m-auto w-[calc(100%-2rem)] ${props.wide ? "max-w-2xl" : "max-w-lg"} rounded-card border border-line bg-ink-2 p-0 text-paper shadow-overlay`}
+      className={`m-auto w-[calc(100%-2rem)] ${props.wide ? "max-w-2xl" : "max-w-lg"} rounded-legacy-card border border-legacy-line bg-legacy-ink-2 p-0 text-legacy-paper shadow-overlay`}
     >
       {props.open && (
         <div className="p-6">
@@ -44,7 +44,7 @@ export function Modal(props: {
             <div className="flex-1">
               <h2 id={titleId}>{props.title}</h2>
               {props.description && (
-                <p id={descId} className="mt-1 text-sm text-muted">
+                <p id={descId} className="mt-1 text-sm text-legacy-muted">
                   {props.description}
                 </p>
               )}

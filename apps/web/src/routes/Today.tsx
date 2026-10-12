@@ -1,3 +1,4 @@
+// TODO(v1, docs/11 §1): Web Dashboard (bento, ref 05): greeting + date pill; row 1 P1HeroCard · today score · screen StripeTrend · inbox box; row 2 P2/P3 · habits; row 3 SegmentGauge · goal RingProgress (v2).
 import { Link } from "react-router-dom";
 import { addDays, type Mark } from "@tatakae/core";
 import { DaysShownUp } from "../components/DaysShownUp";
@@ -47,7 +48,7 @@ export function Today() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1>Today</h1>
-          <p className="text-muted">{formatDay(today, { long: true })}</p>
+          <p className="text-legacy-muted">{formatDay(today, { long: true })}</p>
         </div>
         <DaysShownUp />
       </header>
@@ -55,18 +56,18 @@ export function Today() {
       {ritualPrompt && (
         <Link
           to="/ritual"
-          className="flex min-h-tap items-center gap-3 rounded-card border border-ember bg-ember-soft px-4 py-3 hover:border-paper"
+          className="flex min-h-tap items-center gap-3 rounded-legacy-card border border-legacy-ember bg-legacy-ember-soft px-4 py-3 hover:border-legacy-paper"
         >
-          <MoonIcon className="shrink-0 text-ember" />
+          <MoonIcon className="shrink-0 text-legacy-ember" />
           <span className="flex-1">
             <span className="font-medium">Ritual time.</span> Close today and lock tomorrow — about five minutes.
           </span>
-          <span className="text-sm text-muted">Start</span>
+          <span className="text-sm text-legacy-muted">Start</span>
         </Link>
       )}
 
       {!day ? (
-        <p className="text-muted">Opening…</p>
+        <p className="text-legacy-muted">Opening…</p>
       ) : ranked.length === 0 ? (
         <section aria-labelledby="no-plan" className="space-y-4">
           <h2 id="no-plan">No plan locked. Pick one Minimum now.</h2>
@@ -75,7 +76,7 @@ export function Today() {
       ) : (
         <>
           {!day.forged && (
-            <div className="flex flex-wrap items-center gap-3 rounded-card border border-dashed border-line-strong p-4 text-sm">
+            <div className="flex flex-wrap items-center gap-3 rounded-legacy-card border border-dashed border-legacy-line-strong p-4 text-sm">
               <p className="flex-1">This plan isn't locked yet. Lock it so changes need a reason.</p>
               <button type="button" className="btn-secondary" onClick={() => void lockToday()}>
                 Lock today's plan
@@ -84,7 +85,7 @@ export function Today() {
           )}
 
           {p1 && <P1Card mission={p1} forged={day.forged} />}
-          {!p1 && <p className="text-muted">No P1 today.</p>}
+          {!p1 && <p className="text-legacy-muted">No P1 today.</p>}
 
           {others.length > 0 && (
             <section aria-label="Other missions" className="space-y-4">
@@ -101,10 +102,10 @@ export function Today() {
               </h2>
               <p className="mt-1">
                 <span className="tnum text-2xl font-semibold">{day.score.final}</span>
-                <span className="text-muted"> / 100 · </span>
+                <span className="text-legacy-muted"> / 100 · </span>
                 {MARK_COPY[day.score.mark]}
               </p>
-              {day.score.bonus > 0 && <p className="mt-1 text-sm text-muted">Includes +{day.score.bonus} for coming back.</p>}
+              {day.score.bonus > 0 && <p className="mt-1 text-sm text-legacy-muted">Includes +{day.score.bonus} for coming back.</p>}
             </section>
           )}
         </>

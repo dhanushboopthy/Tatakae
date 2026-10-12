@@ -27,7 +27,7 @@ One user, final-year M.Tech student with an internship, freelancing and a "Winte
 4. **No streaks.** Show a cumulative "days shown up" count that never resets.
 5. **Story lines are rare** (~1 in 3 completions), paraphrased, never on the morning screen, with a global off switch.
 6. **≤ 3 notifications a day**, all predictable, none guilt-based.
-7. **Dark by default**, WCAG 2.2 AA, 44 px/dp targets, full keyboard on laptop.
+7. **"Soft Bento" look** (docs/10-design-system.md): light by day, dark from ritual time; WCAG 2.2 AA, 44 px/dp targets, full keyboard on laptop.
 8. **Offline first.** Every write lands locally first and syncs later.
 9. **Habits are tracked, not scored.**
 10. **Hara Hachi Bu:** plan to 80 % of free time; warn (don't block) above it.

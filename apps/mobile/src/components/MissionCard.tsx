@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Mission, MissionStatus, Slot } from "@tatakae/core";
-import { colors, minTarget, radius, space, text, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, text, type } from "../theme";
 import { STATUS_GLYPH, STATUS_LABEL, StatusChips } from "./StatusChips";
 
 export const SLOT_LABEL: Record<Slot, string> = { P1: "P1", P2: "P2", P3: "P3", side: "Side quest", backlog: "Backlog" };
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink2,
     borderColor: colors.line,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.card,
+    borderRadius: legacyRadius.card,
     padding: space(2),
     gap: space(1),
   },

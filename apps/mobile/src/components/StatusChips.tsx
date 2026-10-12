@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MissionStatus } from "@tatakae/core";
-import { colors, minTarget, radius, space, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, type } from "../theme";
 import { tapLight } from "../haptics";
 
 /** Text glyphs, not an icon font. Shape + label carry the meaning; colour is only a third cue. */
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
     minWidth: minTarget,
     paddingHorizontal: space(1.5),
-    borderRadius: radius.pill,
+    borderRadius: legacyRadius.pill,
     borderWidth: 1,
     borderColor: colors.lineStrong,
     backgroundColor: colors.ink3,

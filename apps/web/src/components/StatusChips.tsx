@@ -11,10 +11,10 @@ import { DashIcon, DoneMarkIcon, HalfMarkIcon, RescheduleIcon } from "./icons";
 type ChipStatus = Extract<MissionStatus, "done" | "minimum" | "missed" | "rescheduled">;
 
 const CHIPS: readonly { status: ChipStatus; label: string; Icon: ComponentType<{ className?: string; size?: number }>; tone: string; selected: string }[] = [
-  { status: "done", label: "Done", Icon: DoneMarkIcon, tone: "text-jade", selected: "bg-jade-soft" },
-  { status: "minimum", label: "Minimum", Icon: HalfMarkIcon, tone: "text-jade", selected: "bg-jade-soft" },
-  { status: "missed", label: "Missed", Icon: DashIcon, tone: "text-muted", selected: "bg-ink-3" },
-  { status: "rescheduled", label: "Reschedule", Icon: RescheduleIcon, tone: "text-muted", selected: "bg-ink-3" },
+  { status: "done", label: "Done", Icon: DoneMarkIcon, tone: "text-legacy-jade", selected: "bg-legacy-jade-soft" },
+  { status: "minimum", label: "Minimum", Icon: HalfMarkIcon, tone: "text-legacy-jade", selected: "bg-legacy-jade-soft" },
+  { status: "missed", label: "Missed", Icon: DashIcon, tone: "text-legacy-muted", selected: "bg-legacy-ink-3" },
+  { status: "rescheduled", label: "Reschedule", Icon: RescheduleIcon, tone: "text-legacy-muted", selected: "bg-legacy-ink-3" },
 ];
 
 export const STATUS_LABEL: Record<MissionStatus, string> = {
@@ -48,7 +48,7 @@ export function StatusChips(props: {
             disabled={props.disabled}
             onClick={() => props.onChange(active && status !== "rescheduled" ? "open" : status)}
             className={`inline-flex min-h-tap items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors duration-base ease-out disabled:opacity-50 ${
-              active ? `border-paper ${selected}` : "border-line-strong hover:bg-ink-3"
+              active ? `border-legacy-paper ${selected}` : "border-legacy-line-strong hover:bg-legacy-ink-3"
             }`}
           >
             <Icon size={18} className={tone} />

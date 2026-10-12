@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, space, type } from "../theme";
+import { colors, legacyRadius, space, type } from "../theme";
 
 /** Small calm confirmation ("Saved"). Shows for ~1.5 s each time `token` changes. */
 export function Toast({ message, token }: { message: string; token: number }) {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink2,
     borderColor: colors.line,
     borderWidth: 1,
-    borderRadius: radius.pill,
+    borderRadius: legacyRadius.pill,
     elevation: 6,
   },
   glyph: { color: colors.jade, fontSize: type.body, fontWeight: "700" },

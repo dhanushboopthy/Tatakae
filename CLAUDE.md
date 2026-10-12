@@ -5,7 +5,7 @@ Personal execution system for one user. **Laptop website** (`apps/web`) for plan
 ## Read before working
 - `docs/06-phases.md` — current phase and the next unchecked task (work in order).
 - `docs/02-method.md` — the method and exact scoring.
-- `docs/05-ui-ux.md` — screen specs and visual system (for any UI work).
+- `docs/05-ui-ux.md` + `docs/10-design-system.md` — screen specs and the "Soft Bento" visual system (for any UI work). Reference images: `docs/design/references/`. Dashboards/charts/calendar/scoreboard/icons: `docs/11-dashboards-charts-calendar.md`.
 - `docs/03-architecture.md`, `docs/07-data-and-api.md` — for API/sync/data work.
 - `docs/08-operations.md` — for infra/deploy work.
 
@@ -20,7 +20,7 @@ pnpm db:generate          # drizzle-kit migrations from db/schema.ts
 ```
 
 ## Hard rules
-- Grey not red; no streaks/XP; ≤ 3 notifications/day; morning = one screen; ≤ 60 s logging; 44 px/dp targets; dark default. Run the `tatakae-guardrails` skill before finishing UI work.
+- Grey not red; no streaks/XP; ≤ 3 notifications/day; morning = one screen; ≤ 60 s logging; 44 px/dp targets; light "Soft Bento" by day, dark at night; ink text on all coloured fills. Run the `tatakae-guardrails` skill before finishing UI work.
 - Scoring, time ("today" = `todayIST()`, 04:00 IST boundary), story picking and sync merge come **only** from `@tatakae/core`.
 - All writes go through the outbox (optimistic) on both clients. Server is authoritative on plan lock.
 - `packages/core` must stay pure TS (no Node, DOM or React Native APIs).

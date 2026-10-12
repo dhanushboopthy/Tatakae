@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Blocker } from "@tatakae/core";
-import { colors, minTarget, radius, space, text, type } from "../theme";
+import { colors, minTarget, legacyRadius, space, text, type } from "../theme";
 import { tapSelect } from "../haptics";
 
 export const BLOCKERS: readonly { blocker: Blocker; title: string; line: string }[] = [
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: space(2),
     paddingVertical: space(1.5),
-    borderRadius: radius.card,
+    borderRadius: legacyRadius.card,
     backgroundColor: colors.ink2,
     borderWidth: 1,
     borderColor: colors.lineStrong,

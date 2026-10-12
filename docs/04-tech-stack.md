@@ -9,6 +9,9 @@ Versions are the baseline at skeleton time (Oct 2026). Upgrade deliberately, one
 | Shared logic | `packages/core` + Zod | zod 3 | One scoring/sync implementation everywhere | Duplicating logic per client |
 | Web UI | React + Vite + Tailwind + TanStack Query + React Router | React 19.2, Vite 5 | Known stack, fast dev | Next.js (no SSR need) |
 | Web offline | vite-plugin-pwa (injectManifest) + idb | — | Desktop install + IndexedDB outbox | — |
+| Fonts | Plus Jakarta Sans (`@fontsource-variable` on web, `@expo-google-fonts` on phone) | — | Matches the reference look; tabular numbers | — |
+| Charts | Hand-rolled SVG (web) / react-native-svg (phone) | — | Few custom charts (hatched bars, stripe trend, segment gauge, rings) | Recharts/Victory (generic look, heavier) |
+| Icons | Lucide (`lucide-react`, `lucide-react-native`), one shared name map in core | 1.55 | Clean line icons matching the references | Material icons |
 | Notes editor (v3) | BlockNote | latest | Block editor with JSON doc model | Tiptap raw (more work) |
 | Phone app | **Expo SDK 57 + Expo Router** (React Native 0.86) | 57 | Native notifications, share intent, widgets, usage stats, background-safe timers; shares TS + core | PWA on phone (weak notifications, no widgets, no usage stats); Flutter/Kotlin (second language) |
 | Phone storage | expo-sqlite + Drizzle | — | Same ORM and schema shapes as API | AsyncStorage (not relational) |

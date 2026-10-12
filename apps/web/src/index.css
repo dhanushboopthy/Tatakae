@@ -10,7 +10,7 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-ink font-sans text-base leading-normal text-paper antialiased;
+    @apply bg-legacy-ink font-sans text-base leading-normal text-legacy-paper antialiased;
   }
   :focus-visible {
     outline: 2px solid #f2a33a;
@@ -36,13 +36,13 @@
     font-variant-numeric: tabular-nums;
   }
   .card {
-    @apply rounded-card border border-line bg-ink-2 p-4;
+    @apply rounded-legacy-card border border-legacy-line bg-legacy-ink-2 p-4;
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-muted;
+    @apply mb-1 block text-sm font-medium text-legacy-muted;
   }
   .input {
-    @apply min-h-tap w-full rounded-control border border-line-strong bg-ink-3 px-3 text-paper placeholder:text-muted;
+    @apply min-h-tap w-full rounded-control border border-legacy-line-strong bg-legacy-ink-3 px-3 text-legacy-paper placeholder:text-legacy-muted;
   }
   textarea.input {
     @apply py-2;
@@ -51,19 +51,19 @@
     @apply inline-flex min-h-tap min-w-tap items-center justify-center gap-2 rounded-control px-4 text-base font-medium transition-colors duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-ember text-ink hover:bg-[#f5b45c];
+    @apply btn bg-legacy-ember text-legacy-ink hover:bg-[#f5b45c];
   }
   .btn-secondary {
-    @apply btn border border-line-strong bg-ink-3 text-paper hover:bg-ink-2;
+    @apply btn border border-legacy-line-strong bg-legacy-ink-3 text-legacy-paper hover:bg-legacy-ink-2;
   }
   .btn-ghost {
-    @apply btn text-paper hover:bg-ink-3;
+    @apply btn text-legacy-paper hover:bg-legacy-ink-3;
   }
   .btn-danger {
-    @apply btn bg-danger text-ink;
+    @apply btn bg-legacy-danger text-legacy-ink;
   }
   .kbd {
-    @apply rounded border border-line-strong px-1.5 text-xs text-muted;
+    @apply rounded border border-legacy-line-strong px-1.5 text-xs text-legacy-muted;
   }
 }
 

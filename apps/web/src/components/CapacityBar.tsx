@@ -21,24 +21,24 @@ export function CapacityBar(props: { plannedMin: number; freeMin: number; scorin
         aria-valuenow={plannedMin}
         aria-valuetext={summary}
         aria-label="Capacity"
-        className="relative h-3 w-full overflow-hidden rounded-full border border-line-strong bg-ink-3"
+        className="relative h-3 w-full overflow-hidden rounded-full border border-legacy-line-strong bg-legacy-ink-3"
       >
-        <div className="h-full rounded-full bg-ember transition-[width] duration-slow ease-out" style={{ width: `${pct(plannedMin)}%` }} />
+        <div className="h-full rounded-full bg-legacy-ember transition-[width] duration-slow ease-out" style={{ width: `${pct(plannedMin)}%` }} />
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 border-l-2 border-dashed border-paper"
+          className="absolute inset-y-0 border-l-2 border-dashed border-legacy-paper"
           style={{ left: `${line}%` }}
         />
       </div>
       <div className="mt-2 flex items-start justify-between gap-4 text-sm">
-        <p className="tnum text-muted">{summary}</p>
-        <p className="tnum shrink-0 text-muted" aria-hidden="true">
+        <p className="tnum text-legacy-muted">{summary}</p>
+        <p className="tnum shrink-0 text-legacy-muted" aria-hidden="true">
           {line} % line
         </p>
       </div>
       {overCapacity && plannedMin > 0 && (
         <p className="mt-2 flex items-center gap-2 text-sm">
-          <InfoIcon size={18} className="shrink-0 text-ember" />
+          <InfoIcon size={18} className="shrink-0 text-legacy-ember" />
           Over {line} % of your free time. Fine if you mean it — or drop one.
         </p>
       )}

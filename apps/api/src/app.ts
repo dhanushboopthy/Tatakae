@@ -17,6 +17,7 @@ import { reviews } from "./routes/reviews";
 import { story } from "./routes/story";
 import { notes } from "./routes/notes";
 import { appVersion } from "./routes/appVersion";
+import { focus } from "./routes/focus";
 
 export function createApp(env: Env, db: Db) {
   const app = new Hono<AppBindings>().basePath("/api");
@@ -45,8 +46,9 @@ export function createApp(env: Env, db: Db) {
   app.route("/inbox", inbox);
   app.route("/settings", settings);
   app.route("/sync", sync);
+  app.route("/focus", focus);
+  app.route("/stats", stats);           // scoreboard + calendar + series are v1
   // v2
-  app.route("/stats", stats);
   app.route("/reviews", reviews);
   app.route("/story", story);
   // v3

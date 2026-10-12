@@ -14,6 +14,7 @@ Source of truth: `db/schema.ts`. Conventions: ULID text ids, IST `YYYY-MM-DD` da
 | v1 | settings | key, value JSON, editable_from |
 | v1 | inbox | text, created_at, processed |
 | v1 | mura_events | mission_id, reason, at |
+| v1 | focus_sessions | mission_id, area_id, started_at, ended_at, planned_min, completed |
 | v2 | areas, goals, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue | see schema |
 | v3 | notes (+ notes_fts), files, applications, stories, japanese_log | see schema |
 | v4 | push_subscriptions | endpoint, keys (laptop only) |
@@ -36,7 +37,9 @@ Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 | CRUD | /inbox | v1 | |
 | GET/PUT | /settings[/:key] | v1 | scoring keys only on even-week Sundays |
 | POST | /sync | v1 | see below |
-| GET | /stats/week/:isoWeek, /stats/month/:yyyymm | v2 | |
+| GET | /stats/scoreboard, /stats/calendar/:yyyymm, /stats/series, /stats/week/:isoWeek | v1 | see docs/11 §5 |
+| GET | /stats/month/:yyyymm, /stats/cycle, /stats/habits | v2 | |
+| CRUD | /focus | v1 | focus sessions |
 | CRUD | /goals, /areas, /reviews, /experiments, /stuck, /story | v2 | `/story/next?moment=` |
 | CRUD | /notes, GET /notes/search?q= | v3 | FTS5 |
 | POST | /files | v3 | multipart |
