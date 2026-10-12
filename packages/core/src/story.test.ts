@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STORY_CHANCE, pickStory, recentlyShownIds, themeFor, type PickableStory } from "./story";
+import { STORY_CHANCE, pickStory, recentlyShownIds, rewardTarget, themeFor, type PickableStory } from "./story";
 
 const ref = (id: string, moment: PickableStory["moment"], muted = false, deletedAt: string | null = null): PickableStory => ({
   id,
@@ -78,5 +78,27 @@ describe("themeFor", () => {
     ["2027-01-01", null],
   ])("%s → %s", (date, expected) => {
     expect(themeFor(date)).toBe(expected);
+  });
+});
+
+describe("rewardTarget", () => {
+  const w = (title: string, status: "queued" | "watching" | "done" | "dropped", unlocked: number, total: number | null, updatedAt = "2026-10-01T00:00:00.000Z") => ({
+    title,
+    status,
+    unlocked,
+    totalEpisodes: total,
+    updatedAt,
+    deletedAt: null,
+  });
+  it("prefers the show being watched while episodes are left", () => {
+    expect(rewardTarget([w("A", "queued", 0, 12), w("B", "watching", 3, 12)])?.title).toBe("B");
+  });
+  it("falls back to the oldest queued show", () => {
+    expect(
+      rewardTarget([w("A", "watching", 12, 12), w("C", "queued", 0, null, "2026-10-03T00:00:00.000Z"), w("D", "queued", 0, 5, "2026-10-02T00:00:00.000Z")])?.title,
+    ).toBe("D");
+  });
+  it("is null when nothing can be unlocked", () => {
+    expect(rewardTarget([w("A", "done", 5, 5), w("B", "dropped", 0, 4)])).toBeNull();
   });
 });

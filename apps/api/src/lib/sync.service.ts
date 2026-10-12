@@ -8,6 +8,7 @@ import {
   shouldApplyIncoming,
   validateForge,
   type Day,
+  type Goal,
   type Mission,
   type OutboxItem,
   type SettingRow,
@@ -18,6 +19,7 @@ import {
 import { syncItems } from "../../../../db/schema";
 import { transaction, type Db } from "./db";
 import { missionsOn, scoringSettings, writeOffsUsed } from "./days.service";
+import { goalProblem } from "./goals.service";
 import { isLockedWrite, recordMura } from "./missions.service";
 import { getRow, listChangedSince, upsertRow } from "./rows.service";
 import { isSettingWritable } from "./settings.service";
@@ -146,6 +148,10 @@ function applyItem(db: Db, item: OutboxItem, now: Date): ItemResult {
       return applyMission(db, incoming as Mission, server as Mission | null, item, now);
     case "settings":
       return applySetting(db, incoming as SettingRow, server as SettingRow | null, now);
+    case "goals":
+      if (goalProblem(db, incoming as Goal, server as Goal | null)) return conflict(server);
+      upsertRow(db, "goals", incoming);
+      return OK;
     default:
       upsertRow(db, table, incoming);
       return OK;

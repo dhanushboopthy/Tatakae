@@ -415,16 +415,21 @@ export const goalInput = z.object({
   nextAction: z.string().max(300).nullable().default(null),
   why: z.string().max(500).nullable().default(null),
   hellYeah: z.boolean().default(false),
+  targetPoints: z.number().int().positive().nullable().default(null),
   start: isoDate.nullable().default(null),
   end: isoDate.nullable().default(null),
 });
 export const goalPatch = goalInput.partial();
+
+export const AREA_COLORS = ["sage", "rose", "butter", "sky", "lime-soft", "lavender-soft"] as const;
 
 export const areaInput = z.object({
   name: z.string().min(1).max(100),
   standard: z.string().max(300).nullable().default(null),
   why: z.string().max(500).nullable().default(null),
   alignmentScore: z.number().int().min(0).max(10).nullable().default(null),
+  color: z.enum(AREA_COLORS).nullable().default(null),
+  icon: z.string().max(60).nullable().default(null),
 });
 export const areaPatch = areaInput.partial();
 

@@ -1,5 +1,5 @@
 import { compareIso } from "./sync";
-import type { ISODate, StoryMoment, StoryRef } from "./types";
+import type { ISODate, StoryMoment, StoryRef, WatchQueueItem } from "./types";
 
 // Story layer rotation. Rules: ~1 in 3 completions, never on morning screen,
 // no repeat within 14 days, skip muted, respect global "story off".
@@ -37,6 +37,19 @@ export function recentlyShownIds(
 ): string[] {
   const cutoff = new Date(now.getTime() - NO_REPEAT_DAYS * 86_400_000).toISOString();
   return refs.filter((r) => r.lastShownAt != null && compareIso(r.lastShownAt, cutoff) > 0).map((r) => r.id);
+}
+
+/**
+ * Which show a completed weekly review unlocks an episode of: the one being watched (if episodes are
+ * left to unlock), else the oldest queued one. Null when the queue has nothing to unlock.
+ */
+export function rewardTarget<T extends Pick<WatchQueueItem, "status" | "unlocked" | "totalEpisodes" | "updatedAt"> & { deletedAt?: string | null }>(
+  queue: readonly T[],
+): T | null {
+  const open = queue.filter((w) => w.deletedAt == null && (w.totalEpisodes == null || w.unlocked < w.totalEpisodes));
+  const watching = open.find((w) => w.status === "watching");
+  if (watching) return watching;
+  return open.filter((w) => w.status === "queued").sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))[0] ?? null;
 }
 
 /** Monthly theme by YYYY-MM (user-editable later). */
