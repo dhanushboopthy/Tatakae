@@ -9,7 +9,11 @@ import {
   focusRemainingMs,
   formatCountdown,
   freeMinutes,
+  hhmmOf,
   ifThenTemplates,
+  istMinutesOf,
+  railSpan,
+  railTimeAt,
   isDayClosed,
   isDayStarted,
   missionsOn,
@@ -192,5 +196,28 @@ describe("focus timer", () => {
   it("elapsedMinutes is at least 1", () => {
     expect(elapsedMinutes(start, new Date(start))).toBe(1);
     expect(elapsedMinutes(start, new Date("2026-10-20T04:50:00.000Z"))).toBe(50);
+  });
+});
+
+describe("week planner rail", () => {
+  it("istMinutesOf reads IST wall-clock minutes", () => {
+    expect(istMinutesOf("2026-10-20T03:30:00.000Z")).toBe(9 * 60); // 09:00 IST
+    expect(istMinutesOf("2026-10-20T19:00:00.000Z")).toBe(30); // 00:30 IST next day
+  });
+  it("railSpan places and clips blocks", () => {
+    expect(railSpan(6 * 60, 18 * 60)).toEqual({ top: 0, height: 1 });
+    expect(railSpan(15 * 60, 54)).toEqual({ top: 0.5, height: 0.05 });
+    expect(railSpan(5 * 60, 30)).toBeNull(); // before the rail
+    expect(railSpan(5 * 60, 90)).toEqual({ top: 0, height: 30 / 1080 });
+    expect(railSpan(30, 60)).toBeNull(); // 00:30 belongs after midnight, past the rail end
+    expect(railSpan(23 * 60 + 30, 60)).toEqual({ top: (17.5 * 60) / 1080, height: 30 / 1080 });
+  });
+  it("hhmmOf and railTimeAt snap to the grid", () => {
+    expect(hhmmOf(9 * 60 + 5)).toBe("09:05");
+    expect(hhmmOf(1440 + 30)).toBe("00:30");
+    expect(railTimeAt(0.5)).toBe("15:00");
+    expect(railTimeAt(0.5 + 7 / 1080)).toBe("15:00");
+    expect(railTimeAt(0.5 + 8 / 1080)).toBe("15:15");
+    expect(railTimeAt(1)).toBe("23:45");
   });
 });

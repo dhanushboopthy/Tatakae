@@ -441,6 +441,15 @@ export function useRunningFocus() {
   });
 }
 
+/** Saved day rows in a date range, by date (forged state for the week planner). */
+export function useDaysRange(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: localKey(["days"], "range", from, to),
+    queryFn: async (): Promise<Record<ISODate, Day>> =>
+      Object.fromEntries((await store.getAll("days")).filter((d) => d.date >= from && d.date <= to).map((d) => [d.date, d] as const)),
+  });
+}
+
 /** Missions in a date range (week planner), live, any slot except backlog. */
 export function useMissionsRange(from: ISODate, to: ISODate) {
   return useQuery({

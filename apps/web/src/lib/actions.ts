@@ -9,6 +9,7 @@ import {
   type Blocker,
   type Day,
   type DayPatch,
+  type FocusSession,
   type ForgeProblem,
   type Habit,
   type ISODate,
@@ -192,6 +193,44 @@ export async function logStuck(missionId: string, blocker: Blocker, unblocker: s
   await write("stuck_events", { id: newId(), missionId, blocker, unblocker: unblocker?.trim() || null, at: nowIso() });
   if (blocker === "fear") void announceMoment("stuck_fear");
   else if (blocker === "inertia") void announceMoment("stuck_inertia");
+}
+
+// ---------- focus sessions ----------
+
+/** Start a focus block now. The area comes from the mission's goal when there is one. */
+export async function startFocusSession(input: { missionId: string | null; plannedMin: number }): Promise<FocusSession> {
+  let areaId: string | null = null;
+  if (input.missionId) {
+    const m = await store.get("missions", input.missionId);
+    if (m?.goalId) areaId = (await store.get("goals", m.goalId))?.areaId ?? null;
+  }
+  return write("focus_sessions", {
+    id: newId(),
+    missionId: input.missionId,
+    areaId,
+    startedAt: nowIso(),
+    endedAt: null,
+    plannedMin: Math.max(1, Math.min(600, Math.round(input.plannedMin))),
+    completed: false,
+  });
+}
+
+/**
+ * End a block. `completed` = it ran to the end (endedAt capped at the planned end). Adds the minutes to
+ * the mission's actualMin. Returns the minutes counted.
+ */
+export async function endFocusSession(session: FocusSession, opts: { completed: boolean; now?: Date }): Promise<number> {
+  const now = opts.now ?? new Date();
+  const plannedEnd = Date.parse(session.startedAt) + session.plannedMin * 60_000;
+  const endMs = Math.min(now.getTime(), plannedEnd);
+  const endedAt = new Date(Math.max(endMs, Date.parse(session.startedAt))).toISOString();
+  const stored = await write("focus_sessions", { ...session, endedAt, completed: opts.completed });
+  const minutes = Math.max(0, Math.round((Date.parse(stored.endedAt ?? endedAt) - Date.parse(session.startedAt)) / 60_000));
+  if (session.missionId && minutes > 0) {
+    const m = await store.get("missions", session.missionId);
+    if (m && m.deletedAt == null) await write("missions", { ...m, actualMin: (m.actualMin ?? 0) + minutes });
+  }
+  return minutes;
 }
 
 // ---------- settings, anchors, recharge ----------
