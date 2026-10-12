@@ -1,0 +1,21 @@
+# Build context = repo root (apps/api/Dockerfile, apps/web/Dockerfile). Images install their own
+# dependencies with pnpm, so local node_modules and build output must never be sent.
+**/node_modules
+**/dist
+**/.vite
+**/coverage
+**/test-results
+**/playwright-report
+.git
+.github
+.claude
+apps/mobile
+infra
+data
+references/*.local.json
+*.zip
+*.db
+*.db-shm
+*.db-wal
+**/.env
+**/.env.*
