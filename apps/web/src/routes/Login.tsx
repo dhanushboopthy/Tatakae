@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { LogoMark } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { login, rememberedDeviceName, type LoginResult } from "../lib/session";
 
 // Phase 0.10. Email + password + device name (remembered) → POST /api/session/login {client: "web"}.
@@ -112,6 +113,7 @@ export function Login() {
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
+        <Kural className="mt-8" meaning={false} />
       </div>
     </main>
   );

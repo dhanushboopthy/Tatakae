@@ -13,6 +13,7 @@ import {
 } from "@tatakae/core";
 import { CapacityBar } from "../components/CapacityBar";
 import { MoonIcon, PlusIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { FORGE_PROBLEM_COPY, IfThenTemplates } from "../components/P1Card";
 import { StatusChips } from "../components/StatusChips";
 import { useToast } from "../components/Toast";
@@ -884,6 +885,7 @@ function ShutdownComplete({ fresh }: { fresh: boolean }) {
       <p className="text-ink-2">
         {fresh ? "Tomorrow is locked. Sleep well." : "Tomorrow is already locked. Changing it needs a reason, from Today."}
       </p>
+      <Kural className="mt-2" />
       <Link to="/today" className="btn-secondary mt-4">
         Back to Today
       </Link>

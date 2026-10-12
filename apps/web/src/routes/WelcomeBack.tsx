@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { Kural } from "../components/Kural";
 import { P1QuickPlan } from "../components/P1Card";
 import { useToast } from "../components/Toast";
 import { formatDay, weekdayInitial, welcomeBackSeenKey } from "../lib/format";
@@ -29,6 +30,8 @@ export function WelcomeBack() {
           <h1 className="mt-2 text-title-sm md:text-title">Welcome back.</h1>
           <p className="mt-3 text-lg">One mission today — that's the whole plan.</p>
         </div>
+
+        <Kural />
 
         <figure className="m-0">
           <ol className="flex gap-2" aria-label="Last seven days">
