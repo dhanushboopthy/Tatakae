@@ -2,20 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { FocusSession, Mission } from "@tatakae/core";
 import { FocusRing } from "../components/FocusRing";
-import { CheckIcon, PauseIcon, PlayIcon, StuckIcon } from "../components/icons";
+import { CheckIcon, DashIcon, PauseIcon, PlayIcon, PlusIcon, StuckIcon } from "../components/icons";
 import { PageHeader } from "../components/PageHeader";
 import { RechargeMenu } from "../components/RechargeMenu";
 import { StuckSheet } from "../components/StuckSheet";
 import { useToast } from "../components/Toast";
 import { endFocusSession, setStatus, startFocusSession, useDay, useMission, useNow, useRunningFocus, useSettings, useToday } from "../lib/hooks";
-import { focusRemainingMs, formatCountdown } from "../lib/plan";
+import { FOCUS_MAX, FOCUS_MIN, clampFocus, durationLabel, focusLengthFor, focusRemainingMs, formatCountdown } from "../lib/plan";
 import { requestWakeLock } from "../lib/platform";
 import { storage } from "../lib/storage";
 
 // Focus (docs/05, docs/10 §6): huge countdown inside a lime ring, mission title, Pause / Done / Stuck
 // as three pills, resume note card below. The timer is derived from the session's start time (never
 // ticked), so a reload or a second tab shows the same number. Pause ends the session and offers to
-// resume with the minutes left. After a block → recharge menu.
+// resume with the minutes left. After a block → recharge menu. Length: the mission's planned minutes
+// by default (calendar / ritual), a 25 · 50 · 90 preset, or any custom 5–240 minutes.
 
 const LENGTHS: readonly number[] = [25, 50, 90];
 const PAUSED_KEY = "tatakae.focus.paused"; // { missionId, remainingMin }
@@ -45,17 +46,26 @@ function Setup(props: { initialMission: string | null; initialMin: number | null
   const toast = useToast();
   const [paused, setPaused] = useState(() => storage.getJson<Paused | null>(PAUSED_KEY, null));
   const [missionId, setMissionId] = useState<string | null>(props.initialMission ?? paused?.missionId ?? null);
-  const [length, setLength] = useState<number | null>(props.initialMin);
+  // An explicit choice (preset, typed or from the URL); null = follow the mission's plan.
+  const [length, setLength] = useState<number | null>(props.initialMin != null ? clampFocus(props.initialMin) : null);
+  const [typed, setTyped] = useState<string | null>(null);
 
   const open = (day?.missions ?? []).filter((m) => m.status === "open" || m.status === "missed");
   const chosenId = missionId ?? open[0]?.id ?? null;
-  const chosenLength = length ?? settings?.focus_default ?? 50;
   const { data: mission } = useMission(chosenId);
+  const planned = focusLengthFor(mission?.estMin, settings?.focus_default ?? 50);
+  const chosenLength = length ?? planned.minutes;
+  const typedValid = typed === null || (/^\d+$/.test(typed) && Number(typed) >= FOCUS_MIN && Number(typed) <= FOCUS_MAX);
+
+  const choose = (min: number) => {
+    setLength(clampFocus(min));
+    setTyped(null);
+  };
 
   async function start(min: number) {
     storage.remove(PAUSED_KEY);
     await startFocusSession({ missionId: chosenId, plannedMin: min });
-    toast(`${min} minutes. Phone face down.`);
+    toast(`${durationLabel(min)}. Phone face down.`);
   }
 
   return (
@@ -99,7 +109,11 @@ function Setup(props: { initialMission: string | null; initialMin: number | null
                   key={m.id}
                   type="button"
                   aria-pressed={chosenId === m.id}
-                  onClick={() => setMissionId(m.id)}
+                  onClick={() => {
+                    setMissionId(m.id);
+                    setLength(null); // follow this mission's planned minutes
+                    setTyped(null);
+                  }}
                   className={`chip ${chosenId === m.id ? "bg-charcoal text-on-charcoal" : "bg-surface-2 font-medium hover:bg-line"}`}
                 >
                   <span className="text-xs font-bold opacity-80">{m.slot === "side" ? "Side" : m.slot}</span>
@@ -117,33 +131,65 @@ function Setup(props: { initialMission: string | null; initialMin: number | null
           </div>
         )}
 
-        <div>
-          <p className="label" id="len-label">
+        <div className="space-y-3">
+          <p className="label mb-0" id="len-label">
             Length
           </p>
-          <div role="radiogroup" aria-labelledby="len-label" className="flex flex-wrap gap-2">
-            {LENGTHS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={chosenLength === n}
-                onClick={() => setLength(n)}
-                className={`chip tnum min-w-[72px] justify-center text-base ${chosenLength === n ? "bg-lime text-on-accent" : "bg-surface-2 font-medium hover:bg-line"}`}
-              >
-                {n} min
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="radiogroup" aria-labelledby="len-label" className="flex flex-wrap gap-2">
+              {LENGTHS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={chosenLength === n}
+                  onClick={() => choose(n)}
+                  className={`chip tnum min-w-[72px] justify-center text-base ${chosenLength === n ? "bg-lime text-on-accent" : "bg-surface-2 font-medium hover:bg-line"}`}
+                >
+                  {n} min
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 rounded-full bg-surface-2 p-1" role="group" aria-label="Custom length">
+              <button type="button" className="icon-btn-sm bg-surface" aria-label="5 minutes less" disabled={chosenLength <= FOCUS_MIN} onClick={() => choose(chosenLength - 5)}>
+                <DashIcon size={18} />
               </button>
-            ))}
-            {!LENGTHS.includes(chosenLength) && (
-              <span className="chip tnum bg-lime text-on-accent" aria-live="polite">
-                {chosenLength} min
-              </span>
-            )}
+              <label htmlFor="focus-len" className="sr-only">
+                Minutes ({FOCUS_MIN} to {FOCUS_MAX})
+              </label>
+              <input
+                id="focus-len"
+                className="tnum h-11 w-16 rounded-full bg-transparent text-center text-base font-semibold"
+                inputMode="numeric"
+                value={typed ?? String(chosenLength)}
+                aria-invalid={!typedValid}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
+                  setTyped(v);
+                  const n = Number(v);
+                  if (v && n >= FOCUS_MIN && n <= FOCUS_MAX) setLength(n);
+                }}
+                onBlur={() => setTyped(null)}
+              />
+              <button type="button" className="icon-btn-sm bg-surface" aria-label="5 minutes more" disabled={chosenLength >= FOCUS_MAX} onClick={() => choose(chosenLength + 5)}>
+                <PlusIcon size={18} />
+              </button>
+              <span className="pr-3 text-sm font-medium text-ink-2">min</span>
+            </div>
           </div>
+          <p className="text-sm text-ink-2" aria-live="polite">
+            {!typedValid
+              ? `Pick ${FOCUS_MIN} to ${FOCUS_MAX} minutes.`
+              : length === null && planned.fromPlan
+                ? `From the plan: ${durationLabel(planned.minutes)} for this mission.`
+                : length === null
+                  ? "Your default length. Set a mission's minutes in the calendar to use them here."
+                  : durationLabel(chosenLength)}
+          </p>
         </div>
 
-        <button type="button" className="btn-accent min-h-[56px] w-full text-lg" onClick={() => void start(chosenLength)}>
-          <PlayIcon size={20} /> Start {chosenLength} minutes
+        <button type="button" className="btn-accent min-h-[56px] w-full text-lg" disabled={!typedValid} onClick={() => void start(chosenLength)}>
+          <PlayIcon size={20} /> Start {durationLabel(chosenLength)}
         </button>
       </section>
     </div>
@@ -205,7 +251,7 @@ function Running(props: { session: FocusSession; onFinished: (minutes: number, m
   return (
     <div className="mx-auto flex max-w-read flex-col items-center gap-8 py-4">
       <div className="text-center">
-        <p className="eyebrow">{s.plannedMin}-minute block</p>
+        <p className="eyebrow">{durationLabel(s.plannedMin)} block</p>
         <h1 className="mt-2 text-p1">{mission?.title ?? "Open focus"}</h1>
       </div>
 

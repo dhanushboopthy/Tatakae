@@ -241,6 +241,21 @@ export function rangeLabel(startMin: number, durationMin: number): string {
 
 // ---------- focus timer ----------
 
+/** Custom focus lengths: 5 min to 4 h. */
+export const FOCUS_MIN = 5;
+export const FOCUS_MAX = 240;
+
+export const clampFocus = (min: number): number => Math.max(FOCUS_MIN, Math.min(FOCUS_MAX, Math.round(min)));
+
+/**
+ * Default block length: the mission's planned minutes (from the calendar or the ritual) when it has
+ * them, otherwise the owner's default. `fromPlan` says which one was used.
+ */
+export function focusLengthFor(estMin: number | null | undefined, fallback: number): { minutes: number; fromPlan: boolean } {
+  if (estMin != null && estMin > 0) return { minutes: clampFocus(estMin), fromPlan: true };
+  return { minutes: clampFocus(fallback), fromPlan: false };
+}
+
 /** Remaining milliseconds of a block started at `startedAt` (derived from start time, never ticked). */
 export function focusRemainingMs(startedAt: string, lengthMin: number, now: Date): number {
   const end = Date.parse(startedAt) + lengthMin * 60_000;

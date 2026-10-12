@@ -8,6 +8,8 @@ import {
   durationLabel,
   elapsedMinutes,
   firstFreeSlot,
+  clampFocus,
+  focusLengthFor,
   focusRemainingMs,
   formatCountdown,
   freeMinutes,
@@ -182,6 +184,17 @@ describe("mission helpers", () => {
       { date: "2026-11-01", kind: "write_off" as const, deletedAt: null },
     ];
     expect(writeOffsUsed(days, "2026-10")).toBe(1);
+  });
+});
+
+describe("focus length", () => {
+  it("uses the mission's planned minutes, else the default, kept within 5–240", () => {
+    expect(focusLengthFor(75, 50)).toEqual({ minutes: 75, fromPlan: true });
+    expect(focusLengthFor(null, 50)).toEqual({ minutes: 50, fromPlan: false });
+    expect(focusLengthFor(0, 25)).toEqual({ minutes: 25, fromPlan: false });
+    expect(focusLengthFor(600, 50)).toEqual({ minutes: 240, fromPlan: true });
+    expect(clampFocus(2)).toBe(5);
+    expect(clampFocus(37.4)).toBe(37);
   });
 });
 
