@@ -31,6 +31,13 @@ export const envSchema = z
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_SECRET_ACCESS_KEY: z.string().optional(),
 
+    // Nightly JSON backup: local copies (newest 7) live here; defaults to <DATABASE_PATH dir>/backups.
+    BACKUP_DIR: z.string().min(1).optional(),
+
+    // Phone update check (GET /api/app/version, public). The phone warns, never blocks.
+    MIN_MOBILE_VERSION: z.string().regex(/^\d+\.\d+\.\d+$/).default("0.1.0"),
+    LATEST_APK_URL: z.string().url().optional(),
+
     // Web push (v4)
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),

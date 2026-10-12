@@ -21,6 +21,8 @@ import { focus } from "./routes/focus";
 import { areas, experiments, goals, stuck } from "./routes/v2";
 import { applications, interviewStories, japanese } from "./routes/v3";
 import { files } from "./routes/files";
+import { exportRoute, system } from "./routes/system";
+import { push } from "./routes/push";
 
 export function createApp(env: Env, db: Db) {
   const app = new Hono<AppBindings>().basePath("/api");
@@ -64,7 +66,10 @@ export function createApp(env: Env, db: Db) {
   app.route("/applications", applications);
   app.route("/stories", interviewStories);
   app.route("/japanese", japanese);
-  // TODO(v4): push, export
+  // v4
+  app.route("/export", exportRoute);
+  app.route("/system", system);
+  app.route("/push", push);
 
   return app;
 }

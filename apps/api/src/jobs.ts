@@ -9,7 +9,7 @@ import { runKeepWarm } from "./cron/keepWarm";
 export function startJobs(env: Env, db: Db): Cron[] {
   const tz = { timezone: env.TZ };
   return [
-    new Cron("0 2 * * *", tz, () => runBackup(env, db)),        // 02:00 IST JSON export → Object Storage
+    new Cron("0 2 * * *", tz, async () => void (await runBackup(env, db))), // 02:00 IST JSON export → disk + Object Storage
     new Cron("30 6 * * *", tz, () => runMorningPush(env, db)),  // v4, optional: web push to laptops only (phone uses local notifications)
     new Cron("*/30 * * * *", tz, () => runKeepWarm(env, db)),   // see docs/08-operations.md (idle reclaim)
   ];

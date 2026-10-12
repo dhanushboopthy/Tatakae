@@ -530,6 +530,15 @@ export const japaneseLogInput = z.object({
 export const japaneseLogPatch = japaneseLogInput.partial();
 export const dateRangeQuery = z.object({ from: isoDate.optional(), to: isoDate.optional() });
 
+// ===================== v4 inputs =====================
+/** Browser PushSubscription.toJSON() plus a device label (laptop web push). */
+export const pushSubscribeInput = z.object({
+  endpoint: z.string().url().max(2000).refine((u) => u.startsWith("https://"), "expected an https endpoint"),
+  keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+  device: z.string().min(1).max(40).nullable().default(null),
+});
+export const pushEndpointInput = z.object({ endpoint: z.string().url().max(2000) });
+
 // ===================== sync =====================
 export const outboxItem = z.object({
   id: z.string(),
@@ -602,5 +611,6 @@ export type InterviewStoryInput = z.infer<typeof interviewStoryInput>;
 export type InterviewStoryPatch = z.infer<typeof interviewStoryPatch>;
 export type JapaneseLogInput = z.infer<typeof japaneseLogInput>;
 export type JapaneseLogPatch = z.infer<typeof japaneseLogPatch>;
+export type PushSubscribeInput = z.infer<typeof pushSubscribeInput>;
 export type LoginInput = z.infer<typeof loginInput>;
 export type LoginMobileResponse = z.infer<typeof loginMobileResponse>;
