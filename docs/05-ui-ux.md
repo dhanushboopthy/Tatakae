@@ -15,7 +15,7 @@
 
 ## Information architecture
 **Phone (floating charcoal pill nav):** Today · Calendar · Focus · Settings; Capture = "+" circle in every header. Modals: Morning, Welcome back, Quick close, Stuck, Recharge.
-**Web (left icon rail):** Today (bento dashboard) · Calendar · Ritual · Inbox · Review (Week / Month) · Cycle · Notes · Settings. Cmd/Ctrl+K command palette everywhere.
+**Web (left icon rail):** Today (bento dashboard) · Calendar · Focus (play badge while a session runs) · Ritual · Inbox · Review (Week / Month) · Cycle · Notes · Settings. Cmd/Ctrl+K command palette everywhere.
 
 Routing rules (both clients): missed yesterday → Welcome back; before P1 started (until noon) → Morning (phone); after ritual time → Ritual prompt (web); otherwise Today.
 

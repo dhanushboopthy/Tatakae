@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { syncLabel, useInbox, useNow, useSettings, useSyncStatus } from "../lib/hooks";
+import { syncLabel, useInbox, useNow, useRunningFocus, useSettings, useSyncStatus } from "../lib/hooks";
 import { platform } from "../lib/platform";
 import { useThemeController } from "../lib/theme";
 import { AuthGate } from "./AuthGate";
@@ -11,10 +11,12 @@ import {
   CalendarIcon,
   ChartIcon,
   CycleIcon,
+  FocusIcon,
   InboxIcon,
   LogoMark,
   MoonIcon,
   NoteIcon,
+  PlayIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
@@ -41,6 +43,7 @@ interface NavItem {
 const NAV: readonly NavItem[] = [
   { to: "/today", label: "Today", Icon: SunIcon },
   { to: "/calendar", label: "Calendar", Icon: CalendarIcon },
+  { to: "/focus", label: "Focus timer", Icon: FocusIcon },
   { to: "/ritual", label: "Night ritual", Icon: MoonIcon },
   { to: "/inbox", label: "Inbox", Icon: InboxIcon },
   { to: "/review/week", label: "Review", Icon: ChartIcon, match: ["/review"] },
@@ -61,6 +64,21 @@ function InboxBadge({ compact }: { compact?: boolean }) {
     >
       {n}
       <span className="sr-only"> unprocessed</span>
+    </span>
+  );
+}
+
+/** Shown on the Focus item while a session is running (shape + screen-reader text, not colour alone). */
+function FocusRunning({ compact }: { compact?: boolean }) {
+  const { data: running } = useRunningFocus();
+  if (!running) return null;
+  return (
+    <span
+      className={`flex items-center justify-center rounded-full bg-lime-deep text-white ${compact ? "absolute -right-0.5 -top-0.5 h-5 w-5" : "h-5 w-5"}`}
+      title="A focus session is running"
+    >
+      <PlayIcon size={10} fill="currentColor" />
+      <span className="sr-only"> (running)</span>
     </span>
   );
 }
@@ -118,6 +136,7 @@ function RailLink({ item }: { item: NavItem }) {
       <Icon size={22} />
       <span className="sr-only">{item.label}</span>
       {item.to === "/inbox" && <InboxBadge compact />}
+      {item.to === "/focus" && <FocusRunning compact />}
       <Tooltip text={item.label} />
     </NavLink>
   );
@@ -135,6 +154,7 @@ function TopLink({ item }: { item: NavItem }) {
       <Icon size={18} />
       {item.label}
       {item.to === "/inbox" && <InboxBadge />}
+      {item.to === "/focus" && <FocusRunning />}
     </NavLink>
   );
 }
