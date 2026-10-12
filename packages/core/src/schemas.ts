@@ -323,6 +323,26 @@ export function validateForge(missions: readonly ForgeMission[]): ForgeProblem[]
   return problems;
 }
 
+/**
+ * Restarting the night ritual unlocks a forged plan. It is meant to be rare, so it carries friction:
+ * a written reason, a typed confirmation word, once per date, at most twice in any 7 days, and it is
+ * logged as a mura event (reason prefixed) so it shows in Sunday's review.
+ */
+export const RITUAL_RESTART = {
+  word: "restart",
+  minReason: 20,
+  waitSeconds: 15,
+  holdMs: 3000,
+  perWeek: 2,
+  reasonPrefix: "Ritual restarted: ",
+} as const;
+
+export const ritualRestartInput = z.object({
+  reason: z.string().trim().min(RITUAL_RESTART.minReason).max(300 - RITUAL_RESTART.reasonPrefix.length),
+  confirm: z.literal(RITUAL_RESTART.word),
+});
+export type RitualRestartInput = z.infer<typeof ritualRestartInput>;
+
 export const lockedEdit = z.object({
   reason: z.string().min(3).max(300), // stored as mura event
   patch: missionPatch,

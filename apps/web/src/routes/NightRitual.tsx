@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   DEFAULT_RANKED,
   MAX_RANKED,
   RANKED_SLOTS,
+  RITUAL_RESTART,
   addDays,
   type Anchor,
   type ISODate,
@@ -14,6 +15,7 @@ import {
 import { CapacityBar } from "../components/CapacityBar";
 import { MoonIcon, PlusIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
+import { Modal } from "../components/Modal";
 import { FORGE_PROBLEM_COPY, IfThenTemplates } from "../components/P1Card";
 import { StatusChips } from "../components/StatusChips";
 import { useToast } from "../components/Toast";
@@ -33,6 +35,8 @@ import {
   type DayView,
 } from "../lib/hooks";
 import { AFTER_P1, anchorsFor, freeMinutes, plannedMinutes } from "../lib/plan";
+import { api, ApiError, isNetworkError } from "../lib/api";
+import { flushNow } from "../sync/engine";
 import { storage } from "../lib/storage";
 import { useForcedDark } from "../lib/theme";
 
@@ -90,7 +94,18 @@ export function NightRitual() {
     return <p className="text-ink-2">Opening the ritual…</p>;
   }
 
-  if (tomorrowQ.data.forged) return <ShutdownComplete fresh={justForged} />;
+  if (tomorrowQ.data.forged) {
+    return (
+      <ShutdownComplete
+        fresh={justForged}
+        date={tomorrow}
+        onRestarted={() => {
+          update({ step: 0, reached: 0, freeMin: null });
+          setJustForged(false);
+        }}
+      />
+    );
+  }
 
   const next = () => update({ step: state.step + 1 });
   const back = () => update({ step: state.step - 1 });
@@ -815,7 +830,9 @@ function Shutdown(props: { tomorrow: DayView; onBack: () => void; onFixPlan: () 
 const HOLD_MS = 1500;
 
 /** Press-and-hold (pointer or Space/Enter) for 1.5 s. Progress is state, so it shows even with reduced motion. */
-function HoldButton(props: { label: string; onComplete: () => void; disabled?: boolean }) {
+function HoldButton(props: { label: string; onComplete: () => void; disabled?: boolean; holdMs?: number; text?: string }) {
+  const holdMs = props.holdMs ?? HOLD_MS;
+  const hintId = useId();
   const [progress, setProgress] = useState(0);
   const startRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -833,7 +850,7 @@ function HoldButton(props: { label: string; onComplete: () => void; disabled?: b
     timerRef.current = window.setInterval(() => {
       const s = startRef.current;
       if (s === null) return;
-      const p = Math.min(1, (performance.now() - s) / HOLD_MS);
+      const p = Math.min(1, (performance.now() - s) / holdMs);
       setProgress(p);
       if (p >= 1) {
         stop();
@@ -862,19 +879,173 @@ function HoldButton(props: { label: string; onComplete: () => void; disabled?: b
         if (e.key === " " || e.key === "Enter") stop();
       }}
       onContextMenu={(e) => e.preventDefault()}
-      aria-describedby="hold-hint"
+      aria-describedby={hintId}
       className="relative flex min-h-[64px] w-full select-none items-center justify-center overflow-hidden rounded-full bg-lime-soft text-lg font-semibold text-ink ring-2 ring-inset ring-lime disabled:opacity-50"
     >
       <span aria-hidden="true" className="absolute inset-y-0 left-0 rounded-full bg-lime" style={{ width: `${progress * 100}%` }} />
-      <span className={`relative ${progress > 0.5 ? "text-on-accent" : ""}`}>Shutdown complete — {props.label.toLowerCase()}</span>
-      <span id="hold-hint" className="sr-only">
-        Press and hold for one and a half seconds.
+      <span className={`relative ${progress > 0.5 ? "text-on-accent" : ""}`}>{props.text ?? `Shutdown complete — ${props.label.toLowerCase()}`}</span>
+      <span id={hintId} className="sr-only">
+        Press and hold for {holdMs / 1000} seconds.
       </span>
     </button>
   );
 }
 
-function ShutdownComplete({ fresh }: { fresh: boolean }) {
+type RestartStage = "why" | "wait" | "confirm";
+
+/**
+ * Restarting the ritual unlocks tomorrow's plan. Deliberately slow: a written reason (≥ 20 characters),
+ * a 15-second pause, typing "restart", then a 3-second hold. The server allows it once per plan and
+ * twice in 7 days, and Sunday's review shows the reason. "Keep my plan" is the primary button throughout.
+ */
+function RitualRestart(props: { date: ISODate; open: boolean; onClose: () => void; onRestarted: () => void }) {
+  return (
+    <Modal open={props.open} onClose={props.onClose} title="Restart the night ritual?" description="Your plan is locked so tomorrow-you can trust it.">
+      {props.open && <RestartFlow {...props} />}
+    </Modal>
+  );
+}
+
+function RestartFlow(props: { date: ISODate; onClose: () => void; onRestarted: () => void }) {
+  const toast = useToast();
+  const [stage, setStage] = useState<RestartStage>("why");
+  const [reason, setReason] = useState("");
+  const [word, setWord] = useState("");
+  const [wait, setWait] = useState<number>(RITUAL_RESTART.waitSeconds);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const chars = reason.trim().length;
+
+  useEffect(() => {
+    if (stage !== "wait" || wait <= 0) return;
+    const t = window.setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [stage, wait]);
+
+  async function unlock() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/days/${props.date}/restart`, { method: "POST", body: { reason: reason.trim(), confirm: RITUAL_RESTART.word } });
+      await flushNow();
+      toast("Unlocked. Plan again, calmly. The reason is saved for Sunday.");
+      props.onRestarted();
+    } catch (e) {
+      const code = e instanceof ApiError && typeof e.body === "object" && e.body !== null ? (e.body as { error?: unknown }).error : null;
+      setError(
+        isNetworkError(e)
+          ? "Restarting needs a connection."
+          : code === "restart_used"
+            ? "This plan was already restarted once. Keep it, or change single missions with a reason."
+            : code === "restart_limit"
+              ? `The ritual can be restarted ${RITUAL_RESTART.perWeek} times in 7 days. Keep this plan.`
+              : "That didn't work. Your plan is still locked.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const keep = (
+    <button type="button" className="btn-primary" onClick={props.onClose}>
+      Keep my plan
+    </button>
+  );
+
+  return (
+    <div className="space-y-5">
+      <ol className="flex gap-2 text-xs font-semibold text-ink-2" aria-label="Steps">
+        {(["why", "wait", "confirm"] as const).map((s, i) => (
+          <li key={s} aria-current={stage === s ? "step" : undefined} className={`rounded-full px-3 py-1 ${stage === s ? "bg-charcoal text-on-charcoal" : "bg-surface-2"}`}>
+            {i + 1}. {s === "why" ? "Why" : s === "wait" ? "Pause" : "Confirm"}
+          </li>
+        ))}
+      </ol>
+
+      {stage === "why" && (
+        <>
+          <p className="text-sm text-ink-2">
+            Restarting unlocks tomorrow so you can plan it again. It works once per plan and {RITUAL_RESTART.perWeek} times a week, and the reason
+            shows in Sunday's review. To change one mission, edit it from Today instead.
+          </p>
+          <div>
+            <label htmlFor="restart-why" className="label">
+              What changed since you locked it?
+            </label>
+            <textarea
+              id="restart-why"
+              className="input min-h-[96px] py-3"
+              maxLength={250}
+              autoFocus
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <p className="tnum mt-1 text-xs text-ink-2">
+              {chars < RITUAL_RESTART.minReason ? `${RITUAL_RESTART.minReason - chars} more characters` : "Thanks. That's honest enough."}
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" className="btn-ghost" disabled={chars < RITUAL_RESTART.minReason} onClick={() => setStage("wait")}>
+              Continue
+            </button>
+            {keep}
+          </div>
+        </>
+      )}
+
+      {stage === "wait" && (
+        <>
+          <p className="text-lg">Sit with it for a moment.</p>
+          <p className="text-sm text-ink-2">You made this plan with a clear head. If it still feels wrong in {RITUAL_RESTART.waitSeconds} seconds, go on.</p>
+          <p className="tnum text-title-sm" role="timer" aria-live="off">
+            {wait > 0 ? `0:${String(wait).padStart(2, "0")}` : "0:00"}
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" className="btn-ghost" disabled={wait > 0} onClick={() => setStage("confirm")}>
+              {wait > 0 ? "Wait…" : "Continue"}
+            </button>
+            {keep}
+          </div>
+        </>
+      )}
+
+      {stage === "confirm" && (
+        <>
+          <div>
+            <label htmlFor="restart-word" className="label">
+              Type <span className="font-semibold text-ink">{RITUAL_RESTART.word}</span> to unlock tomorrow
+            </label>
+            <input
+              id="restart-word"
+              className="input"
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+            />
+          </div>
+          <HoldButton
+            label="restart"
+            text={busy ? "Unlocking…" : "Hold to unlock tomorrow"}
+            holdMs={RITUAL_RESTART.holdMs}
+            disabled={busy || word.trim().toLowerCase() !== RITUAL_RESTART.word}
+            onComplete={() => void unlock()}
+          />
+          {error && (
+            <p role="alert" className="text-sm">
+              {error}
+            </p>
+          )}
+          <div className="flex justify-end">{keep}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ShutdownComplete({ fresh, date, onRestarted }: { fresh: boolean; date: ISODate; onRestarted: () => void }) {
+  const [restarting, setRestarting] = useState(false);
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-read flex-col items-start justify-center gap-4">
       <span className="icon-btn pointer-events-none mb-2 h-16 w-16 bg-lime text-on-accent" aria-hidden="true">
@@ -889,6 +1060,18 @@ function ShutdownComplete({ fresh }: { fresh: boolean }) {
       <Link to="/today" className="btn-secondary mt-4">
         Back to Today
       </Link>
+      <button type="button" className="btn-ghost mt-6 text-sm font-medium text-ink-2" onClick={() => setRestarting(true)}>
+        Restart the ritual…
+      </button>
+      <RitualRestart
+        date={date}
+        open={restarting}
+        onClose={() => setRestarting(false)}
+        onRestarted={() => {
+          setRestarting(false);
+          onRestarted();
+        }}
+      />
     </div>
   );
 }

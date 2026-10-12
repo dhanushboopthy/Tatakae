@@ -6,6 +6,7 @@ import {
   monthOf,
   monthRange,
   readSettings,
+  RITUAL_RESTART,
   scoreDay,
   slotRank,
   SEED_UPDATED_AT,
@@ -20,7 +21,8 @@ import {
 } from "@tatakae/core";
 import { days, missions } from "../../../../db/schema";
 import { transaction, type Db } from "./db";
-import { BadRequest } from "./errors";
+import { BadRequest, Conflict } from "./errors";
+import { newId } from "./ids";
 import { allRows, bumpUpdatedAt, getRow, upsertRow, withoutUndefined } from "./rows.service";
 
 const bySlot = (a: Mission, b: Mission): number => slotRank(a.slot) - slotRank(b.slot) || a.id.localeCompare(b.id);
@@ -175,6 +177,44 @@ export function forgeDay(db: Db, date: ISODate, now: Date = new Date()): Day {
       updatedAt: bumpUpdatedAt(prev.updatedAt, now),
       deletedAt: null,
     });
+  });
+}
+
+/**
+ * Restart the night ritual: unlock a forged plan for `date` (today or later). Rare by design: once per
+ * date, at most RITUAL_RESTART.perWeek in any 7 days, and logged as a mura event against the day's P1
+ * (reason prefixed "Ritual restarted: ") so it shows in Sunday's review. Validation of the reason and the
+ * typed confirmation is done by `ritualRestartInput` at the route.
+ */
+export function restartRitual(db: Db, date: ISODate, reason: string, now: Date = new Date()): Day {
+  return transaction(db, () => {
+    if (date < todayIST(now)) throw new BadRequest("Past days stay as they were.", "past_day");
+    const prev = getDay(db, date);
+    if (!prev?.forgedAt) throw new Conflict("That plan isn't locked, so there's nothing to restart.", "not_locked");
+
+    const dayOf = new Map(allRows(db, "missions").map((m) => [m.id, m.dayDate]));
+    const restarts = allRows(db, "mura_events", { includeDeleted: false }).filter((e) => e.reason.startsWith(RITUAL_RESTART.reasonPrefix));
+    if (restarts.some((e) => dayOf.get(e.missionId) === date || e.missionId === `day:${date}`)) {
+      throw new Conflict("This plan was already restarted once. Keep it, or change single missions with a reason.", "restart_used");
+    }
+    const weekAgo = now.getTime() - 7 * 86_400_000;
+    const recent = restarts.filter((e) => Date.parse(e.at) > weekAgo).length;
+    if (recent >= RITUAL_RESTART.perWeek) {
+      throw new Conflict(`The ritual can be restarted ${RITUAL_RESTART.perWeek} times in 7 days. Keep this plan.`, "restart_limit", { recent });
+    }
+
+    const ms = missionsOn(db, date);
+    const anchorId = ms.find((m) => m.slot === "P1")?.id ?? ms[0]?.id ?? `day:${date}`;
+    const at = now.toISOString();
+    upsertRow(db, "mura_events", {
+      id: newId(),
+      missionId: anchorId,
+      reason: `${RITUAL_RESTART.reasonPrefix}${reason.trim()}`,
+      at,
+      updatedAt: at,
+      deletedAt: null,
+    });
+    return upsertRow(db, "days", { ...prev, forgedAt: null, updatedAt: bumpUpdatedAt(prev.updatedAt, now), deletedAt: null });
   });
 }
 

@@ -27,6 +27,7 @@ The software exists to run this method. If a feature does not serve a step below
 6. **Pick ranked missions** — 5 rows by default (P1–P5), "Add" for more up to P9. P1 needs a **Minimum** version and an **if-then** plan; the others are optional. Points default 1. The capacity bar still warns above 80 %.
 7. **Side quest** — optional, one, unscored.
 8. **Shutdown complete** — lock tomorrow (`forged_at`). Screen says: phone outside the room.
+   - **Restart the ritual** (rare, high friction): a written reason (≥ 20 characters) → a 15-second pause → type "restart" → hold 3 s. Server: today or later, once per plan, at most 2 in any 7 days, logged as a mura event ("Ritual restarted: …") for Sunday's review. Changing one mission still goes through the normal lock reason.
 
 If the laptop ritual is missed, the phone offers **Quick close** (statuses, habits, screen minutes — ≤ 45 s). It does not plan tomorrow; next morning shows "No plan locked — pick one Minimum now."
 

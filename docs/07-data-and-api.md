@@ -31,6 +31,7 @@ Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 | GET | /app/version | v4 | public; `{minMobileVersion, latestApkUrl}` |
 | GET/PUT | /days/:date | v1 | GET includes missions + score |
 | POST | /days/:date/forge | v1 | validates P1 Minimum + if-then |
+| POST | /days/:date/restart | v1 | `{reason ≥ 20, confirm: "restart"}` unlocks a forged plan; once per date, 2 per 7 days; mura event |
 | CRUD | /missions | v1 | 423 when day forged |
 | POST | /missions/:id/edit-locked | v1 | `{reason, patch}` → mura_events |
 | CRUD | /habits, PUT /habits/:id/logs/:date | v1 | |
