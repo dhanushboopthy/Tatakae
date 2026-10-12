@@ -16,6 +16,7 @@ import {
 import { AreaBlock } from "../components/AreaBlock";
 import { HatchedStackBar } from "../components/HatchedStackBar";
 import { ChevronLeftIcon, ChevronRightIcon, OpenIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { PillBar } from "../components/PillBar";
@@ -96,6 +97,7 @@ export function WeeklyReview() {
               </div>
             </div>
             <ReviewForm key={existing?.id ?? start} start={start} end={end} stats={stats} existing={existing} />
+            <Kural n={620} className="max-w-read" />
           </>
         ) : (
           <p className="text-ink-2">Opening…</p>

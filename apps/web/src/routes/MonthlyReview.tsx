@@ -5,6 +5,7 @@ import { BlockBarChart, CountBlocks, type BlockSeries } from "../components/Bloc
 import { DayLegend } from "../components/DayCircle";
 import { HabitHeatGrid } from "../components/HabitHeatGrid";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { DeltaPill } from "../components/MetricCard";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { PageHeader } from "../components/PageHeader";
@@ -112,6 +113,7 @@ export function MonthlyReview() {
 
           <HabitsCard />
           <ReflectionForm key={existing?.id ?? start} month={month} stats={stats} existing={existing} />
+          <Kural n={666} className="max-w-read" />
         </>
       )}
     </div>

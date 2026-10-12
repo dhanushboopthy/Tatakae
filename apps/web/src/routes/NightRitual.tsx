@@ -480,6 +480,7 @@ function Capacity(props: {
         </p>
       </div>
       <CapacityBar plannedMin={planned} freeMin={freeN} scoring={props.settings.scoring} />
+      <Kural n={475} size="sm" />
     </StepForm>
   );
 }
@@ -964,6 +965,7 @@ function RestartFlow(props: { date: ISODate; onClose: () => void; onRestarted: (
 
       {stage === "why" && (
         <>
+          <Kural n={467} size="sm" />
           <p className="text-sm text-ink-2">
             Restarting unlocks tomorrow so you can plan it again. It works once per plan and {RITUAL_RESTART.perWeek} times a week, and the reason
             shows in Sunday's review. To change one mission, edit it from Today instead.
@@ -1056,7 +1058,7 @@ function ShutdownComplete({ fresh, date, onRestarted }: { fresh: boolean; date: 
       <p className="text-ink-2">
         {fresh ? "Tomorrow is locked. Sleep well." : "Tomorrow is already locked. Changing it needs a reason, from Today."}
       </p>
-      <Kural className="mt-2" />
+      <Kural n={664} className="mt-2" />
       <Link to="/today" className="btn-secondary mt-4">
         Back to Today
       </Link>

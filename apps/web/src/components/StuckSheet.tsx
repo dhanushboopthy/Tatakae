@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Blocker, Mission } from "@tatakae/core";
 import { logStuck } from "../lib/hooks";
+import { Kural } from "./Kural";
 import { Modal } from "./Modal";
 import { useToast } from "./Toast";
 
@@ -62,6 +63,7 @@ function StuckBody({ mission, onClose }: { mission: Mission; onClose: () => void
             <span className="text-sm">{c.body}</span>
           </button>
         ))}
+        <Kural n={611} size="sm" className="mt-2" />
       </div>
     );
   }

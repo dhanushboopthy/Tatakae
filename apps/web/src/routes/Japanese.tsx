@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { addDays, weekdayOf, type ISODate, type JapaneseKind } from "@tatakae/core";
 import { BlockBarChart, type BlockSeries } from "../components/BlockBarChart";
 import { TrashIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { LibraryTabs } from "../components/LibraryTabs";
 import { PageHeader } from "../components/PageHeader";
 import { SegmentedPills } from "../components/SegmentedPills";
@@ -171,6 +172,7 @@ export function Japanese() {
           </ul>
         )}
       </section>
+      <Kural n={396} size="sm" className="max-w-read" />
     </div>
   );
 }

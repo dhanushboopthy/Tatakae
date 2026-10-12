@@ -58,6 +58,7 @@ Calm, short, second person. No exclamation marks except inside story lines. Neve
 - Inbox zero: "Inbox zero. Capture anything with one tap."
 - Welcome back: "Welcome back. One mission today — that's the whole plan."
 - Rules line (shown once in Settings and on Welcome back): "Misses turn grey. Nothing resets. Don't miss twice."
+- Thirukkural (web, `components/Kural.tsx`), one per calm moment, Tamil plus a one-line meaning: Login 619 · Shutdown complete 664 · Restart dialog 467 · Ritual capacity step 475 · Welcome back 621 · Focus "Block complete" 616 · Stuck sheet 611 · Inbox 672 · Cycle 595 · Weekly review 620 · Monthly review 666 · Notes 391 · Japanese 396. Never on Morning or a running timer; 618 left out (reads as blame next to a miss).
 
 ## Notifications (max 3/day)
 1. Morning at wake time: "P1: <title>. Start?" → opens Morning.

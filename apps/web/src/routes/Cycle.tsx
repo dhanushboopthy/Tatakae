@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { MAX_ACTIVE_GOALS, addDays, type CalendarDay, type Goal, type GoalProgress, type GoalStatus } from "@tatakae/core";
 import { DayCircle } from "../components/DayCircle";
 import { PencilIcon, PlusIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { PageHeader } from "../components/PageHeader";
 import { RingProgress } from "../components/RingProgress";
 import { SegmentGauge } from "../components/SegmentGauge";
@@ -27,6 +28,7 @@ export function Cycle() {
         eyebrow={cycle ? `${formatDay(cycle.start).replace(/^\w+ /, "")} – ${formatDay(cycle.end).replace(/^\w+ /, "")}${weekIndex ? ` · week ${weekIndex} of ${cycle.weeks.length}` : ""}` : "Cycle"}
         title={`Cycle ${cycle?.index ?? 1}`}
       />
+      <Kural n={595} className="max-w-read" />
       {cycle && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section aria-labelledby="gauge-title" className="card flex flex-col items-center gap-3">

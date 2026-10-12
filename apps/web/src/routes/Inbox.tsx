@@ -3,6 +3,7 @@ import { addDays, type ISODate, type InboxItem, type Slot } from "@tatakae/core"
 import { CaptureForm } from "../components/CaptureDialog";
 import { EmptyState } from "../components/EmptyState";
 import { InboxIcon, NoteIcon, PencilIcon, TrashIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { LockReasonDialog } from "../components/LockReasonDialog";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
@@ -143,6 +144,8 @@ export function Inbox() {
           </ul>
         </>
       )}
+
+      <Kural n={672} size="sm" />
 
       <ToMissionDialog item={toMission} onClose={() => setToMission(null)} />
     </div>

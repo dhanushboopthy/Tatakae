@@ -6,6 +6,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ArrowLeftIcon, CheckIcon, CloseIcon, DownloadIcon, NoteIcon, PlusIcon, SearchIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { LibraryTabs } from "../components/LibraryTabs";
 import { Modal } from "../components/Modal";
+import { Kural } from "../components/Kural";
 import { PageHeader } from "../components/PageHeader";
 import { SegmentedPills } from "../components/SegmentedPills";
 import { useToast } from "../components/Toast";
@@ -74,16 +75,19 @@ export function Notes() {
           {id ? (
             <NoteDetail key={id} id={id} />
           ) : (
-            <EmptyState
-              icon={<NoteIcon />}
-              title="Pick a note, or start a new one."
-              body="Write what you learnt in your own words, then mark whether you can explain it and build it."
-              action={
-                <button type="button" className="btn-primary" onClick={() => void newNote()}>
-                  <PlusIcon size={18} /> New note
-                </button>
-              }
-            />
+            <div className="space-y-6">
+              <EmptyState
+                icon={<NoteIcon />}
+                title="Pick a note, or start a new one."
+                body="Write what you learnt in your own words, then mark whether you can explain it and build it."
+                action={
+                  <button type="button" className="btn-primary" onClick={() => void newNote()}>
+                    <PlusIcon size={18} /> New note
+                  </button>
+                }
+              />
+              <Kural n={391} size="sm" className="max-w-read" />
+            </div>
           )}
         </div>
       </div>

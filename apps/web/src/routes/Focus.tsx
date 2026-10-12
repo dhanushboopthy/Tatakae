@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { FocusSession, Mission } from "@tatakae/core";
 import { FocusRing } from "../components/FocusRing";
 import { CheckIcon, DashIcon, PauseIcon, PlayIcon, PlusIcon, StuckIcon } from "../components/icons";
+import { Kural } from "../components/Kural";
 import { PageHeader } from "../components/PageHeader";
 import { RechargeMenu } from "../components/RechargeMenu";
 import { StuckSheet } from "../components/StuckSheet";
@@ -315,6 +316,7 @@ function AfterBlock(props: { minutes: number; mission: Mission | null; onDone: (
             </button>
           </div>
         )}
+        <Kural n={616} size="sm" className="mt-2" />
       </div>
       <RechargeMenu onDone={props.onDone} />
     </div>

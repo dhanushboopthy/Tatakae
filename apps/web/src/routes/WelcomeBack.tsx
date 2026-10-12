@@ -31,7 +31,7 @@ export function WelcomeBack() {
           <p className="mt-3 text-lg">One mission today — that's the whole plan.</p>
         </div>
 
-        <Kural />
+        <Kural n={621} />
 
         <figure className="m-0">
           <ol className="flex gap-2" aria-label="Last seven days">
