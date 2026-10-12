@@ -2,32 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tokens and rationale: docs/10-design-system.md */
+/* Tokens and rationale: docs/10-design-system.md ("Soft Bento"). RGB triplets so Tailwind can add alpha. */
 
 @layer base {
-  html {
+  :root {
+    --canvas: 241 241 239;
+    --canvas-cream: 250 244 232;
+    --surface: 255 255 255;
+    --surface-2: 244 244 242;
+    --line: 230 230 227;
+    --ink: 28 28 30;
+    --ink-2: 102 102 107;
+    --charcoal: 38 38 38;
+    --charcoal-line: 74 74 79;
+    --on-charcoal: 255 255 255;
+    --on-charcoal-2: 184 184 190;
+    --lime-soft: 238 245 211;
+    --lavender-soft: 233 231 248;
+    --missed: 138 138 144;
+    --danger: 194 65 12;
+    color-scheme: light;
+  }
+
+  /* Dark variant: ritual time → wake time, and always for the night ritual. The hero inverts. */
+  .dark {
+    --canvas: 14 14 16;
+    --canvas-cream: 20 18 15;
+    --surface: 27 27 31;
+    --surface-2: 37 37 42;
+    --line: 47 47 53;
+    --ink: 236 236 241;
+    --ink-2: 161 161 170;
+    --charcoal: 236 236 241;
+    --charcoal-line: 196 196 204;
+    --on-charcoal: 18 18 20;
+    --on-charcoal-2: 74 74 82;
+    --lime-soft: 42 49 22;
+    --lavender-soft: 42 40 64;
+    --missed: 116 116 124;
+    --danger: 240 128 90;
     color-scheme: dark;
+  }
+
+  html {
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-legacy-ink font-sans text-base leading-normal text-legacy-paper antialiased;
+    @apply bg-canvas font-sans text-base leading-normal text-ink antialiased;
+    font-feature-settings: "cv11";
   }
   :focus-visible {
-    outline: 2px solid #f2a33a;
+    outline: 2px solid rgb(var(--ink));
     outline-offset: 2px;
   }
   ::selection {
-    background: #2e2215;
-    color: #ececf1;
+    background: #cde37a;
+    color: #1c1c1e;
   }
   h1 {
-    @apply text-2xl font-semibold;
+    @apply text-title-sm;
   }
   h2 {
     @apply text-lg font-semibold;
   }
   dialog::backdrop {
-    background: rgb(0 0 0 / 0.6);
+    background: rgb(0 0 0 / 0.45);
   }
 }
 
@@ -35,35 +74,96 @@
   .tnum {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Surfaces: flat, separated by tone (canvas → surface → surface-2). */
   .card {
-    @apply rounded-legacy-card border border-legacy-line bg-legacy-ink-2 p-4;
+    @apply rounded-card bg-surface p-6;
   }
+  .card-inner {
+    @apply rounded-card-inner bg-surface-2 p-4;
+  }
+  .page {
+    @apply mx-auto w-full max-w-dash space-y-6;
+  }
+  .page-read {
+    @apply mx-auto w-full max-w-read space-y-6;
+  }
+  .eyebrow {
+    @apply text-[15px] font-medium text-ink-2;
+  }
+
+  /* Forms */
   .label {
-    @apply mb-1 block text-sm font-medium text-legacy-muted;
+    @apply mb-1.5 block text-sm font-medium text-ink-2;
   }
   .input {
-    @apply min-h-tap w-full rounded-control border border-legacy-line-strong bg-legacy-ink-3 px-3 text-legacy-paper placeholder:text-legacy-muted;
+    @apply min-h-tap w-full rounded-field border border-missed bg-surface px-4 text-ink placeholder:text-ink-2;
   }
   textarea.input {
-    @apply py-2;
+    @apply py-3;
   }
+  select.input {
+    @apply pr-10;
+  }
+
+  /* Buttons: pills and circles. Primary = charcoal; accent = lime with ink text. */
   .btn {
-    @apply inline-flex min-h-tap min-w-tap items-center justify-center gap-2 rounded-control px-4 text-base font-medium transition-colors duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-tap min-w-tap select-none items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition duration-fast ease-out active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-legacy-ember text-legacy-ink hover:bg-[#f5b45c];
+    @apply btn bg-charcoal text-on-charcoal hover:opacity-90;
+  }
+  .btn-accent {
+    @apply btn bg-lime text-on-accent hover:brightness-95;
   }
   .btn-secondary {
-    @apply btn border border-legacy-line-strong bg-legacy-ink-3 text-legacy-paper hover:bg-legacy-ink-2;
+    @apply btn bg-surface-2 text-ink hover:bg-line;
+  }
+  .btn-outline {
+    @apply btn border border-missed text-ink hover:bg-surface-2;
   }
   .btn-ghost {
-    @apply btn text-legacy-paper hover:bg-legacy-ink-3;
+    @apply btn font-medium text-ink hover:bg-surface-2;
   }
   .btn-danger {
-    @apply btn bg-legacy-danger text-legacy-ink;
+    @apply btn bg-danger text-white hover:opacity-90 dark:text-on-accent;
+  }
+  .icon-btn {
+    @apply inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink transition duration-fast ease-out hover:bg-line active:scale-[0.96];
+  }
+  .icon-btn-primary {
+    @apply icon-btn bg-charcoal text-on-charcoal hover:bg-charcoal hover:opacity-90;
+  }
+  .icon-btn-soft {
+    @apply icon-btn bg-lavender-soft hover:bg-lavender-soft hover:brightness-95;
+  }
+  .icon-btn-sm {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink transition duration-fast ease-out hover:bg-line;
+  }
+
+  /* Small labels */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-semibold;
+  }
+  .pill-outline {
+    @apply pill border border-current font-medium;
+  }
+  .chip {
+    @apply inline-flex min-h-tap items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition duration-fast ease-out active:scale-[0.96];
   }
   .kbd {
-    @apply rounded border border-legacy-line-strong px-1.5 text-xs text-legacy-muted;
+    @apply rounded-md border border-line bg-surface px-1.5 text-xs font-medium text-ink-2;
+  }
+  .link {
+    @apply font-semibold underline decoration-line decoration-2 underline-offset-4 hover:decoration-ink;
+  }
+
+  /* Hatching for "minimum" (lavender) and "missed" (grey) marks. */
+  .hatch-min {
+    background: repeating-linear-gradient(45deg, #a9a3db 0 5px, #c8c3ea 5px 10px);
+  }
+  .hatch-missed {
+    background: repeating-linear-gradient(45deg, rgb(var(--surface-2)) 0 5px, rgb(var(--line)) 5px 10px);
   }
 }
 

@@ -3,7 +3,7 @@ import type { ForgeProblem, ISODate, Mission } from "@tatakae/core";
 import { forge, upsertMission, useIfThenTemplates } from "../lib/hooks";
 import { MissionCard } from "./MissionCard";
 
-/** The P1 mission, large: title at 30 px, Minimum and if-then visible, Start focus as the primary action. */
+/** The P1 mission as the charcoal hero card (title at 30 px, Minimum and if-then, lime Start circle). */
 export function P1Card(props: { mission: Mission; forged: boolean }) {
   return <MissionCard mission={props.mission} forged={props.forged} prominent />;
 }
@@ -22,11 +22,11 @@ export function IfThenTemplates(props: { onPick: (t: string) => void }) {
   if (templates.length === 0) return null;
   return (
     <div className="mt-2">
-      <p className="mb-1 text-sm text-legacy-muted">From earlier plans</p>
+      <p className="mb-1.5 text-sm text-ink-2">From earlier plans</p>
       <ul className="flex flex-wrap gap-2">
         {templates.map((t) => (
           <li key={t}>
-            <button type="button" className="min-h-tap rounded-full border border-legacy-line-strong px-3 text-left text-sm hover:bg-legacy-ink-3" onClick={() => props.onPick(t)}>
+            <button type="button" className="chip bg-surface-2 py-2 text-left font-medium hover:bg-line" onClick={() => props.onPick(t)}>
               {t}
             </button>
           </li>

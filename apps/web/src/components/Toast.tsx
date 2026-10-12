@@ -48,13 +48,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {item && (
           <div
             key={item.id}
-            className="pointer-events-auto flex max-w-md items-center gap-3 rounded-legacy-card border border-legacy-line bg-legacy-ink-2 py-2 pl-4 pr-2 shadow-overlay"
+            className="pointer-events-auto flex max-w-md items-center gap-3 rounded-full bg-charcoal py-1.5 pl-5 pr-1.5 text-on-charcoal shadow-float"
           >
-            <p className="flex-1 text-sm">{item.message}</p>
+            <p className="flex-1 text-sm font-medium">{item.message}</p>
             {item.action && (
               <button
                 type="button"
-                className="btn-ghost text-sm text-legacy-ember"
+                className="btn min-h-0 bg-lime px-4 py-2 text-sm text-on-accent"
                 onClick={() => {
                   item.action?.onClick();
                   clear();
@@ -63,7 +63,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 {item.action.label}
               </button>
             )}
-            <button type="button" className="btn-ghost px-2" aria-label="Dismiss" onClick={clear}>
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-on-charcoal/10"
+              aria-label="Dismiss"
+              onClick={clear}
+            >
               <CloseIcon size={18} />
             </button>
           </div>

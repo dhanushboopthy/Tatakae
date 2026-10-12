@@ -8,7 +8,11 @@ import { setUnauthorizedHandler } from "./lib/api";
 import { captureInstallPrompt } from "./lib/install";
 import { forgetSession } from "./lib/session";
 import { SESSION_QUERY_KEY } from "./components/AuthGate";
+import { applyStoredTheme } from "./lib/theme";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./index.css";
+
+applyStoredTheme(); // before first paint, so a night visit doesn't flash light
 
 captureInstallPrompt(); // beforeinstallprompt fires early; keep it for the "Install app" button
 

@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
-import type { Mission, MissionStatus } from "@tatakae/core";
-import { editLocked, needsLockReason, patchMissionFree, setStatus, upsertMission } from "../lib/hooks";
-import { FocusIcon, HelpIcon, LockIcon, PencilIcon } from "./icons";
+import { useNavigate } from "react-router-dom";
+import type { FocusLength, Mission, MissionStatus } from "@tatakae/core";
+import { editLocked, needsLockReason, patchMissionFree, setStatus, upsertMission, useSettings } from "../lib/hooks";
+import { ArrowRightIcon, FocusIcon, LockIcon, PencilIcon, StuckIcon } from "./icons";
 import { LockReasonDialog } from "./LockReasonDialog";
 import { StatusChips, STATUS_LABEL } from "./StatusChips";
 import { StuckSheet } from "./StuckSheet";
 import { useToast } from "./Toast";
 
 /**
- * A mission with one-tap status chips, Start focus, Stuck, resume note and edit.
- * Status / resume note are free fields. Editing title, Minimum, if-then, points or moving it off a
- * locked (forged) day asks for a reason first (LockReasonDialog → mura event).
+ * A mission card (docs/10 §5): P1 = charcoal hero with a lime Start circle and 25 · 50 · 90 pills;
+ * P2 = lavender, P3 = lime-soft, side quest = surface-2. Ink text on every coloured fill.
+ * One-tap status chips, Start focus, Stuck, resume note and edit. Status / resume note are free fields;
+ * editing title, Minimum, if-then, points or moving it off a locked (forged) day asks for a reason
+ * first (LockReasonDialog → mura event).
  */
 
 export const SLOT_LABEL: Record<Mission["slot"], string> = {
@@ -22,11 +24,70 @@ export const SLOT_LABEL: Record<Mission["slot"], string> = {
   backlog: "Backlog",
 };
 
+interface Tone {
+  card: string;
+  sub: string;
+  action: string;
+  pill: string;
+  outline: string;
+  onColor: boolean;
+}
+
+const TONE: Record<Mission["slot"], Tone> = {
+  P1: {
+    card: "bg-charcoal text-on-charcoal",
+    sub: "text-on-charcoal-2",
+    action: "bg-on-charcoal/10 text-on-charcoal hover:bg-on-charcoal/20",
+    pill: "bg-lime text-on-accent",
+    outline: "border-charcoal-line text-on-charcoal-2",
+    onColor: true,
+  },
+  P2: {
+    card: "bg-lavender text-on-accent",
+    sub: "text-on-accent/80",
+    action: "bg-white/60 text-on-accent hover:bg-white/80",
+    pill: "bg-on-accent text-white",
+    outline: "border-on-accent text-on-accent",
+    onColor: true,
+  },
+  P3: {
+    card: "bg-lime-soft text-ink",
+    sub: "text-ink-2",
+    action: "bg-surface text-ink hover:bg-surface/70",
+    pill: "bg-ink text-surface",
+    outline: "border-ink text-ink",
+    onColor: false,
+  },
+  side: {
+    card: "bg-surface-2 text-ink",
+    sub: "text-ink-2",
+    action: "bg-surface text-ink hover:bg-line",
+    pill: "bg-surface text-ink",
+    outline: "border-missed text-ink-2",
+    onColor: false,
+  },
+  backlog: {
+    card: "bg-surface text-ink",
+    sub: "text-ink-2",
+    action: "bg-surface-2 text-ink hover:bg-line",
+    pill: "bg-surface-2 text-ink",
+    outline: "border-missed text-ink-2",
+    onColor: false,
+  },
+};
+
+const LENGTHS: readonly FocusLength[] = [25, 50, 90];
+
 type Pending = { patch: Partial<Mission>; summary: string } | null;
 
-export function MissionCard(props: { mission: Mission; forged: boolean; prominent?: boolean }) {
-  const { mission: m, forged, prominent = false } = props;
+export function MissionCard(props: { mission: Mission; forged: boolean; prominent?: boolean; compact?: boolean }) {
+  const { mission: m, forged } = props;
+  const tone = TONE[m.slot];
+  const hero = m.slot === "P1" || props.prominent === true;
+  const navigate = useNavigate();
   const toast = useToast();
+  const { data: settings } = useSettings();
+  const [length, setLength] = useState<FocusLength | null>(null);
   const [editing, setEditing] = useState(false);
   const [stuck, setStuck] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
@@ -35,6 +96,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
 
   const rescheduled = m.status === "rescheduled";
   const finished = m.status === "done" || m.status === "minimum";
+  const chosen = length ?? settings?.focus_default ?? 50;
 
   async function onStatus(s: MissionStatus) {
     await setStatus(m, s);
@@ -63,77 +125,84 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
     setNoteOpen(false);
   }
 
+  const startFocus = (min: number) => navigate(`/focus?mission=${encodeURIComponent(m.id)}&min=${min}`);
+
   return (
     <article
       aria-labelledby={`m-${m.id}`}
-      className={`card ${prominent ? "border-l-4 border-l-legacy-ember p-6" : ""} ${rescheduled ? "opacity-70" : ""}`}
+      className={`flex flex-col rounded-card ${hero ? "gap-5 p-7" : "gap-4 p-6"} ${tone.card} ${rescheduled ? "opacity-70" : ""}`}
     >
       <header className="flex items-start gap-3">
-        <div className="flex-1">
-          <p className="flex items-center gap-2 text-sm text-legacy-muted">
-            <span className={prominent ? "font-semibold text-legacy-ember" : "font-medium"}>{SLOT_LABEL[m.slot]}</span>
-            {m.slot !== "side" && m.points != null && m.points !== 1 && <span className="tnum">· {m.points} points</span>}
-            {m.slot === "side" && <span>· unscored</span>}
-            {forged && (
-              <span className="inline-flex items-center gap-1">
-                · <LockIcon size={14} /> locked
-              </span>
-            )}
-            {m.estMin != null && <span className="tnum">· {m.estMin} min</span>}
-          </p>
-          <h3 id={`m-${m.id}`} className={prominent ? "mt-1 text-p1" : "mt-1 text-lg font-semibold"}>
-            {m.title}
-          </h3>
+        <div className="flex flex-1 flex-wrap items-center gap-2 text-[13px]">
+          <span className={`pill ${tone.pill}`}>{SLOT_LABEL[m.slot]}</span>
+          {m.estMin != null && <span className={`pill-outline tnum ${tone.outline}`}>{m.estMin} min</span>}
+          {m.slot !== "side" && m.points != null && m.points !== 1 && <span className={`tnum ${tone.sub}`}>{m.points} points</span>}
+          {m.slot === "side" && <span className={tone.sub}>Unscored</span>}
+          {forged && (
+            <span className={`inline-flex items-center gap-1 ${tone.sub}`}>
+              <LockIcon size={14} /> Locked
+            </span>
+          )}
         </div>
         {!editing && (
-          <button type="button" className="btn-ghost px-2" aria-label={`Edit ${m.title}`} onClick={() => setEditing(true)}>
-            <PencilIcon />
+          <button
+            type="button"
+            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${tone.action}`}
+            aria-label={`Edit ${m.title}`}
+            onClick={() => setEditing(true)}
+          >
+            <PencilIcon size={18} />
           </button>
         )}
       </header>
 
-      {(m.minimum || m.ifThen) && !editing && (
-        <dl className="mt-3 grid gap-1 text-sm">
-          {m.minimum && (
-            <div className="flex gap-2">
-              <dt className="text-legacy-muted">Minimum</dt>
-              <dd>{m.minimum}</dd>
-            </div>
-          )}
-          {m.ifThen && (
-            <div className="flex gap-2">
-              <dt className="text-legacy-muted">If-then</dt>
-              <dd>{m.ifThen}</dd>
-            </div>
-          )}
-        </dl>
-      )}
+      <div>
+        <h3 id={`m-${m.id}`} className={hero ? "text-p1" : "text-xl font-semibold leading-snug"}>
+          {m.title}
+        </h3>
+        {(m.minimum || m.ifThen) && !editing && (
+          <dl className={`mt-3 grid gap-1 text-sm ${tone.sub}`}>
+            {m.minimum && (
+              <div className="flex gap-1.5">
+                <dt className="font-semibold">Minimum ·</dt>
+                <dd>{m.minimum}</dd>
+              </div>
+            )}
+            {m.ifThen && (
+              <div className="flex gap-1.5">
+                <dt className="font-semibold">If-then ·</dt>
+                <dd>{m.ifThen}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </div>
 
       {editing ? (
-        <MissionEditForm
-          mission={m}
-          onCancel={() => setEditing(false)}
-          onSave={async (patch) => {
-            if (await save(patch, `Edit ${SLOT_LABEL[m.slot]}: ${m.title}`)) setEditing(false);
-          }}
-          onBacklog={async () => {
-            const ok = await save({ dayDate: null, slot: "backlog", status: "backlog" }, `Move "${m.title}" to the backlog`);
-            if (ok) {
-              setEditing(false);
-              toast("Moved to your backlog.");
-            }
-          }}
-        />
+        <div className="rounded-card-inner bg-surface p-4 text-ink">
+          <MissionEditForm
+            mission={m}
+            onCancel={() => setEditing(false)}
+            onSave={async (patch) => {
+              if (await save(patch, `Edit ${SLOT_LABEL[m.slot]}: ${m.title}`)) setEditing(false);
+            }}
+            onBacklog={async () => {
+              const ok = await save({ dayDate: null, slot: "backlog", status: "backlog" }, `Move "${m.title}" to the backlog`);
+              if (ok) {
+                setEditing(false);
+                toast("Moved to your backlog.");
+              }
+            }}
+          />
+        </div>
       ) : rescheduled ? (
-        <p className="mt-3 text-sm text-legacy-muted">{STATUS_LABEL.rescheduled} — a copy waits in your backlog.</p>
+        <p className={`text-sm ${tone.sub}`}>{STATUS_LABEL.rescheduled} — a copy waits in your backlog.</p>
       ) : (
         <>
-          <div className="mt-4">
-            <StatusChips value={m.status} onChange={(s) => void onStatus(s)} label={m.title} />
-          </div>
+          <StatusChips value={m.status} onChange={(s) => void onStatus(s)} label={m.title} onColor={tone.onColor} />
 
           {noteOpen ? (
-            <form onSubmit={saveNote} className="mt-4 flex gap-2">
+            <form onSubmit={saveNote} className="flex gap-2">
               <label htmlFor={`note-${m.id}`} className="sr-only">
                 Resume note
               </label>
@@ -146,34 +215,67 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Where to pick up next time"
               />
-              <button type="submit" className="btn-secondary">
+              <button type="submit" className="btn-primary">
                 Save
               </button>
             </form>
           ) : m.resumeNote ? (
-            <p className="mt-4 text-sm">
-              <span className="text-legacy-muted">Resume: </span>
+            <p className="text-sm">
+              <span className={`font-semibold ${tone.sub}`}>Resume · </span>
               {m.resumeNote}{" "}
-              <button type="button" className="min-h-tap text-legacy-muted underline underline-offset-4" onClick={openNote}>
+              <button type="button" className={`min-h-tap font-semibold underline underline-offset-4 ${tone.sub}`} onClick={openNote}>
                 edit
               </button>
             </p>
           ) : null}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {!finished && (
-              <Link to={`/focus?mission=${encodeURIComponent(m.id)}`} className={prominent ? "btn-primary" : "btn-secondary"}>
+          <div className="flex flex-wrap items-center gap-2">
+            {!finished && hero && (
+              <>
+                <span className={`mr-1 text-sm ${tone.sub}`} id={`len-${m.id}`}>
+                  Start focus
+                </span>
+                <div role="radiogroup" aria-labelledby={`len-${m.id}`} className="flex gap-1.5">
+                  {LENGTHS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      role="radio"
+                      aria-checked={chosen === n}
+                      onClick={() => setLength(n)}
+                      className={`tnum inline-flex h-11 min-w-[48px] items-center justify-center rounded-full border px-3 text-sm font-semibold transition ${
+                        chosen === n ? "border-transparent bg-on-charcoal text-charcoal" : tone.outline
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {!finished && !hero && (
+              <button type="button" className={`btn min-h-tap ${tone.action}`} onClick={() => startFocus(chosen)}>
                 <FocusIcon size={18} /> Start focus
-              </Link>
+              </button>
             )}
             {!finished && (
-              <button type="button" className="btn-ghost" onClick={() => setStuck(true)}>
-                <HelpIcon size={18} /> Stuck
+              <button type="button" className={`btn min-h-tap font-medium ${tone.action}`} onClick={() => setStuck(true)}>
+                <StuckIcon size={18} /> Stuck
               </button>
             )}
             {!noteOpen && !m.resumeNote && (
-              <button type="button" className="btn-ghost" onClick={openNote}>
-                Add resume note
+              <button type="button" className={`btn min-h-tap font-medium ${tone.action}`} onClick={openNote}>
+                Resume note
+              </button>
+            )}
+            {!finished && hero && (
+              <button
+                type="button"
+                onClick={() => startFocus(chosen)}
+                className="ml-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-lime text-on-accent transition hover:brightness-95 active:scale-[0.96]"
+                aria-label={`Start ${chosen}-minute focus on ${m.title}`}
+              >
+                <ArrowRightIcon size={26} strokeWidth={2} />
               </button>
             )}
           </div>
@@ -229,7 +331,7 @@ export function MissionEditForm(props: {
 
   const id = (k: string) => `edit-${m.id}-${k}`;
   return (
-    <form onSubmit={onSubmit} className="mt-4 space-y-3">
+    <form onSubmit={onSubmit} className="space-y-3">
       <div>
         <label htmlFor={id("title")} className="label">
           Title
@@ -275,7 +377,7 @@ export function MissionEditForm(props: {
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="text-sm font-medium">
           {error}
         </p>
       )}

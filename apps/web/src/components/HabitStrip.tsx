@@ -3,19 +3,31 @@ import type { ISODate } from "@tatakae/core";
 import { logHabit, useHabits } from "../lib/hooks";
 import { CheckIcon } from "./icons";
 
-/** Habits for a date: one-tap toggles. Tracked, never scored. */
-export function HabitStrip({ date }: { date: ISODate }) {
+/** Habits for a date as pills: tap to toggle (lime with ✓ when done). Tracked, never scored. */
+export function HabitStrip({ date, title = "Habits", bare = false }: { date: ISODate; title?: string; bare?: boolean }) {
   const { data } = useHabits(date);
   if (!data) return null;
+  const doneCount = data.habits.filter((h) => data.done[h.id] === true).length;
 
   return (
-    <section aria-labelledby="habits-title">
-      <h2 id="habits-title" className="mb-2">
-        Habits
-      </h2>
+    <section aria-labelledby="habits-title" className={bare ? "" : "card"}>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 id="habits-title" className="text-base font-semibold">
+          {title}
+        </h2>
+        {data.habits.length > 0 && (
+          <span className="tnum text-sm text-ink-2">
+            {doneCount} / {data.habits.length}
+          </span>
+        )}
+      </div>
       {data.habits.length === 0 ? (
-        <p className="text-sm text-legacy-muted">
-          No habits yet. <Link to="/settings#habits" className="underline underline-offset-4">Add one in Settings</Link>.
+        <p className="text-sm text-ink-2">
+          No habits yet.{" "}
+          <Link to="/settings#habits" className="link">
+            Add one in Settings
+          </Link>
+          .
         </p>
       ) : (
         <ul className="flex flex-wrap gap-2">
@@ -28,16 +40,9 @@ export function HabitStrip({ date }: { date: ISODate }) {
                   aria-pressed={done}
                   onClick={() => void logHabit(h.id, date, !done)}
                   title={h.minimum ? `Minimum: ${h.minimum}` : undefined}
-                  className={`inline-flex min-h-tap items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-base ease-out ${
-                    done ? "border-legacy-paper bg-legacy-jade-soft" : "border-legacy-line-strong hover:bg-legacy-ink-3"
-                  }`}
+                  className={`chip ${done ? "bg-lime text-on-accent" : "bg-surface-2 font-medium text-ink-2 hover:bg-line hover:text-ink"}`}
                 >
-                  <span
-                    aria-hidden="true"
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${done ? "border-legacy-jade bg-legacy-jade text-legacy-ink" : "border-legacy-line-strong"}`}
-                  >
-                    {done && <CheckIcon size={14} strokeWidth={2.5} />}
-                  </span>
+                  {done && <CheckIcon size={16} strokeWidth={2.5} />}
                   {h.behaviour}
                   <span className="sr-only">{done ? "(done)" : "(not yet)"}</span>
                 </button>

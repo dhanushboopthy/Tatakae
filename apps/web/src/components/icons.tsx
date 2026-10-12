@@ -1,207 +1,170 @@
-import type { ReactNode, SVGProps } from "react";
+import type { ComponentType } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  BatteryCharging,
+  Bell,
+  Briefcase,
+  CalendarDays,
+  ChartColumn,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  CircleQuestionMark,
+  Coffee,
+  Command,
+  Contrast,
+  CornerUpRight,
+  Download,
+  Dumbbell,
+  Feather,
+  Inbox,
+  Info,
+  Languages,
+  LifeBuoy,
+  Lock,
+  LogOut,
+  Minus,
+  Moon,
+  NotebookPen,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  RefreshCw,
+  Repeat,
+  Search,
+  Server,
+  Settings2,
+  Smartphone,
+  Sparkles,
+  Sun,
+  Target,
+  Timer,
+  Trash,
+  Upload,
+  X,
+  type LucideProps,
+} from "lucide-react";
+import { ICONS, type IconKey } from "@tatakae/core";
 
-// Small inline SVG icon set (original, stroke-based, 24 px grid). Decorative by default
-// (aria-hidden); always pair with a visible label or an aria-label on the control.
+// Lucide line icons (docs/11 §6): 1.75 px stroke, decorative by default (aria-hidden). Always pair
+// with a visible label or an aria-label on the control. Names follow core ICONS where one exists.
 
-type IconProps = Omit<SVGProps<SVGSVGElement>, "children"> & { size?: number };
+export type IconProps = Omit<LucideProps, "ref"> & { size?: number };
+type Lucide = ComponentType<LucideProps>;
 
-function Icon({ size = 20, children, ...rest }: IconProps & { children: ReactNode }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-      {...rest}
-    >
-      {children}
-    </svg>
+function wrap(L: Lucide) {
+  const C = ({ size = 20, strokeWidth = 1.75, ...rest }: IconProps) => (
+    <L size={size} strokeWidth={strokeWidth} aria-hidden="true" focusable="false" {...rest} />
   );
+  return C;
 }
 
-export const SunIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
-  </Icon>
-);
+// Navigation / meanings (core ICONS)
+export const SunIcon = wrap(Sun);
+export const CalendarIcon = wrap(CalendarDays);
+export const FocusIcon = wrap(Timer);
+export const PlusIcon = wrap(Plus);
+export const SettingsIcon = wrap(Settings2);
+export const MoonIcon = wrap(Moon);
+export const InboxIcon = wrap(Inbox);
+export const ChartIcon = wrap(ChartColumn);
+export const CycleIcon = wrap(Target);
+export const NoteIcon = wrap(NotebookPen);
+export const OpenIcon = wrap(ArrowUpRight);
+export const BellIcon = wrap(Bell);
+export const SearchIcon = wrap(Search);
+export const CheckIcon = wrap(Check);
+export const MinimumIcon = wrap(Contrast);
+export const DashIcon = wrap(Minus);
+export const RescheduleIcon = wrap(CornerUpRight);
+export const StuckIcon = wrap(LifeBuoy);
+export const RechargeIcon = wrap(BatteryCharging);
+export const HabitIcon = wrap(Repeat);
+export const ScreenIcon = wrap(Smartphone);
+export const LockIcon = wrap(Lock);
+export const RestIcon = wrap(Coffee);
+export const WriteOffIcon = wrap(Feather);
+export const StoryIcon = wrap(Sparkles);
 
-export const MoonIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
-  </Icon>
-);
+// Status marks (shape encodes the state, never colour alone)
+export const DoneMarkIcon = CheckIcon;
+export const HalfMarkIcon = MinimumIcon;
+export const OpenMarkIcon = wrap(Circle);
 
-export const InboxIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M3 13h5l1.5 2.5h5L16 13h5" />
-    <path d="M5.5 5h13L21 13v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5Z" />
-  </Icon>
-);
+// Controls
+export const CommandIcon = wrap(Command);
+export const CloseIcon = wrap(X);
+export const PlayIcon = wrap(Play);
+export const PauseIcon = wrap(Pause);
+export const DownloadIcon = wrap(Download);
+export const UploadIcon = wrap(Upload);
+export const InfoIcon = wrap(Info);
+export const PencilIcon = wrap(Pencil);
+export const TrashIcon = wrap(Trash);
+export const ArrowRightIcon = wrap(ArrowRight);
+export const ArrowLeftIcon = wrap(ArrowLeft);
+export const HelpIcon = wrap(CircleQuestionMark);
+export const ChevronLeftIcon = wrap(ChevronLeft);
+export const ChevronRightIcon = wrap(ChevronRight);
+export const ChevronDownIcon = wrap(ChevronDown);
+export const LogOutIcon = wrap(LogOut);
+export const RefreshIcon = wrap(RefreshCw);
 
-export const ChartIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4 20h16M7 16v-5M12 16V7M17 16v-8" />
-  </Icon>
-);
+const BY_NAME: Record<(typeof ICONS)[IconKey], Lucide> = {
+  Sun,
+  CalendarDays,
+  Timer,
+  Plus,
+  Settings2,
+  Moon,
+  Inbox,
+  ChartColumn,
+  Target,
+  NotebookPen,
+  ArrowUpRight,
+  Bell,
+  Search,
+  Check,
+  Contrast,
+  Minus,
+  CornerUpRight,
+  LifeBuoy,
+  BatteryCharging,
+  Repeat,
+  Smartphone,
+  Lock,
+  Coffee,
+  Feather,
+  Sparkles,
+  Server,
+  Dumbbell,
+  Languages,
+  Briefcase,
+};
 
-export const CycleIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M20 12a8 8 0 0 1-14.3 4.9M4 12A8 8 0 0 1 18.3 7.1" />
-    <path d="M18.5 3v4.5H14M5.5 21v-4.5H10" />
-  </Icon>
-);
+/** Icon by meaning (core ICONS key), e.g. <KeyIcon name="stuck" />. */
+export function KeyIcon({ name, ...rest }: IconProps & { name: IconKey }) {
+  const L = BY_NAME[ICONS[name]];
+  return <L size={rest.size ?? 20} strokeWidth={rest.strokeWidth ?? 1.75} aria-hidden="true" focusable="false" {...rest} />;
+}
 
-export const CalendarIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-    <path d="M3.5 10h17M8 3v4M16 3v4" />
-  </Icon>
-);
+/** Icon by lucide name stored on a row (areas.icon); falls back to a dot. */
+export function NamedIcon({ name, ...rest }: IconProps & { name: string | null | undefined }) {
+  const L = name && name in BY_NAME ? BY_NAME[name as keyof typeof BY_NAME] : Circle;
+  return <L size={rest.size ?? 20} strokeWidth={rest.strokeWidth ?? 1.75} aria-hidden="true" focusable="false" {...rest} />;
+}
 
-export const NoteIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
-    <path d="M14 3v4h4M8.5 12h7M8.5 16h5" />
-  </Icon>
-);
-
-export const SettingsIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-    <circle cx="16" cy="7" r="2" />
-    <circle cx="10" cy="17" r="2" />
-  </Icon>
-);
-
-export const CheckIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="m5 12.5 4.5 4.5L19 7.5" />
-  </Icon>
-);
-
-/** Done mark: filled circle with a check (fill = currentColor, check = ink). */
-export const DoneMarkIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="9" fill="currentColor" />
-    <path d="m8 12.3 2.8 2.8L16.2 9.7" stroke="#0b0b0f" strokeWidth={2} />
-  </Icon>
-);
-
-/** Minimum mark: outline circle with the left half filled. */
-export const HalfMarkIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none" />
-  </Icon>
-);
-
-/** Missed mark: a dash (grey). */
-export const DashIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M6.5 12h11" strokeWidth={2.25} />
-  </Icon>
-);
-
-export const OpenMarkIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="8.5" />
-  </Icon>
-);
-
-export const RescheduleIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4 12a8 8 0 1 0 2.4-5.7" />
-    <path d="M4 4v4.5h4.5" />
-  </Icon>
-);
-
-export const CommandIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3Z" />
-  </Icon>
-);
-
-export const PlusIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M12 5v14M5 12h14" />
-  </Icon>
-);
-
-export const CloseIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="m6 6 12 12M18 6 6 18" />
-  </Icon>
-);
-
-export const PlayIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M8 5.5v13l10-6.5Z" fill="currentColor" />
-  </Icon>
-);
-
-export const LockIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <rect x="5" y="10.5" width="14" height="10" rx="2" />
-    <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
-  </Icon>
-);
-
-export const DownloadIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14" />
-  </Icon>
-);
-
-export const InfoIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 11v5.5M12 7.6v.1" />
-  </Icon>
-);
-
-export const PencilIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4 20h4L19 9l-4-4L4 16Z" />
-  </Icon>
-);
-
-export const TrashIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 13h9l1-13M9.5 7V4h5v3" />
-  </Icon>
-);
-
-export const ArrowRightIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M5 12h14M13 6l6 6-6 6" />
-  </Icon>
-);
-
-export const HelpIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.4v.5M12 16.6v.1" />
-  </Icon>
-);
-
-export const FocusIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="12" cy="13" r="8" />
-    <path d="M12 9v4l2.5 2M9.5 2.5h5" />
-  </Icon>
-);
-
-export const LogoMark = (p: IconProps) => (
-  <svg width={p.size ?? 28} height={p.size ?? 28} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-    <rect width="64" height="64" rx="14" fill="#14141a" />
-    <path d="M32 12c4 8 12 13 12 24a12 12 0 0 1-24 0c0-6 3-10 6-13 0 5 2 8 5 9-1-7 0-13 1-20Z" fill="#f2a33a" />
-    <rect x="16" y="50" width="32" height="3" rx="1.5" fill="#6a6a76" />
+/** App mark (docs/11 §6): charcoal tile, three rising rounded steps — P3, P2, P1. */
+export const LogoMark = (p: { size?: number; className?: string }) => (
+  <svg width={p.size ?? 40} height={p.size ?? 40} viewBox="0 0 48 48" aria-hidden="true" focusable="false" className={p.className}>
+    <rect width="48" height="48" rx="14" fill="#262626" />
+    <rect x="12" y="26" width="7" height="10" rx="3.5" fill="#8A8A90" />
+    <rect x="20.5" y="20" width="7" height="16" rx="3.5" fill="#A9A3DB" />
+    <rect x="29" y="14" width="7" height="22" rx="3.5" fill="#CDE37A" />
   </svg>
 );

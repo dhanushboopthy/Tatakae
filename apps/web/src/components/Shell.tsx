@@ -1,61 +1,149 @@
 import type { ComponentType } from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import { syncLabel, useInbox, useSyncStatus } from "../lib/hooks";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { syncLabel, useInbox, useNow, useSettings, useSyncStatus } from "../lib/hooks";
 import { platform } from "../lib/platform";
+import { useThemeController } from "../lib/theme";
 import { AuthGate } from "./AuthGate";
+import { CaptureDialog } from "./CaptureDialog";
 import { CommandPalette, openCommandPalette } from "./CommandPalette";
-import { CalendarIcon, ChartIcon, CommandIcon, CycleIcon, InboxIcon, LogoMark, MoonIcon, NoteIcon, SettingsIcon, SunIcon } from "./icons";
+import {
+  CalendarIcon,
+  ChartIcon,
+  CycleIcon,
+  InboxIcon,
+  LogoMark,
+  MoonIcon,
+  NoteIcon,
+  SearchIcon,
+  SettingsIcon,
+  SunIcon,
+  type IconProps,
+} from "./icons";
 import { InstallBanner } from "./InstallBanner";
+import { StoryToastHost } from "./StoryToast";
 import { ToastProvider } from "./Toast";
 
 /**
- * Laptop layout: left sidebar (Today · Calendar · Ritual · Inbox · Review (Week/Month) · Cycle · Notes · Settings),
- * sync status in the footer, Cmd/Ctrl+K palette everywhere. Narrow windows get a top bar instead.
- * TODO(v1, docs/10): lucide icons in 48px circles (ref 05/06).
+ * Laptop layout (docs/10 §6, ref 05/06): a left icon rail of 48 px circles (active = lime), the
+ * command palette and sync status at the bottom. Narrow windows get a top bar with icon + label pills.
+ * Cmd/Ctrl+K opens the palette everywhere. The theme follows ritual/wake time (lib/theme).
  */
 
-type NavIcon = ComponentType<{ size?: number; className?: string }>;
+interface NavItem {
+  to: string;
+  label: string;
+  Icon: ComponentType<IconProps>;
+  /** Path prefix that marks the item active (defaults to `to`). */
+  match?: string;
+}
 
-const NAV: readonly { to: string; label: string; Icon: NavIcon }[] = [
+const NAV: readonly NavItem[] = [
   { to: "/today", label: "Today", Icon: SunIcon },
   { to: "/calendar", label: "Calendar", Icon: CalendarIcon },
-  { to: "/ritual", label: "Ritual", Icon: MoonIcon },
+  { to: "/ritual", label: "Night ritual", Icon: MoonIcon },
   { to: "/inbox", label: "Inbox", Icon: InboxIcon },
-];
-const NAV_AFTER: readonly { to: string; label: string; Icon: NavIcon }[] = [
+  { to: "/review/week", label: "Review", Icon: ChartIcon, match: "/review" },
   { to: "/cycle", label: "Cycle", Icon: CycleIcon },
   { to: "/notes", label: "Notes", Icon: NoteIcon },
   { to: "/settings", label: "Settings", Icon: SettingsIcon },
 ];
 
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex min-h-tap items-center gap-3 rounded-control border-l-2 px-3 transition-colors duration-fast ease-out ${
-    isActive ? "border-legacy-ember bg-legacy-ink-3 font-medium text-legacy-paper" : "border-transparent text-legacy-muted hover:bg-legacy-ink-3 hover:text-legacy-paper"
-  }`;
-
-function InboxCount() {
+function InboxBadge({ compact }: { compact?: boolean }) {
   const { data } = useInbox();
   const n = data?.length ?? 0;
   if (n === 0) return null;
   return (
-    <span className="tnum ml-auto rounded-full border border-legacy-line-strong px-2 text-xs text-legacy-paper">
+    <span
+      className={`tnum flex min-w-[20px] items-center justify-center rounded-full bg-lavender px-1.5 text-[11px] font-bold text-on-accent ${
+        compact ? "absolute -right-0.5 -top-0.5 h-5" : "h-5"
+      }`}
+    >
       {n}
       <span className="sr-only"> unprocessed</span>
     </span>
   );
 }
 
-function SyncFooter() {
+function SyncDot() {
   const status = useSyncStatus();
   const label = syncLabel(status);
-  const dot =
-    status.state === "syncing" ? "bg-legacy-ember" : status.state === "idle" && status.pending === 0 ? "bg-legacy-jade" : "bg-legacy-muted";
+  const ok = status.state === "idle" && status.pending === 0 && !status.error;
+  const tone = status.state === "syncing" ? "bg-lavender" : ok ? "bg-lime-deep" : "bg-missed";
   return (
-    <p className="flex items-center gap-2 px-3 text-sm text-legacy-muted" role="status" aria-live="polite">
-      <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-      <span className="truncate">{label}</span>
+    <p className="group relative flex h-12 w-12 items-center justify-center" role="status" aria-live="polite" title={label}>
+      <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${tone}`} />
+      <span className="sr-only">{label}</span>
+      <Tooltip text={label} />
     </p>
   );
+}
+
+function SyncLine() {
+  const status = useSyncStatus();
+  return (
+    <p className="text-sm text-ink-2" role="status" aria-live="polite">
+      {syncLabel(status)}
+    </p>
+  );
+}
+
+function Tooltip({ text }: { text: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-40 -translate-y-1/2 whitespace-nowrap rounded-full bg-charcoal px-3 py-1.5 text-xs font-semibold text-on-charcoal opacity-0 shadow-float transition-opacity duration-fast group-hover:opacity-100 group-focus-visible:opacity-100"
+    >
+      {text}
+    </span>
+  );
+}
+
+function useIsActive(item: NavItem): boolean {
+  const { pathname } = useLocation();
+  const prefix = item.match ?? item.to;
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function RailLink({ item }: { item: NavItem }) {
+  const active = useIsActive(item);
+  const { Icon } = item;
+  return (
+    <NavLink
+      to={item.to}
+      aria-current={active ? "page" : undefined}
+      className={`group relative flex h-12 w-12 items-center justify-center rounded-full transition duration-fast ease-out ${
+        active ? "bg-lime text-on-accent" : "bg-surface-2 text-ink hover:bg-line"
+      }`}
+    >
+      <Icon size={22} />
+      <span className="sr-only">{item.label}</span>
+      {item.to === "/inbox" && <InboxBadge compact />}
+      <Tooltip text={item.label} />
+    </NavLink>
+  );
+}
+
+function TopLink({ item }: { item: NavItem }) {
+  const active = useIsActive(item);
+  const { Icon } = item;
+  return (
+    <NavLink
+      to={item.to}
+      aria-current={active ? "page" : undefined}
+      className={`chip shrink-0 ${active ? "bg-lime text-on-accent" : "bg-surface-2 font-medium text-ink"}`}
+    >
+      <Icon size={18} />
+      {item.label}
+      {item.to === "/inbox" && <InboxBadge />}
+    </NavLink>
+  );
+}
+
+function ThemeController() {
+  const { data: settings } = useSettings();
+  const now = useNow();
+  useThemeController({ ritualTime: settings?.ritual_time ?? "21:30", wakeTime: settings?.wake_time ?? "06:30", now });
+  return null;
 }
 
 export function Shell() {
@@ -63,70 +151,59 @@ export function Shell() {
   return (
     <AuthGate>
       <ToastProvider>
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-legacy-ink-2 focus:p-3">
+        <ThemeController />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-charcoal focus:px-4 focus:py-3 focus:text-on-charcoal"
+        >
           Skip to content
         </a>
-        <div className="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
-          <aside className="border-b border-legacy-line bg-legacy-ink-2 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-b-0 md:border-r">
-            <div className="flex items-center gap-3 px-4 py-4">
-              <LogoMark size={28} />
-              <span className="font-semibold">Tatakae</span>
-            </div>
-            <nav aria-label="Main" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-1 md:flex-col md:overflow-visible md:pb-0">
-              {NAV.map(({ to, label, Icon }) => (
-                <NavLink key={to} to={to} className={linkClass}>
-                  <Icon size={20} />
-                  <span>{label}</span>
-                  {to === "/inbox" && <InboxCount />}
-                </NavLink>
+        <div className="min-h-screen md:grid md:grid-cols-[88px_1fr]">
+          {/* Rail (md+) */}
+          <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:flex-col md:items-center md:gap-3 md:py-6">
+            <NavLink to="/today" className="mb-4 rounded-[14px]" aria-label="Tatakae, go to Today">
+              <LogoMark size={48} />
+            </NavLink>
+            <nav aria-label="Main" className="flex flex-1 flex-col items-center gap-3">
+              {NAV.map((item) => (
+                <RailLink key={item.to} item={item} />
               ))}
-              <div className="md:mt-2">
-                <p id="nav-review" className="hidden px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-legacy-muted md:block">
-                  Review
-                </p>
-                <ul aria-labelledby="nav-review" className="flex gap-1 md:flex-col">
-                  <li>
-                    <NavLink to="/review/week" className={linkClass}>
-                      <ChartIcon size={20} />
-                      <span>Week</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/review/month" className={linkClass}>
-                      <ChartIcon size={20} />
-                      <span>Month</span>
-                    </NavLink>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex gap-1 md:mt-2 md:flex-col">
-                {NAV_AFTER.map(({ to, label, Icon }) => (
-                  <NavLink key={to} to={to} className={linkClass}>
-                    <Icon size={20} />
-                    <span>{label}</span>
-                  </NavLink>
-                ))}
-              </div>
             </nav>
-            <div className="hidden space-y-2 border-t border-legacy-line p-2 md:block">
-              <button type="button" onClick={openCommandPalette} className="btn-ghost w-full justify-start text-legacy-muted">
-                <CommandIcon size={18} />
-                <span className="flex-1 text-left">Search or capture</span>
-                <span className="kbd">{mod} K</span>
-              </button>
-              <SyncFooter />
-            </div>
+            <button type="button" onClick={openCommandPalette} className="icon-btn group relative" aria-keyshortcuts="Control+K Meta+K">
+              <SearchIcon size={22} />
+              <span className="sr-only">Search or capture ({mod} K)</span>
+              <Tooltip text={`Search or capture · ${mod} K`} />
+            </button>
+            <SyncDot />
           </aside>
 
-          <main id="main" className="min-w-0 px-4 py-6 md:px-10 md:py-10">
+          {/* Top bar (narrow) */}
+          <header className="sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur md:hidden">
+            <div className="flex items-center gap-3 px-4 pt-3">
+              <LogoMark size={36} />
+              <span className="flex-1 font-semibold">Tatakae</span>
+              <button type="button" onClick={openCommandPalette} className="icon-btn-sm" aria-label="Search or capture">
+                <SearchIcon />
+              </button>
+            </div>
+            <nav aria-label="Main" className="flex gap-2 overflow-x-auto px-4 py-3">
+              {NAV.map((item) => (
+                <TopLink key={item.to} item={item} />
+              ))}
+            </nav>
+          </header>
+
+          <main id="main" className="min-w-0 px-4 py-6 md:px-8 md:py-8 lg:px-10">
             <InstallBanner />
             <Outlet />
             <div className="mt-10 md:hidden">
-              <SyncFooter />
+              <SyncLine />
             </div>
           </main>
         </div>
         <CommandPalette />
+        <CaptureDialog />
+        <StoryToastHost />
       </ToastProvider>
     </AuthGate>
   );

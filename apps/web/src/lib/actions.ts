@@ -22,6 +22,7 @@ import {
 } from "@tatakae/core";
 import { remove, store, write } from "../sync/engine";
 import { missionsOn } from "./plan";
+import { announceMoment } from "./story";
 
 // Write helpers. Every write goes to IndexedDB + outbox first (optimistic) and syncs later.
 // The server stays authoritative for the plan lock (forgedAt, locked mission fields).
@@ -69,6 +70,9 @@ export async function setStatus(mission: Mission, status: MissionStatus): Promis
     return;
   }
   await write("missions", { ...mission, status });
+  if (status === mission.status) return;
+  if (status === "done" && mission.slot === "P1") void announceMoment("p1_done");
+  else if (status === "minimum") void announceMoment("minimum_done");
 }
 
 export async function rescheduleMission(mission: Mission): Promise<void> {
@@ -186,6 +190,8 @@ export async function inboxToMission(item: InboxItem, target: { dayDate: ISODate
 
 export async function logStuck(missionId: string, blocker: Blocker, unblocker: string | null): Promise<void> {
   await write("stuck_events", { id: newId(), missionId, blocker, unblocker: unblocker?.trim() || null, at: nowIso() });
+  if (blocker === "fear") void announceMoment("stuck_fear");
+  else if (blocker === "inertia") void announceMoment("stuck_inertia");
 }
 
 // ---------- settings, anchors, recharge ----------

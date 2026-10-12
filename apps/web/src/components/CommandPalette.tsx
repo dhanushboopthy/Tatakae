@@ -21,6 +21,7 @@ interface Command {
 
 const SCREENS: readonly [string, string][] = [
   ["Today", "/today"],
+  ["Calendar", "/calendar"],
   ["Night ritual", "/ritual"],
   ["Inbox", "/inbox"],
   ["Capture", "/capture"],
@@ -70,7 +71,7 @@ export function CommandPalette() {
         close();
       }}
       onClick={(e) => e.target === e.currentTarget && close()}
-      className="mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-xl rounded-legacy-card border border-legacy-line bg-legacy-ink-2 p-0 text-legacy-paper shadow-overlay"
+      className="mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-xl rounded-card bg-surface p-0 text-ink shadow-float"
     >
       {open && <PaletteBody onClose={close} />}
     </dialog>
@@ -152,7 +153,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         aria-activedescendant={commands[safeActive] ? `${listId}-${safeActive}` : undefined}
         autoFocus
         autoComplete="off"
-        className="min-h-[56px] w-full rounded-t-card border-b border-legacy-line bg-transparent px-4 text-lg placeholder:text-legacy-muted focus-visible:outline-none"
+        className="min-h-[64px] w-full rounded-t-card border-b border-line bg-transparent px-6 text-lg placeholder:text-ink-2 focus-visible:outline-none"
         placeholder="Capture a thought, or jump somewhere…"
         value={query}
         onChange={(e) => {
@@ -170,16 +171,16 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
             aria-selected={i === safeActive}
             onMouseEnter={() => setActive(i)}
             onClick={() => void run(c)}
-            className={`flex min-h-tap cursor-pointer items-center justify-between gap-4 rounded-control border-l-2 px-3 ${
-              i === safeActive ? "border-legacy-ember bg-legacy-ink-3" : "border-transparent"
+            className={`flex min-h-tap cursor-pointer items-center justify-between gap-4 rounded-full px-4 ${
+              i === safeActive ? "bg-lime font-semibold text-on-accent" : ""
             }`}
           >
             <span className="truncate">{c.label}</span>
-            {c.hint && <span className="shrink-0 text-sm text-legacy-muted">{c.hint}</span>}
+            {c.hint && <span className={`shrink-0 text-sm ${i === safeActive ? "" : "text-ink-2"}`}>{c.hint}</span>}
           </li>
         ))}
       </ul>
-      <p className="border-t border-legacy-line px-4 py-2 text-xs text-legacy-muted">
+      <p className="border-t border-line px-6 py-3 text-xs text-ink-2">
         <span className="kbd">↑</span> <span className="kbd">↓</span> to move · <span className="kbd">Enter</span> to run ·{" "}
         <span className="kbd">Esc</span> to close
       </p>

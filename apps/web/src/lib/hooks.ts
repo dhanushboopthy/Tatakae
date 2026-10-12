@@ -5,8 +5,25 @@ import {
   DEFAULT_SETTINGS,
   SEED_UPDATED_AT,
   addDays,
+  appDayOf,
+  calendarDay,
+  calendarMonth,
+  cycleFor,
+  cycleStats,
   daysShownUp,
   firstUseDate,
+  habitGrid,
+  indexStats,
+  monthStats,
+  scoreOn as statsScoreOn,
+  scoreboard,
+  series,
+  weekStats,
+  type Area,
+  type FocusSession,
+  type Goal,
+  type SeriesMetric,
+  type StatsIndex,
   isMissedDay,
   istTimeHHMM,
   monthOf,
@@ -295,6 +312,141 @@ export function useRecharge() {
       if (all.length === 0) return DEFAULT_RECHARGE_ITEMS.map((r) => ({ ...r, updatedAt: SEED_UPDATED_AT, deletedAt: null }));
       return all.filter((r) => r.deletedAt == null).sort((a, b) => a.name.localeCompare(b.name));
     },
+  });
+}
+
+// ---------- stats (core stats.ts over the local store) ----------
+
+const STATS_TABLES: readonly SyncTable[] = [
+  "days",
+  "missions",
+  "settings",
+  "focus_sessions",
+  "habits",
+  "habit_logs",
+  "stuck_events",
+  "inbox",
+  "goals",
+  "areas",
+  "mura_events",
+];
+
+async function loadStats(today: ISODate): Promise<{ ix: StatsIndex; settings: ResolvedSettings }> {
+  const [days, missions, settingRows, focusSessions, habits, habitLogs, stuckEvents, inbox, goals, areas, muraEvents] = await Promise.all([
+    store.getAll("days"),
+    store.getAll("missions"),
+    store.getAll("settings"),
+    store.getAll("focus_sessions"),
+    store.getAll("habits"),
+    store.getAll("habit_logs"),
+    store.getAll("stuck_events"),
+    store.getAll("inbox"),
+    store.getAll("goals"),
+    store.getAll("areas"),
+    store.getAll("mura_events"),
+  ]);
+  const settings = readSettings(settingRows);
+  const ix = indexStats(
+    { days, missions, focusSessions, habits, habitLogs, stuckEvents, inbox, goals, areas, muraEvents },
+    { today, scoring: settings.scoring },
+  );
+  return { ix, settings };
+}
+
+function useStats<T>(name: string, params: readonly unknown[], fn: (ix: StatsIndex, settings: ResolvedSettings) => T) {
+  const today = useToday();
+  return useQuery({
+    queryKey: localKey(STATS_TABLES, "stats", name, today, ...params),
+    queryFn: async (): Promise<T> => {
+      const { ix, settings } = await loadStats(today);
+      return fn(ix, settings);
+    },
+  });
+}
+
+export function useScoreboard(date?: ISODate) {
+  return useStats("scoreboard", [date], (ix, s) => scoreboard(ix, { date, focusWeekTarget: s.focus_week_target }));
+}
+
+export function useCalendarMonth(yyyymm: string) {
+  return useStats("calendar", [yyyymm], (ix) => calendarMonth(ix, yyyymm));
+}
+
+export function useSeries(metric: SeriesMetric, days: number) {
+  return useStats("series", [metric, days], (ix) => series(ix, metric, days));
+}
+
+export function useWeekStats(week: { year: number; week: number }) {
+  return useStats("week", [week.year, week.week], (ix) => weekStats(ix, week));
+}
+
+export function useMonthStats(yyyymm: string) {
+  return useStats("month", [yyyymm], (ix) => monthStats(ix, yyyymm));
+}
+
+export function useCycleStats(date?: ISODate) {
+  return useStats("cycle", [date], (ix) => {
+    const cycle = cycleFor(date ?? ix.today);
+    return { ...cycleStats(ix, cycle), index: cycle.index };
+  });
+}
+
+export function useHabitGrid(days = 84) {
+  return useStats("habit-grid", [days], (ix) => habitGrid(ix, days));
+}
+
+/** One calendar day (Day sheet / week strip). */
+export function useCalendarDay(date: ISODate) {
+  return useStats("calendar-day", [date], (ix) => ({ cal: calendarDay(ix, date), scored: statsScoreOn(ix, date) }));
+}
+
+// ---------- areas, goals, focus ----------
+
+export function useAreas() {
+  return useQuery({
+    queryKey: localKey(["areas"], "all"),
+    queryFn: async (): Promise<Area[]> => (await store.getAll("areas")).sort((a, b) => a.name.localeCompare(b.name)),
+  });
+}
+
+export function useGoals() {
+  return useQuery({
+    queryKey: localKey(["goals"], "all"),
+    queryFn: async (): Promise<Goal[]> => (await store.getAll("goals")).sort((a, b) => a.name.localeCompare(b.name)),
+  });
+}
+
+/** Focus sessions whose app day falls in [from, to], oldest first. */
+export function useFocusSessions(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: localKey(["focus_sessions"], "range", from, to),
+    queryFn: async (): Promise<FocusSession[]> =>
+      (await store.getAll("focus_sessions"))
+        .filter((f) => {
+          const d = appDayOf(f.startedAt);
+          return d >= from && d <= to;
+        })
+        .sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
+  });
+}
+
+/** The running focus session (endedAt null), if any — newest first. */
+export function useRunningFocus() {
+  return useQuery({
+    queryKey: localKey(["focus_sessions"], "running"),
+    queryFn: async (): Promise<FocusSession | null> =>
+      (await store.getAll("focus_sessions"))
+        .filter((f) => f.endedAt === null)
+        .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null,
+  });
+}
+
+/** Missions in a date range (week planner), live, any slot except backlog. */
+export function useMissionsRange(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: localKey(["missions"], "range", from, to),
+    queryFn: async (): Promise<Mission[]> =>
+      (await store.getAll("missions")).filter((m) => m.dayDate != null && m.dayDate >= from && m.dayDate <= to && m.slot !== "backlog"),
   });
 }
 

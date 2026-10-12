@@ -1,4 +1,2 @@
-// TODO: spec in docs/11-dashboards-charts-calendar.md (Icon). Tailwind tokens; hand-rolled SVG; icons via lucide-react + core ICONS.
-export function Icon(_props: Record<string, unknown>) {
-  return null;
-}
+// Icon by meaning — see icons.tsx (Lucide + core ICONS). Kept as a separate module name from docs/11.
+export { KeyIcon as Icon, NamedIcon } from "./icons";

@@ -45,16 +45,16 @@ export function Login() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <LogoMark size={40} />
+      <div className="w-full max-w-md">
+        <div className="mb-8 flex items-center gap-4">
+          <LogoMark size={56} />
           <div>
-            <h1>Tatakae</h1>
-            <p className="text-sm text-legacy-muted">Plan the night before. Start strict. Show up.</p>
+            <h1 className="text-title-sm">Tatakae</h1>
+            <p className="text-ink-2">Plan the night before. Start strict. Show up.</p>
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="card space-y-4" noValidate aria-describedby={error ? "login-error" : undefined}>
+        <form onSubmit={onSubmit} className="card space-y-5 p-8" noValidate aria-describedby={error ? "login-error" : undefined}>
           <div>
             <label htmlFor="email" className="label">
               Email
@@ -97,18 +97,18 @@ export function Login() {
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
             />
-            <p id="device-hint" className="mt-1 text-sm text-legacy-muted">
+            <p id="device-hint" className="mt-1.5 text-sm text-ink-2">
               Shown in Settings → Devices, so you can sign this laptop out later.
             </p>
           </div>
 
           {error && (
-            <p id="login-error" role="alert" className="text-sm text-legacy-paper">
+            <p id="login-error" role="alert" className="card-inner text-sm font-medium">
               {error}
             </p>
           )}
 
-          <button type="submit" className="btn-primary w-full" disabled={busy || !email || password.length < 1}>
+          <button type="submit" className="btn-primary min-h-[52px] w-full" disabled={busy || !email || password.length < 1}>
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>

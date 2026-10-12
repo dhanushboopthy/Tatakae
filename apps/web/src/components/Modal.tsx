@@ -36,20 +36,22 @@ export function Modal(props: {
       onClick={(e) => {
         if (e.target === e.currentTarget) props.onClose(); // backdrop click
       }}
-      className={`m-auto w-[calc(100%-2rem)] ${props.wide ? "max-w-2xl" : "max-w-lg"} rounded-legacy-card border border-legacy-line bg-legacy-ink-2 p-0 text-legacy-paper shadow-overlay`}
+      className={`m-auto w-[calc(100%-2rem)] ${props.wide ? "max-w-2xl" : "max-w-lg"} rounded-card bg-surface p-0 text-ink shadow-float`}
     >
       {props.open && (
         <div className="p-6">
-          <div className="mb-4 flex items-start gap-4">
-            <div className="flex-1">
-              <h2 id={titleId}>{props.title}</h2>
+          <div className="mb-5 flex items-start gap-4">
+            <div className="flex-1 pt-1">
+              <h2 id={titleId} className="text-xl font-semibold">
+                {props.title}
+              </h2>
               {props.description && (
-                <p id={descId} className="mt-1 text-sm text-legacy-muted">
+                <p id={descId} className="mt-1 text-sm text-ink-2">
                   {props.description}
                 </p>
               )}
             </div>
-            <button type="button" className="btn-ghost -mr-2 -mt-2 px-2" aria-label="Close" onClick={props.onClose}>
+            <button type="button" className="icon-btn-sm -mr-1 -mt-1" aria-label="Close" onClick={props.onClose}>
               <CloseIcon />
             </button>
           </div>
