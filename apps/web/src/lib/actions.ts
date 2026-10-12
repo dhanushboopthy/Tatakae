@@ -6,7 +6,11 @@ import {
   reschedule,
   validateForge,
   type Anchor,
+  type Area,
   type Blocker,
+  type StoryPack,
+  type StoryRef,
+  type WatchQueueItem,
   type Day,
   type DayPatch,
   type FocusSession,
@@ -165,6 +169,10 @@ export async function saveHabit(h: Partial<Habit> & { behaviour: string }): Prom
   });
 }
 
+export async function removeHabit(id: string): Promise<void> {
+  await remove("habits", id);
+}
+
 // ---------- inbox ----------
 
 export async function capture(text: string): Promise<InboxItem | null> {
@@ -241,6 +249,51 @@ export async function endFocusSession(session: FocusSession, opts: { completed: 
     if (m && m.deletedAt == null) await write("missions", { ...m, actualMin: (m.actualMin ?? 0) + minutes });
   }
   return minutes;
+}
+
+// ---------- areas, goals, story ----------
+
+export async function saveArea(a: Partial<Area> & { name: string }): Promise<Area> {
+  return write("areas", {
+    id: a.id ?? newId(),
+    name: a.name.trim(),
+    standard: a.standard ?? null,
+    why: a.why ?? null,
+    alignmentScore: a.alignmentScore ?? null,
+    color: a.color ?? null,
+    icon: a.icon ?? null,
+  });
+}
+
+export async function removeArea(id: string): Promise<void> {
+  await remove("areas", id);
+}
+
+/** Import a validated reference pack: one story_refs row per entry (new ids; existing refs untouched). */
+export async function importStoryPack(pack: StoryPack): Promise<number> {
+  const existing = await store.getAll("story_refs");
+  const seen = new Set(existing.map((r) => `${r.title}|${r.moment}|${r.lesson}`.toLowerCase()));
+  let added = 0;
+  for (const ref of pack.refs) {
+    const key = `${ref.title}|${ref.moment}|${ref.lesson}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    await write("story_refs", { id: newId(), ...ref, muted: false, lastShownAt: null });
+    added++;
+  }
+  return added;
+}
+
+export async function setStoryMuted(ref: StoryRef, muted: boolean): Promise<void> {
+  await write("story_refs", { ...ref, muted });
+}
+
+export async function saveWatch(w: Omit<WatchQueueItem, "updatedAt" | "deletedAt">): Promise<void> {
+  await write("watch_queue", w);
+}
+
+export async function removeWatch(title: string): Promise<void> {
+  await remove("watch_queue", title);
 }
 
 // ---------- settings, anchors, recharge ----------

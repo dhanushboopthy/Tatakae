@@ -24,6 +24,8 @@ import {
   type Goal,
   type SeriesMetric,
   type StatsIndex,
+  type StoryRef,
+  type WatchQueueItem,
   isMissedDay,
   istTimeHHMM,
   monthOf,
@@ -413,6 +415,20 @@ export function useGoals() {
   return useQuery({
     queryKey: localKey(["goals"], "all"),
     queryFn: async (): Promise<Goal[]> => (await store.getAll("goals")).sort((a, b) => a.name.localeCompare(b.name)),
+  });
+}
+
+export function useStoryRefs() {
+  return useQuery({
+    queryKey: localKey(["story_refs"], "all"),
+    queryFn: async (): Promise<StoryRef[]> => (await store.getAll("story_refs")).sort((a, b) => a.title.localeCompare(b.title)),
+  });
+}
+
+export function useWatchQueue() {
+  return useQuery({
+    queryKey: localKey(["watch_queue"], "all"),
+    queryFn: async (): Promise<WatchQueueItem[]> => (await store.getAll("watch_queue")).sort((a, b) => a.title.localeCompare(b.title)),
   });
 }
 

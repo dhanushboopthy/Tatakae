@@ -1,5 +1,67 @@
-// Times (wake/ritual), focus default, anchors, recharge menu, scoring constants (locked unless even Sunday), Story: on/off, import pack, mute, disclaimer. Notifications + quiet hours (v4). Export (v4).
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { PageHeader } from "../components/PageHeader";
+import { AnchorsSettings } from "./settings/Anchors";
+import { AreasSettings } from "./settings/Areas";
+import { DataSettings } from "./settings/Data";
+import { DevicesSettings } from "./settings/Devices";
+import { GeneralSettings } from "./settings/General";
+import { HabitsSettings } from "./settings/Habits";
+import { RechargeSettings } from "./settings/Recharge";
+import { ScoringSettings } from "./settings/Scoring";
+import { StorySettings } from "./settings/Story";
+
+// Settings (docs/05): everything, including scoring constants (even-ISO-week Sundays), anchors, recharge
+// menu, areas, reference pack import + disclaimer, devices, data. Sections are anchors so other
+// screens can deep-link (e.g. /settings#habits).
+
+const SECTIONS = [
+  ["general", "General"],
+  ["habits", "Habits"],
+  ["anchors", "Anchors"],
+  ["recharge", "Recharge"],
+  ["areas", "Areas"],
+  ["story", "Story"],
+  ["scoring", "Scoring"],
+  ["devices", "Devices"],
+  ["data", "Data"],
+] as const;
+
 export function Settings() {
-  // TODO(v1)
-  return <main className="p-4"><h1 className="text-xl">Settings</h1></main>;
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
+  }, [hash]);
+
+  return (
+    <div className="mx-auto w-full max-w-wide space-y-6">
+      <PageHeader eyebrow="Settings" title="Settings" quiet />
+      <p className="card-inner text-sm">Misses turn grey. Nothing resets. Don't miss twice.</p>
+      <div className="grid gap-6 lg:grid-cols-[180px_minmax(0,1fr)]">
+        <nav aria-label="Settings sections" className="lg:sticky lg:top-8 lg:self-start">
+          <ul className="flex flex-wrap gap-1.5 lg:flex-col">
+            {SECTIONS.map(([id, label]) => (
+              <li key={id}>
+                <a href={`#${id}`} className="chip bg-surface font-medium hover:bg-surface-2 lg:w-full">
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div className="min-w-0 space-y-6">
+          <GeneralSettings />
+          <HabitsSettings />
+          <AnchorsSettings />
+          <RechargeSettings />
+          <AreasSettings />
+          <StorySettings />
+          <ScoringSettings />
+          <DevicesSettings />
+          <DataSettings />
+        </div>
+      </div>
+    </div>
+  );
 }

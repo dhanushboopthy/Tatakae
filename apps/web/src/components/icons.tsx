@@ -154,8 +154,8 @@ export function KeyIcon({ name, ...rest }: IconProps & { name: IconKey }) {
 }
 
 /** Icon by lucide name stored on a row (areas.icon); falls back to a dot. */
-export function NamedIcon({ name, ...rest }: IconProps & { name: string | null | undefined }) {
-  const L = name && name in BY_NAME ? BY_NAME[name as keyof typeof BY_NAME] : Circle;
+export function NamedIcon({ icon, ...rest }: Omit<IconProps, "name"> & { icon: string | null | undefined }) {
+  const L = icon && icon in BY_NAME ? BY_NAME[icon as keyof typeof BY_NAME] : Circle;
   return <L size={rest.size ?? 20} strokeWidth={rest.strokeWidth ?? 1.75} aria-hidden="true" focusable="false" {...rest} />;
 }
 
