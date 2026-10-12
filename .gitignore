@@ -18,8 +18,6 @@ data/
 !.env.example
 deploy/.env
 references/*.local.json
-scripts/notion-import/export/
-scripts/notion-import/import.json
 
 # terraform
 infra/terraform/.terraform/

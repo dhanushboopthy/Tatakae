@@ -17,3 +17,11 @@
 - docs: `docs/MANUAL-STEPS.md`, the ordered by-hand steps for Phase 0.
 - api (0.9): env validation with readable errors, migrations + default rows on boot, JSON errors, graceful shutdown; hashed session tokens with sliding expiry, signed web cookie / mobile bearer / API_TOKEN, login rate limit, `/session` login, logout, me, devices.
 - api (v1): generic row store with change log; days (score, write-off limit, forge), missions (plan lock 423, edit-locked → mura, reschedule), habits + logs, inbox processing, settings (even-Sunday guard), `POST /sync`; route tests (written, not yet run).
+- core (Run 2): stats engine (`stats.ts`: scoreboard, calendar, series, week/month/cycle stats, habits, focus hours, goal progress); `focus_sessions` synced; `focus_week_target` setting; D19 mobile typecheck fix.
+- api (Run 2): `/stats/*` and `/focus` CRUD; generic CRUD for v2 resources; `/goals` (hell-yeah gate, max 4 active, also through sync), `/areas`, `/experiments` (one running), `/stuck`, `/reviews` (one per period; weekly unlocks a reward), `/story` (import, next, mute, watch queue).
+- web (Run 2): Soft Bento foundation (CSS-variable tokens, auto dark theme, icon rail, Lucide icons, every chart component), bento dashboard, Focus timer, Calendar month + week planner, Inbox triage, Capture (share target), Welcome back, Morning, home routing, Settings (all sections), PWA icons, Weekly Control Room, Monthly review, Cycle page.
+- v3 api: `/notes` CRUD + FTS5 search over plain text (`notes.body_text`, migration 0003), `/files` multipart upload to disk + optional Object Storage copy, `/applications`, `/stories`, `/japanese`.
+- v3 web: Notes (list, search, tags, goal/area links, can-explain / can-implement / misunderstood, BlockNote editor with autosave, attachments); Applications, Stories (STAR) and Japanese log screens under the Notes rail item.
+- v4 api: `GET /export`, `GET /system/jobs`, nightly JSON backup (local newest 7 + Object Storage newest 30) logged to `job_runs`, public `GET /app/version`, laptop web push (`/push/*`, 06:30 morning message).
+- v4 web: Settings → Notifications (push opt-in + test), service-worker push handler, "edited elsewhere" note from sync conflicts, Playwright smoke test (written; dependency not installed yet).
+- Dropped: Notion import (no Notion data; the app starts fresh). `scripts/notion-import/` removed.

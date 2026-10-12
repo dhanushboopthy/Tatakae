@@ -5,6 +5,12 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 > **Status 2026-10-12 morning:** the overnight run is over. It was stopped by a usage limit, and then the Soft Bento UI update was merged (`c786fc6`).
 > - The "no tests / no typecheck" and "never ask" rules applied only to that night. `pnpm typecheck` and `pnpm test` now run, and 340/340 tests pass.
 > - **UI tokens changed.** See *Progress* and D15–D20 below before touching any screen.
+>
+> **Run 2 (started 2026-10-12, unattended): finish the whole website, v1 → v4. Mobile waits.** The owner chose:
+> - Scope: every web screen in v1–v4, plus the core/api/db work those screens need.
+> - Styling: restyle everything to Soft Bento (login, shell and night ritual included), then delete the web `legacy-*` tokens.
+> - Checks: `pnpm typecheck` and the affected tests before each commit, fixing failures as they come up.
+> - Git: one Conventional Commit per task on `main`. No questions mid-run; decisions go in the *Decisions log* (R2-…).
 
 ## Ground rules (owner's instructions for tonight)
 - **Do not run tests or typecheck.** Write test files where useful, but do not run them or try to make them pass. Owner runs them in the morning.
@@ -92,7 +98,15 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - [x] Soft Bento UI update merged (`c786fc6`):
   - Content: docs/10 + docs/11 + docs/design (references, mockups), core `stats.ts` + `icons.ts` (stubs), `focus_sessions` table + `missions.planned_start`, `areas.color/icon`, `goals.target_points` (migration `0002_soft_bento_ui`), web `/calendar` route + nav, mobile Calendar tab + `capture` modal + `day/[date]`, 40+ chart/nav component stubs (web + mobile), lucide + Plus Jakarta Sans deps, `.claude/skills/tatakae-guardrails/SKILL.md`.
   - Checks after merge: typecheck passes for core, api and web; mobile has 1 error from before the merge (D19); tests 340/340.
-- **Next:** finish v1 web (Today onward) and v1 mobile (Focus onward) on the legacy tokens or restyled to Soft Bento (owner decides; START_PROMPT prompt 2 runs the design-system pass first), then v2 → v4 from the task queue.
+- [x] **Run 2 (12 Oct, website v1 → v4)**, one commit per task on `main`:
+  - `c4d994d` core stats engine · `ec69689` api /stats + /focus · `f0cdacb` web Soft Bento foundation · `3b5e88c` focus, calendar, week planner · `21d3c78` inbox, capture, welcome back, morning, routing · `d4a4cb1` settings + PWA icons · `f658207` api v2 routes · `6e62d5c` weekly / monthly / cycle.
+  - `f01a614` v3 api: notes + FTS5, files, applications, stories, japanese log.
+  - `9fd56da` v3 web: Notes (BlockNote), Applications, Stories, Japanese.
+  - `12dd049` v4 api: export, job log, nightly backup, app version, web push.
+  - `18eae3d` v4 web: push opt-in, conflict note, Playwright smoke test (written).
+  - Final checks: typecheck clean (core, api, web); tests core 285, api 95, web 37; `vite build` OK.
+  - **Not done:** passkeys (R2-12), Playwright install (R2-13), visual check (R2-17), mobile (out of scope for Run 2).
+- **Next:** passkeys once the registry is reachable; then mobile (v1 Focus onward).
 
 ## Decisions log
 - D1: Git author is the existing git config (`dhanush-superdom <dhanush.boopathy@superdom.ai>`), which is a work email. It was left unchanged as instructed. Run `git config user.email` in this repo if you want your personal email instead.
@@ -154,6 +168,25 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
   - `focus_sessions` is **not** in `SYNC_TABLES` yet. Add a row schema, PK and API registry entry when `/focus` is built.
   - `plannedStart` is a free field (not plan-locked).
   - Plus Jakarta Sans is installed but not imported yet, so it falls back to Inter/system.
+
+### Run 2 decisions (R2-…)
+- R2-1: New setting `focus_week_target` (600 minutes/week) drives the focus-hours box; also in `db/seed.sql`.
+- R2-2: The web `BottomNav` was removed. It is a phone pattern; the website uses the icon rail (md+) and top pills (narrow).
+- R2-3: The display name for the greeting is stored locally (`lib/profile.ts`, localStorage, per laptop), not as a synced setting.
+- R2-4: The story pack is imported client-side: Settings → Story validates the pack with core `storyPack` and writes `story_refs` rows through the outbox (sync), so it works offline. `POST /story/import` exists for scripts.
+- R2-5: Web dashboards compute scores from the local store with core `stats.ts` (offline-first). The `/stats/*` routes give the same numbers for the phone and scripts.
+- R2-6: The week planner's time rail runs 06:00–24:00.
+- R2-7: v3 tables are REST-only through `localCrudRoutes` (lib/crud.ts + lib/local.service.ts). Migration `0003_notes_body_text` adds `notes.body_text` (plain text from core `blocksToText`) and rebuilds the FTS triggers to index it; before, the raw BlockNote JSON keys matched every search. Old notes are backfilled on boot. Search input is turned into quoted prefix terms (core `ftsQuery`), so it can never be parsed as FTS syntax.
+- R2-8: Files live at `FILES_DIR/files/<id>` (same key in Object Storage); `files.name` keeps the original name. Only images, PDF and plain text are served inline; everything else is a download, with `CSP: sandbox` and `nosniff`, so an uploaded HTML/SVG can't run as the app's origin. Delete is soft and the bytes stay for restores. An Object Storage failure doesn't fail the upload (`offsite: false`).
+- R2-9: BlockNote 0.55 (`@blocknote/core`, `react`, `mantine`) is lazy-loaded in its own chunk (≈ 943 KB, 284 KB gzipped). Colours come from CSS overrides of BlockNote's variables in `index.css`; BlockNote's theme object follows the OS colour scheme, not the app's. Installed with pnpm 10.27 and `npm_config_manage_package_manager_versions=false`; the lockfile stays v9.
+- R2-10: Applications, Stories and the Japanese log share the Notes rail item through library tabs instead of three new rail icons (the rail stays at 8).
+- R2-11: Nightly backup = local `BACKUP_DIR` (default `<db dir>/backups`, newest 7, mode 600) + Object Storage `backups/` (newest 30). The export leaves out `sessions`, `changes`, `sync_items` and `push_subscriptions`, and lists files without their bytes.
+- R2-12: **Passkeys not built.** The npm registry started refusing requests mid-run, even with the host declared, so `@simplewebauthn/server` and `@simplewebauthn/browser` couldn't be installed. WebAuthn verification was not hand-rolled instead. To do: `pnpm add --filter api @simplewebauthn/server` and `pnpm add --filter web @simplewebauthn/browser`, then the routes, a `passkeys` table, the Settings screen and the login button.
+- R2-13: Playwright smoke test written (`apps/web/e2e/smoke.e2e.ts`, `playwright.config.ts`, `pnpm --filter web e2e`), but `@playwright/test` is not installed (same registry problem). The file is named `*.e2e.ts` so vitest never collects it, and `e2e/` is outside the web tsconfig.
+- R2-14: **Notion import dropped** (owner, 12 Oct: there is no Notion data; the app starts fresh). `scripts/notion-import/` removed; the phase gates and docs/01 no longer mention Notion.
+- R2-15: Web push is opt-in per laptop and sends only the same 06:30 morning message the phone shows, so it doesn't add a new kind of reminder (the ≤ 3/day rule). Each send is a `job_runs` row; subscriptions the push service reports gone (404/410) are deleted. App version comes from `MIN_MOBILE_VERSION` (default 0.1.0) and `LATEST_APK_URL`.
+- R2-16: Conflict UI: one calm toast per sync round plus an "Edited elsewhere" pill on the mission card for 10 minutes. Kinds: newer (another device saved later), kept (the server refused: plan lock, guards), undone (refused create).
+- R2-17: **Visual check skipped.** tsx can't create its IPC pipe in the sandbox, so the API was bundled with tsup into `apps/api/dist` (removed afterwards). Each sandboxed command gets its own loopback, so the servers must run inside the same command. Firefox is a Snap and `snap-confine` can't run in the sandbox. Demo data seeded over REST against the running API without errors, which exercised the v2/v3 routes live.
 
 ## Core API reference (`@tatakae/core`)
 _Signatures only; see JSDoc in `packages/core/src`. Keep adding Progress / Decisions entries in their sections above, not here._
@@ -235,3 +268,25 @@ _JSON in and out, with camelCase rows exactly as in core's row schemas (real boo
   - Every item ends up in `applied` or `conflicts`.
   - Conflicts: LWW loss or tie, an invalid row, a locked mission change without `meta.lockReason`, the scoring guard, and a rejected forge or write-off (the latter two carry the stored row).
   - Plain REST writes also show up in later pulls.
+
+**Stats and focus (Run 2)**: all numbers come from core `stats.ts`.
+- `GET /stats/scoreboard?date=` → `{ date, boxes: MetricBox[] }` · `/stats/calendar/:yyyymm` → `{ month, days: CalendarDay[] }` · `/stats/series?metric=&days=` → `Series` · `/stats/week/:isoWeek` ("2026-W43") → `WeekStats` · `/stats/month/:yyyymm` → `MonthStats` · `/stats/cycle?date=` → `CycleStats` · `/stats/habits?days=` → `HabitGrid` · `/stats/focus-hours` → `{ counts: number[7][24] }`
+- `/focus`: `GET ?from=&to=` → `{ sessions }` (by app day, newest first) · `POST` focusInput → 201 `{ session }` · `PATCH /:id` · `DELETE /:id` (soft)
+
+**v2 resources (Run 2)**: `/goals`, `/areas`, `/experiments`, `/reviews` follow lib/crud.ts: `GET /` → `{ items }`, `GET /:id`, `POST` (+ `id?`) → 201 `{ item }`, `PATCH /:id`, `DELETE /:id` (soft). Every write is recorded for sync.
+- `/goals`: a goal must pass the hell-yeah gate to be active → 400; a 5th active goal → 409 `too_many_goals` (the same rules apply through sync).
+- `/experiments`: one running at a time → 409 `experiment_running`; `end ≥ start`.
+- `/reviews`: one per type and period → 409 `review_exists`; creating a weekly review unlocks one reward episode.
+- `/stuck`: `GET ?from=&to=` → `{ items }`; `POST` stuckInput → 201 `{ item }`.
+- `/story`: `GET /` · `POST /import` storyPack → `{ added, skipped }` · `PATCH /:id` · `GET /next?moment=` → `{ story | null }` · watch queue `GET/POST /watch`, `PATCH/DELETE /watch/:title`.
+
+**v3 (REST only, not synced)**: `/notes`, `/applications`, `/stories` and `/japanese` follow lib/crud.ts `localCrudRoutes`, with the same shapes as above.
+- `/notes`: `GET ?tag=&goalId=` → `{ items: NoteSummary[] }` (no body; `excerpt`; newest first) · `GET /search?q=` → `{ items: NoteSearchHit[] }` (title weighted 10×; 50 max) · `GET /:id` → `{ item: Note }` (`bodyJson` = BlockNote blocks, `tags` normalised).
+- `/files`: `POST` multipart `file` (≤ 20 MB) + `noteId?` → 201 `{ item: FileMeta, offsite }` · `GET ?noteId=` → `{ items }` · `GET /:id` → the bytes · `DELETE /:id` (soft).
+- `/applications`: sorted offer → interview → applied → wishlist → closed, then by `nextStepOn`. `/stories`: STAR fields + tags. `/japanese`: `GET ?from=&to=` (IST dates), newest first; `minutes` 1–600.
+
+**v4**
+- `GET /export` → `{ app: "tatakae", format: 1, exportedAt, tables }` as a download. `GET /system/jobs` → `{ runs }` (newest 50).
+- `GET /app/version` (public) → `{ minMobileVersion, latestApkUrl | null }`.
+- `/push`: `GET /key` → `{ publicKey }` (503 `push_off` without VAPID) · `POST /subscribe` `{ endpoint (https), keys: { p256dh, auth }, device? }` → 201 · `DELETE /subscribe` `{ endpoint }` · `POST /test` `{ endpoint }` → `{ sent }`.
+- Jobs: 02:00 IST backup (`job: "backup"`), 06:30 IST morning push (`job: "morning_push"`, only with VAPID keys and subscriptions).

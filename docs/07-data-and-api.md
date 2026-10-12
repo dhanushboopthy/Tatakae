@@ -41,10 +41,13 @@ Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 | GET | /stats/month/:yyyymm, /stats/cycle, /stats/habits | v2 | |
 | CRUD | /focus | v1 | focus sessions |
 | CRUD | /goals, /areas, /reviews, /experiments, /stuck, /story | v2 | `/story/next?moment=` |
-| CRUD | /notes, GET /notes/search?q= | v3 | FTS5 |
-| POST | /files | v3 | multipart |
+| CRUD | /notes, GET /notes/search?q= | v3 | FTS5 over `notes.body_text` (plain text of the BlockNote body) |
+| POST, GET, DELETE | /files[/:id] | v3 | multipart ≤ 20 MB → FILES_DIR (+ Object Storage copy) |
+| CRUD | /applications, /stories, /japanese | v3 | REST only (not synced); `/japanese?from=&to=` |
 | GET | /export | v4 | full JSON |
-| POST | /push/subscribe | v4 | laptop web push |
+| GET | /system/jobs | v4 | `job_runs`, newest first |
+| GET | /push/key, POST /push/test | v4 | 503 `push_off` without VAPID keys |
+| POST/DELETE | /push/subscribe | v4 | laptop web push (06:30 morning message only) |
 
 ## Sync protocol
 Request `POST /api/sync`

@@ -18,7 +18,7 @@ export const envSchema = z
     OWNER_PASSWORD_HASH: z.string().min(1), // argon2id, generate with deploy/scripts/hash-password.sh
     SESSION_SECRET: z.string().min(32),
     SESSION_DAYS: z.coerce.number().int().min(1).max(365).default(90),
-    API_TOKEN: z.string().min(32).optional(), // bearer token for scripts (notion import)
+    API_TOKEN: z.string().min(32).optional(), // bearer token for scripts (curl, one-off maintenance)
     DEV_BYPASS_AUTH: z.enum(["0", "1"]).default("0"),
 
     // Idle-reclaim guard (see cron/keepWarm.ts). Kept a no-op on purpose.

@@ -1,7 +1,7 @@
 # 01 · Overview
 
 ## What TATAKAE is
-A personal execution system for one person (Dhanush). It replaces a Notion setup with software that **enforces a method** rather than storing tasks:
+A personal execution system for one person (Dhanush): software that **enforces a method** rather than storing tasks. It starts fresh (nothing is imported):
 
 1. **Plan the night before** (laptop, ≤ 5 minutes): close today, pick three ranked missions for tomorrow, lock the plan.
 2. **Start strict in the morning** (phone, ≤ 10 seconds): one screen, one P1 mission, one Start button.
@@ -38,5 +38,5 @@ XP, levels, coins, leaderboards, social features, AI auto-scheduling, multi-user
 ## Success criteria
 - v1: 7 consecutive days run entirely in the app (rituals on laptop, daily actions on phone).
 - v2: the Sunday review on 15 Nov 2026 happens in the app.
-- v3: one full week without opening Notion.
-- v4: Notion archived on 3 Jan 2027; a disaster-recovery restore has been rehearsed.
+- v3: one full week of notes kept in the app.
+- v4: a disaster-recovery restore has been rehearsed.

@@ -80,7 +80,6 @@ packages/core       shared logic
 db/                 schema + migrations
 deploy/             compose, Caddyfile, litestream, cloud-init, scripts
 infra/terraform     OCI resources
-scripts/notion-import
 references/         story pack format
 docs/               you are here
 .claude/skills      project-specific Claude Code skills
