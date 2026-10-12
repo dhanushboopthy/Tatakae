@@ -26,6 +26,12 @@ import {
   type StatsIndex,
   type StoryRef,
   type WatchQueueItem,
+  type Experiment,
+  type Review,
+  type WeekStats,
+  formatIsoWeek,
+  isoWeek,
+  monthRange,
   isMissedDay,
   istTimeHHMM,
   monthOf,
@@ -47,7 +53,7 @@ import {
   type SyncTable,
 } from "@tatakae/core";
 import { getSyncClient, localKey, store } from "../sync/engine";
-import { bySlot, ifThenTemplates, isDayClosed, isDayStarted, missionsOn, writeOffsUsed } from "./plan";
+import { anchorsFor, bySlot, freeMinutes, ifThenTemplates, isDayClosed, isDayStarted, missionsOn, plannedMinutes, writeOffsUsed } from "./plan";
 
 // TanStack Query hooks that read from the LOCAL IndexedDB store (offline-first). The sync engine
 // invalidates ["local", tables, …] keys when rows of those tables change. Write helpers live in
@@ -393,6 +399,23 @@ export function useCycleStats(date?: ISODate) {
   });
 }
 
+/** Week stats for every ISO week touching a month (monthly review block chart). */
+export function useMonthWeeks(yyyymm: string) {
+  return useStats("month-weeks", [yyyymm], (ix) => {
+    const { start, end } = monthRange(yyyymm);
+    const out: WeekStats[] = [];
+    for (let d = start; d <= end; d = addDays(d, 7)) out.push(weekStats(ix, isoWeek(d)));
+    const last = isoWeek(end);
+    if (!out.some((w) => w.week === formatIsoWeek(last))) out.push(weekStats(ix, last));
+    return out;
+  });
+}
+
+/** 30-day final-score sparkline series. */
+export function useScoreSeries(days = 30) {
+  return useStats("score-series", [days], (ix) => series(ix, "final", days));
+}
+
 export function useHabitGrid(days = 84) {
   return useStats("habit-grid", [days], (ix) => habitGrid(ix, days));
 }
@@ -415,6 +438,55 @@ export function useGoals() {
   return useQuery({
     queryKey: localKey(["goals"], "all"),
     queryFn: async (): Promise<Goal[]> => (await store.getAll("goals")).sort((a, b) => a.name.localeCompare(b.name)),
+  });
+}
+
+export function useReviews() {
+  return useQuery({
+    queryKey: localKey(["reviews"], "all"),
+    queryFn: async (): Promise<Review[]> =>
+      (await store.getAll("reviews")).sort((a, b) => b.periodStart.localeCompare(a.periodStart)),
+  });
+}
+
+export function useExperiments() {
+  return useQuery({
+    queryKey: localKey(["experiments"], "all"),
+    queryFn: async (): Promise<Experiment[]> => (await store.getAll("experiments")).sort((a, b) => b.start.localeCompare(a.start)),
+  });
+}
+
+/** Lock-edit reasons (mura events) whose app day falls in [from, to], newest first. */
+export function useMuraEvents(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: localKey(["mura_events", "missions"], "range", from, to),
+    queryFn: async () => {
+      const [events, missions] = await Promise.all([store.getAll("mura_events"), store.getAll("missions")]);
+      return events
+        .filter((e) => {
+          const d = appDayOf(e.at);
+          return d >= from && d <= to;
+        })
+        .sort((a, b) => b.at.localeCompare(a.at))
+        .map((e) => ({ ...e, title: missions.find((m) => m.id === e.missionId)?.title ?? "A mission" }));
+    },
+  });
+}
+
+/** Planned minutes vs budget per day (Muri): budget = capacityRatio × free minutes (wake → ritual − anchors). */
+export function useCapacityRange(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: localKey(["missions", "anchors", "settings"], "capacity", from, to),
+    queryFn: async () => {
+      const [missions, anchors, settingRows] = await Promise.all([store.getAll("missions"), store.getAll("anchors"), store.getAll("settings")]);
+      const s = readSettings(settingRows);
+      const out: { date: ISODate; planned: number; budget: number }[] = [];
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        const free = freeMinutes({ wakeTime: s.wake_time, ritualTime: s.ritual_time, anchors: anchorsFor(anchors, d) });
+        out.push({ date: d, planned: plannedMinutes(missionsOn(missions, d)), budget: Math.floor(free * s.scoring.capacityRatio) });
+      }
+      return out;
+    },
   });
 }
 

@@ -6,8 +6,12 @@ import {
   reschedule,
   validateForge,
   type Anchor,
+  rewardTarget,
   type Area,
   type Blocker,
+  type Experiment,
+  type Goal,
+  type Review,
   type StoryPack,
   type StoryRef,
   type WatchQueueItem,
@@ -294,6 +298,37 @@ export async function saveWatch(w: Omit<WatchQueueItem, "updatedAt" | "deletedAt
 
 export async function removeWatch(title: string): Promise<void> {
   await remove("watch_queue", title);
+}
+
+// ---------- reviews, experiments, goals ----------
+
+export type ReviewFields = Omit<Review, "id" | "updatedAt" | "deletedAt">;
+
+/**
+ * Save a review (create or update). Completing a weekly review for the first time unlocks one reward
+ * episode (core rewardTarget) and may show a story line. Returns the unlocked show's title, if any.
+ */
+export async function saveReview(fields: ReviewFields, existing: Review | null): Promise<string | null> {
+  await write("reviews", { ...(existing ?? { id: newId() }), ...fields });
+  if (existing || fields.type !== "week") return null;
+  void announceMoment("weekly_review");
+  const queue = await store.getAll("watch_queue");
+  const target = rewardTarget(queue);
+  if (!target) return null;
+  await write("watch_queue", { ...target, unlocked: target.unlocked + 1, status: target.status === "queued" ? "watching" : target.status });
+  return target.title;
+}
+
+export async function saveExperiment(e: Omit<Experiment, "id" | "updatedAt" | "deletedAt"> & { id?: string }): Promise<void> {
+  await write("experiments", { ...e, id: e.id ?? newId() });
+}
+
+export async function saveGoal(g: Omit<Goal, "id" | "updatedAt" | "deletedAt"> & { id?: string }): Promise<Goal> {
+  return write("goals", { ...g, id: g.id ?? newId() });
+}
+
+export async function removeGoal(id: string): Promise<void> {
+  await remove("goals", id);
 }
 
 // ---------- settings, anchors, recharge ----------
