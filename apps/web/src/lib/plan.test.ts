@@ -4,6 +4,8 @@ import {
   anchorsFor,
   bySlot,
   decideHome,
+  dragRange,
+  durationLabel,
   elapsedMinutes,
   firstFreeSlot,
   focusRemainingMs,
@@ -14,6 +16,8 @@ import {
   istMinutesOf,
   railSpan,
   railTimeAt,
+  rangeLabel,
+  resizeTo,
   isDayClosed,
   isDayStarted,
   missionsOn,
@@ -219,5 +223,25 @@ describe("week planner rail", () => {
     expect(railTimeAt(0.5 + 7 / 1080)).toBe("15:00");
     expect(railTimeAt(0.5 + 8 / 1080)).toBe("15:15");
     expect(railTimeAt(1)).toBe("23:45");
+  });
+
+  const at = (min: number) => (min - 6 * 60) / 1080; // rail position of a wall-clock minute
+  it("dragRange snaps both ends, works upwards and keeps a minimum length", () => {
+    expect(dragRange(at(9 * 60 + 7), at(10 * 60 + 53))).toEqual({ startMin: 9 * 60, durationMin: 120 });
+    expect(dragRange(at(11 * 60), at(9 * 60 + 30))).toEqual({ startMin: 9 * 60 + 30, durationMin: 90 });
+    expect(dragRange(at(14 * 60), at(14 * 60), { minDur: 50 })).toEqual({ startMin: 14 * 60, durationMin: 50 });
+    expect(dragRange(at(23 * 60 + 50), at(23 * 60 + 50), { minDur: 50 })).toEqual({ startMin: 23 * 60 + 10, durationMin: 50 });
+    expect(dragRange(-1, 2)).toEqual({ startMin: 6 * 60, durationMin: 18 * 60 });
+  });
+  it("resizeTo keeps at least one step and ends on the rail", () => {
+    expect(resizeTo(9 * 60, at(10 * 60 + 20))).toBe(75);
+    expect(resizeTo(9 * 60, at(8 * 60))).toBe(15);
+    expect(resizeTo(23 * 60, 1.5)).toBe(60);
+  });
+  it("duration and range labels", () => {
+    expect(durationLabel(45)).toBe("45 min");
+    expect(durationLabel(120)).toBe("2 h");
+    expect(durationLabel(90)).toBe("1 h 30 min");
+    expect(rangeLabel(9 * 60 + 30, 90)).toBe("09:30–11:00 · 1 h 30 min");
   });
 });

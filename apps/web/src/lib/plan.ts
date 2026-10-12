@@ -192,6 +192,53 @@ export function railTimeAt(fraction: number, step = 15, rail: { startMin: number
   return hhmmOf(snapped);
 }
 
+type Rail = { startMin: number; endMin: number };
+
+/** Minutes since midnight for a rail position (0..1), snapped to `step` and kept on the rail. */
+export function railMinutesAt(fraction: number, step = 15, rail: Rail = RAIL): number {
+  const raw = rail.startMin + Math.max(0, Math.min(1, fraction)) * (rail.endMin - rail.startMin);
+  return Math.max(rail.startMin, Math.min(rail.endMin, Math.round(raw / step) * step));
+}
+
+/**
+ * Drag-to-create: the block between two rail positions (either order), snapped, at least `minDur`
+ * minutes and inside the rail.
+ */
+export function dragRange(a: number, b: number, opts: { step?: number; minDur?: number; rail?: Rail } = {}): { startMin: number; durationMin: number } {
+  const step = opts.step ?? 15;
+  const rail = opts.rail ?? RAIL;
+  const minDur = Math.max(step, opts.minDur ?? step);
+  let s = railMinutesAt(Math.min(a, b), step, rail);
+  let e = railMinutesAt(Math.max(a, b), step, rail);
+  if (e - s < minDur) e = s + minDur;
+  if (e > rail.endMin) {
+    e = rail.endMin;
+    s = Math.max(rail.startMin, e - minDur);
+  }
+  return { startMin: s, durationMin: e - s };
+}
+
+/** Resize: duration from `startMin` to the rail position `fraction`, snapped, ≥ one step, ending on the rail. */
+export function resizeTo(startMin: number, fraction: number, opts: { step?: number; rail?: Rail } = {}): number {
+  const step = opts.step ?? 15;
+  const rail = opts.rail ?? RAIL;
+  const end = Math.min(rail.endMin, railMinutesAt(fraction, step, rail));
+  return Math.max(step, end - startMin);
+}
+
+/** "1 h 30 min", "45 min", "2 h". */
+export function durationLabel(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** "09:30–11:00 · 1 h 30 min" */
+export function rangeLabel(startMin: number, durationMin: number): string {
+  return `${hhmmOf(startMin)}–${hhmmOf(startMin + durationMin)} · ${durationLabel(durationMin)}`;
+}
+
 // ---------- focus timer ----------
 
 /** Remaining milliseconds of a block started at `startedAt` (derived from start time, never ticked). */

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { isoWeek, monthRange, summarizeWeek, type ISODate } from "@tatakae/core";
+import { monthRange, summarizeWeek, type ISODate } from "@tatakae/core";
 import { DayDetail } from "../components/DayDetail";
 import { DayLegend } from "../components/DayCircle";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/icons";
@@ -13,9 +13,9 @@ import { useCalendarMonth, useScoreboard, useToday } from "../lib/hooks";
 
 // Web Calendar (docs/11 §4, refs 06/07): Month view (DayCircle + mini 3-segment bar + screen minutes per
 // cell, day sheet on the right) ↔ Week planner (time rail, anchors, focus sessions, planned missions,
-// current-time line). Month / Week segmented pills; ‹ › and a "This month" pill.
+// current-time line, drag-to-create) ↔ Day planner (the same, one wide column). Month / Week / Day pills.
 
-type View = "month" | "week";
+type View = "month" | "week" | "day";
 
 const monthTitle = (yyyymm: string) =>
   new Date(`${yyyymm}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -29,7 +29,8 @@ function shiftMonth(yyyymm: string, n: number): string {
 export function Calendar() {
   const today = useToday();
   const [params, setParams] = useSearchParams();
-  const view: View = params.get("view") === "week" ? "week" : "month";
+  const raw = params.get("view");
+  const view: View = raw === "week" || raw === "day" ? raw : "month";
   const month = /^\d{4}-\d{2}$/.test(params.get("m") ?? "") ? (params.get("m") as string) : today.slice(0, 7);
   const [selected, setSelected] = useState<ISODate>(today);
 
@@ -46,15 +47,16 @@ export function Calendar() {
     <div className="page">
       <PageHeader
         eyebrow="Calendar"
-        title={view === "month" ? monthTitle(month) : "Week planner"}
+        title={view === "month" ? monthTitle(month) : view === "week" ? "Week planner" : "Day planner"}
         actions={
-          <SegmentedPills
+          <SegmentedPills<View>
             label="Calendar view"
             value={view}
             onChange={(v) => set({ view: v === "month" ? null : v })}
             options={[
               { value: "month", label: "Month" },
               { value: "week", label: "Week" },
+              { value: "day", label: "Day" },
             ]}
           />
         }
@@ -68,7 +70,7 @@ export function Calendar() {
           onMonth={(m) => set({ m: m === today.slice(0, 7) ? null : m })}
         />
       ) : (
-        <WeekPlanner initialWeek={isoWeek(selected)} />
+        <WeekPlanner key={view} mode={view} initialDate={selected} />
       )}
     </div>
   );
