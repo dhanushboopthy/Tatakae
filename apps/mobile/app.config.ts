@@ -1,6 +1,27 @@
 import type { ExpoConfig } from "expo/config";
 
+// Evaluated by the Expo CLI in Node. The app tsconfig has no @types/node, so type the two Node
+// APIs used here locally instead of adding a dependency.
+declare const __dirname: string;
+const { existsSync } = require<{ existsSync(p: string): boolean }>("fs");
+const { join } = require<{ join(...parts: string[]): string }>("path");
+
 // Phone app (Android first). iOS stays possible but is not built or shipped.
+//
+// Env:
+// - EXPO_PUBLIC_API_URL  production API origin, e.g. https://tatakae.example.me (no trailing /api)
+// - EAS_PROJECT_ID       set once the EAS project exists; enables EAS Update (v4). Without it the
+//                        build has no `updates` block, so local/CI builds never point at a placeholder.
+
+const easProjectId = process.env.EAS_PROJECT_ID?.trim() || null;
+
+/** Only reference artwork that exists, so `expo prebuild` works before the icon is drawn. */
+const asset = (file: string): string | undefined =>
+  existsSync(join(__dirname, "assets", file)) ? `./assets/${file}` : undefined;
+
+const icon = asset("icon.png"); // TODO(phase0): original 1024×1024 icon, no franchise art
+const adaptiveIcon = asset("adaptive-icon.png");
+
 const config: ExpoConfig = {
   name: "Tatakae",
   slug: "tatakae",
@@ -8,11 +29,14 @@ const config: ExpoConfig = {
   version: "0.1.0",
   orientation: "portrait",
   userInterfaceStyle: "dark",
-  icon: "./assets/icon.png",               // TODO(phase0): original icon, no franchise art
+  backgroundColor: "#0b0b0f",
+  ...(icon ? { icon } : {}),
   android: {
-    package: "dev.OWNER.tatakae",          // TODO(phase0): replace OWNER
-    adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#0b0b0f" },
-    permissions: ["POST_NOTIFICATIONS", "VIBRATE"],
+    // Owner can change this before the first release build; changing it later means a fresh install.
+    package: "dev.dhanush.tatakae",
+    ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#0b0b0f" } } : {}),
+    permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
+    softwareKeyboardLayoutMode: "resize",
     // TODO(v2): PACKAGE_USAGE_STATS (usage access, granted by user in system settings)
   },
   plugins: [
@@ -23,10 +47,11 @@ const config: ExpoConfig = {
     "expo-background-task",
     // TODO(v2): "expo-share-intent", "expo-quick-actions", "react-native-android-widget"
   ],
-  updates: { url: "https://u.expo.dev/TODO_EAS_PROJECT_ID" }, // TODO(v4) EAS Update
+  ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
   runtimeVersion: { policy: "appVersion" },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8787", // Android emulator → host
+    ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
   },
 };
 
