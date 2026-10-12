@@ -33,8 +33,8 @@ interface NavItem {
   to: string;
   label: string;
   Icon: ComponentType<IconProps>;
-  /** Path prefix that marks the item active (defaults to `to`). */
-  match?: string;
+  /** Path prefixes that mark the item active (defaults to `to`). */
+  match?: readonly string[];
 }
 
 const NAV: readonly NavItem[] = [
@@ -42,9 +42,9 @@ const NAV: readonly NavItem[] = [
   { to: "/calendar", label: "Calendar", Icon: CalendarIcon },
   { to: "/ritual", label: "Night ritual", Icon: MoonIcon },
   { to: "/inbox", label: "Inbox", Icon: InboxIcon },
-  { to: "/review/week", label: "Review", Icon: ChartIcon, match: "/review" },
+  { to: "/review/week", label: "Review", Icon: ChartIcon, match: ["/review"] },
   { to: "/cycle", label: "Cycle", Icon: CycleIcon },
-  { to: "/notes", label: "Notes", Icon: NoteIcon },
+  { to: "/notes", label: "Notes", Icon: NoteIcon, match: ["/notes", "/applications", "/stories", "/japanese"] },
   { to: "/settings", label: "Settings", Icon: SettingsIcon },
 ];
 
@@ -100,8 +100,7 @@ function Tooltip({ text }: { text: string }) {
 
 function useIsActive(item: NavItem): boolean {
   const { pathname } = useLocation();
-  const prefix = item.match ?? item.to;
-  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+  return (item.match ?? [item.to]).some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 function RailLink({ item }: { item: NavItem }) {

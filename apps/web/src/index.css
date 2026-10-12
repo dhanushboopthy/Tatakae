@@ -167,6 +167,37 @@
   }
 }
 
+/* BlockNote (notes editor): its colour variables follow the Soft Bento tokens in both modes.
+   `:root` lifts specificity above BlockNote's `.bn-root[data-color-scheme=…]`, which loads later. */
+:root .bn-root[data-color-scheme] {
+  --bn-colors-editor-text: rgb(var(--ink));
+  --bn-colors-editor-background: rgb(var(--surface));
+  --bn-colors-menu-text: rgb(var(--ink));
+  --bn-colors-menu-background: rgb(var(--surface));
+  --bn-colors-tooltip-text: rgb(var(--on-charcoal));
+  --bn-colors-tooltip-background: rgb(var(--charcoal));
+  --bn-colors-hovered-text: rgb(var(--ink));
+  --bn-colors-hovered-background: rgb(var(--surface-2));
+  --bn-colors-selected-text: rgb(var(--on-charcoal));
+  --bn-colors-selected-background: rgb(var(--charcoal));
+  --bn-colors-disabled-text: rgb(var(--ink-2));
+  --bn-colors-disabled-background: rgb(var(--surface-2));
+  --bn-colors-border: rgb(var(--line));
+  --bn-colors-side-menu: rgb(var(--missed));
+  --bn-font-family: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --bn-border-radius-small: 10px;
+  --bn-border-radius-medium: 14px;
+  --bn-border-radius-large: 20px;
+}
+/* The base h1/h2 sizes above must not fight BlockNote's heading levels. */
+.bn-root h1,
+.bn-root h2,
+.bn-root h3 {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

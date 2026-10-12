@@ -77,6 +77,20 @@ export async function api(path: string, opts: ApiOptions = {}): Promise<unknown>
   return body;
 }
 
+/** POST multipart/form-data (file uploads); the browser sets the boundary header. */
+export async function apiUpload(path: string, form: FormData): Promise<unknown> {
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { method: "POST", credentials: "include", body: form });
+  } catch (e) {
+    throw new NetworkError(e);
+  }
+  const body = await readBody(res);
+  if (res.status === 401) notifyUnauthorized();
+  if (!res.ok) throw new ApiError(res.status, body);
+  return body;
+}
+
 /** GET helper kept for older call sites. */
 export async function apiGet(path: string): Promise<unknown> {
   return api(path);

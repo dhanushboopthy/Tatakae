@@ -11,6 +11,9 @@ import { WeeklyReview } from "./routes/WeeklyReview";
 import { MonthlyReview } from "./routes/MonthlyReview";
 import { Cycle } from "./routes/Cycle";
 import { Notes } from "./routes/Notes";
+import { Applications } from "./routes/Applications";
+import { Stories } from "./routes/Stories";
+import { Japanese } from "./routes/Japanese";
 import { Settings } from "./routes/Settings";
 import { Login } from "./routes/Login";
 import { Calendar } from "./routes/Calendar";
@@ -54,6 +57,9 @@ export const router = createBrowserRouter([
       { path: "/review/month", element: <MonthlyReview /> },// v2
       { path: "/cycle", element: <Cycle /> },              // v2
       { path: "/notes/*", element: <Notes /> },            // v3
+      { path: "/applications", element: <Applications /> },// v3
+      { path: "/stories", element: <Stories /> },          // v3
+      { path: "/japanese", element: <Japanese /> },        // v3
       { path: "/settings", element: <Settings /> },        // v1+
     ],
   },

@@ -24,11 +24,26 @@ export function resolveDark(input: { pref: ThemePref; forced: boolean; now: stri
   return isNightTime(input.now, input.ritualTime, input.wakeTime);
 }
 
+let appliedDark = false;
+
 function setDark(dark: boolean): void {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark", dark);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? THEME_COLOR.dark : THEME_COLOR.light);
   storage.set(LAST_KEY, dark ? "dark" : "light");
+  if (appliedDark !== dark) {
+    appliedDark = dark;
+    emit();
+  }
+}
+
+/** Whether the dark variant is applied right now (for widgets with their own theme, e.g. the editor). */
+export function useIsDark(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => appliedDark,
+    () => false,
+  );
 }
 
 /** First paint: reuse the last applied mode (settings aren't loaded yet). */
