@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { RANKED_SLOTS, type FocusLength, type Mission, type MissionStatus, type RankedSlot } from "@tatakae/core";
+import { RANKED_SLOTS, type Mission, type MissionStatus, type RankedSlot } from "@tatakae/core";
 import { editLocked, needsLockReason, patchMissionFree, setStatus, upsertMission, useSettings } from "../lib/hooks";
+import { durationLabel, focusLengthFor } from "../lib/plan";
 import { EditedElsewhere } from "./ConflictNotice";
 import { ArrowRightIcon, FocusIcon, LockIcon, PencilIcon, StuckIcon } from "./icons";
 import { LockReasonDialog } from "./LockReasonDialog";
@@ -10,7 +11,8 @@ import { StuckSheet } from "./StuckSheet";
 import { useToast } from "./Toast";
 
 /**
- * A mission card (docs/10 §5): P1 = charcoal hero with a lime Start circle and 25 · 50 · 90 pills;
+ * A mission card (docs/10 §5): P1 = charcoal hero with a lime Start circle (length = the mission's
+ * planned minutes; change it on the Focus screen);
  * P2 = lavender, P3 = lime-soft, P4–P9 = plain surface with an ink rank pill, side quest = surface-2.
  * Ink text on every coloured fill.
  * One-tap status chips, Start focus, Stuck, resume note and edit. Status / resume note are free fields;
@@ -92,7 +94,6 @@ const TONE: Record<Mission["slot"], Tone> = {
   },
 };
 
-const LENGTHS: readonly FocusLength[] = [25, 50, 90];
 
 type Pending = { patch: Partial<Mission>; summary: string } | null;
 
@@ -103,7 +104,6 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
   const navigate = useNavigate();
   const toast = useToast();
   const { data: settings } = useSettings();
-  const [length, setLength] = useState<FocusLength | null>(null);
   const [editing, setEditing] = useState(false);
   const [stuck, setStuck] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
@@ -112,7 +112,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
 
   const rescheduled = m.status === "rescheduled";
   const finished = m.status === "done" || m.status === "minimum";
-  const chosen = length ?? settings?.focus_default ?? 50;
+  const chosen = focusLengthFor(m.estMin, settings?.focus_default ?? 50).minutes; // the mission's planned minutes
 
   async function onStatus(s: MissionStatus) {
     await setStatus(m, s);
@@ -248,27 +248,9 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
 
           <div className="flex flex-wrap items-center gap-2">
             {!finished && hero && (
-              <>
-                <span className={`mr-1 text-sm ${tone.sub}`} id={`len-${m.id}`}>
-                  Start focus
-                </span>
-                <div role="radiogroup" aria-labelledby={`len-${m.id}`} className="flex gap-1.5">
-                  {LENGTHS.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      role="radio"
-                      aria-checked={chosen === n}
-                      onClick={() => setLength(n)}
-                      className={`tnum inline-flex h-11 min-w-[48px] items-center justify-center rounded-full border px-3 text-sm font-semibold transition ${
-                        chosen === n ? "border-transparent bg-on-charcoal text-charcoal" : tone.outline
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <span className={`mr-1 text-sm ${tone.sub}`}>
+                Start focus · <span className="tnum font-semibold">{durationLabel(chosen)}</span>
+              </span>
             )}
             {!finished && !hero && (
               <button type="button" className={`btn min-h-tap ${tone.action}`} onClick={() => startFocus(chosen)}>
@@ -290,7 +272,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
                 type="button"
                 onClick={() => startFocus(chosen)}
                 className="ml-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-lime text-on-accent transition hover:brightness-95 active:scale-[0.96]"
-                aria-label={`Start ${chosen}-minute focus on ${m.title}`}
+                aria-label={`Start ${durationLabel(chosen)} focus on ${m.title}`}
               >
                 <ArrowRightIcon size={26} strokeWidth={2} />
               </button>

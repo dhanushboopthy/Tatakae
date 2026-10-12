@@ -16,9 +16,8 @@ import { storage } from "../lib/storage";
 // as three pills, resume note card below. The timer is derived from the session's start time (never
 // ticked), so a reload or a second tab shows the same number. Pause ends the session and offers to
 // resume with the minutes left. After a block → recharge menu. Length: the mission's planned minutes
-// by default (calendar / ritual), a 25 · 50 · 90 preset, or any custom 5–240 minutes.
+// by default (calendar / ritual), or any length from 5 to 240 minutes (−5 / typed / +5). No presets.
 
-const LENGTHS: readonly number[] = [25, 50, 90];
 const PAUSED_KEY = "tatakae.focus.paused"; // { missionId, remainingMin }
 
 interface Paused {
@@ -136,21 +135,7 @@ function Setup(props: { initialMission: string | null; initialMin: number | null
             Length
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <div role="radiogroup" aria-labelledby="len-label" className="flex flex-wrap gap-2">
-              {LENGTHS.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={chosenLength === n}
-                  onClick={() => choose(n)}
-                  className={`chip tnum min-w-[72px] justify-center text-base ${chosenLength === n ? "bg-lime text-on-accent" : "bg-surface-2 font-medium hover:bg-line"}`}
-                >
-                  {n} min
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-1 rounded-full bg-surface-2 p-1" role="group" aria-label="Custom length">
+            <div className="flex items-center gap-1 rounded-full bg-surface-2 p-1" role="group" aria-labelledby="len-label">
               <button type="button" className="icon-btn-sm bg-surface" aria-label="5 minutes less" disabled={chosenLength <= FOCUS_MIN} onClick={() => choose(chosenLength - 5)}>
                 <DashIcon size={18} />
               </button>
