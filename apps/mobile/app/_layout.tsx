@@ -8,6 +8,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NetInfo from "@react-native-community/netinfo";
 import { getToken, onAuthChange, setExpiresAt, type AuthState } from "../src/auth/session";
 import { apiGet, ApiError } from "../src/api/client";
+import { initSync } from "../src/sync/engine"; // also defines the background sync task at module scope
+import { useSettings } from "../src/lib/hooks";
+import { setHapticsEnabled } from "../src/haptics";
 import { colors } from "../src/theme";
 
 /** Deep links (notification taps) into a modal still get the tabs underneath. */
@@ -83,7 +86,13 @@ function AuthGate() {
   useEffect(() => {
     if (auth !== "in") return;
     void verifySession();
+    return initSync(queryClient);
   }, [auth]);
+
+  const settings = useSettings();
+  useEffect(() => {
+    if (settings.data) setHapticsEnabled(settings.data.haptics_enabled);
+  }, [settings.data]);
 
   return (
     <View style={styles.fill}>
