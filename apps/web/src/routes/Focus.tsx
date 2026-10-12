@@ -4,7 +4,6 @@ import type { FocusSession, Mission } from "@tatakae/core";
 import { FocusRing } from "../components/FocusRing";
 import { CheckIcon, DashIcon, PauseIcon, PlayIcon, PlusIcon, StuckIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
-import { SceneCard } from "../components/SceneCard";
 import { PageHeader } from "../components/PageHeader";
 import { RechargeMenu } from "../components/RechargeMenu";
 import { StuckSheet } from "../components/StuckSheet";
@@ -179,7 +178,6 @@ function Setup(props: { initialMission: string | null; initialMin: number | null
           <PlayIcon size={20} /> Start {durationLabel(chosenLength)}
         </button>
       </section>
-      <SceneCard scene="focus" />
     </div>
   );
 }
@@ -320,7 +318,6 @@ function AfterBlock(props: { minutes: number; mission: Mission | null; onDone: (
         )}
         <Kural n={616} size="sm" className="mt-2" />
       </div>
-      <SceneCard scene="focus_done" />
       <RechargeMenu onDone={props.onDone} />
     </div>
   );

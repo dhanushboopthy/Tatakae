@@ -1,45 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { StoryRef } from "@tatakae/core";
-import { useSettings } from "../lib/hooks";
-import { fileUrl } from "../lib/rest";
 import { muteStory, onStory, storyLine } from "../lib/story";
 import { StoryIcon } from "./icons";
 
 /**
- * The owner's picture for a story title (settings.story_pictures → /api/files/:id), cropped square.
- * Falls back to the sparkle icon when there is none or it can't load (offline). Decorative: the
- * text beside it names the title.
- */
-export function StoryPicture({ title, size = 48, className = "" }: { title: string; size?: number; className?: string }) {
-  const { data: s } = useSettings();
-  const id = s?.story_pictures[title];
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [id]);
-  if (!id || failed) {
-    return (
-      <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-card-inner bg-surface-2 ${className}`} style={{ width: size, height: size }}>
-        <StoryIcon size={Math.round(size * 0.4)} className="text-lavender-deep" />
-      </span>
-    );
-  }
-  return (
-    <img
-      src={fileUrl(id)}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={`shrink-0 rounded-card-inner object-cover object-top ${className}`}
-      style={{ width: size, height: size }}
-    />
-  );
-}
-
-/**
- * Subtle story card (docs/10 §5): small surface card with a lavender left bar, the title's picture
- * (when the owner added one), one line of text, slides up near the bottom. Click the line to dismiss;
- * "Mute" hides that reference for good.
+ * Subtle story card (docs/10 §5): small surface card with a lavender left bar, one line of text, slides
+ * up near the bottom. Click the line to dismiss; "Mute" hides that reference for good. Text only.
  */
 export function StoryToast(props: { story: StoryRef | null; onDismiss: () => void; onMute?: () => void }) {
   const s = props.story;
@@ -52,7 +18,7 @@ export function StoryToast(props: { story: StoryRef | null; onDismiss: () => voi
     >
       <span aria-hidden="true" className="w-1.5 shrink-0 bg-lavender" />
       <button type="button" onClick={props.onDismiss} className="flex flex-1 items-start gap-3 px-4 py-3 text-left" aria-label={`${storyLine(s)}. Dismiss.`}>
-        <StoryPicture title={s.title} />
+        <StoryIcon size={18} className="mt-0.5 shrink-0 text-lavender-deep" />
         <span className="text-sm">
           <span className="font-semibold">{s.character ? `${s.character}, ` : ""}</span>
           <span className="italic">{s.title}</span> — {s.lesson}

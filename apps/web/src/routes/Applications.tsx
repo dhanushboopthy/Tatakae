@@ -4,7 +4,6 @@ import type { Application, ApplicationStatus } from "@tatakae/core";
 import { EmptyState } from "../components/EmptyState";
 import { OpenIcon, PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { LibraryTabs } from "../components/LibraryTabs";
-import { SceneCard } from "../components/SceneCard";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { useToast } from "../components/Toast";
@@ -46,7 +45,6 @@ export function Applications() {
         }
       />
       <LibraryTabs />
-      <SceneCard scene="applications" className="max-w-read" />
       {list.isError ? (
         <EmptyState title="Applications didn't load." body={restErrorText(list.error, "Applications")} />
       ) : items.length === 0 ? (

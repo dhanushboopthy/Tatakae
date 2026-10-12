@@ -36,7 +36,7 @@ Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 | POST | /missions/:id/edit-locked | v1 | `{reason, patch}` → mura_events |
 | CRUD | /habits, PUT /habits/:id/logs/:date | v1 | |
 | CRUD | /inbox | v1 | |
-| GET/PUT | /settings[/:key] | v1 | scoring keys only on even-week Sundays; `story_pictures` = `{ [title]: fileId }` (≤ 100) |
+| GET/PUT | /settings[/:key] | v1 | scoring keys only on even-week Sundays |
 | POST | /sync | v1 | see below |
 | GET | /stats/scoreboard, /stats/calendar/:yyyymm, /stats/series, /stats/week/:isoWeek | v1 | see docs/11 §5 |
 | GET | /stats/month/:yyyymm, /stats/cycle, /stats/habits | v2 | |

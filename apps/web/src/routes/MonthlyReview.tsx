@@ -6,7 +6,6 @@ import { DayLegend } from "../components/DayCircle";
 import { HabitHeatGrid } from "../components/HabitHeatGrid";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
-import { SceneCard } from "../components/SceneCard";
 import { DeltaPill } from "../components/MetricCard";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { PageHeader } from "../components/PageHeader";
@@ -55,7 +54,6 @@ export function MonthlyReview() {
           </>
         }
       />
-      <SceneCard scene="monthly" className="max-w-read" />
       {!stats ? (
         <p className="text-ink-2">Opening…</p>
       ) : (

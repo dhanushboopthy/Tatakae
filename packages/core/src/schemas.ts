@@ -233,7 +233,7 @@ export const storyRefRow = z.object({
   title: z.string().min(1).max(200),
   medium: storyMedium,
   character: optText(100),
-  lesson: z.string().min(1).max(160), // one short line (owner's private pack)
+  lesson: z.string().min(1).max(160), // paraphrase only
   moment: storyMoment,
   yourLine: optText(160),
   muted: z.boolean(),
@@ -406,14 +406,6 @@ export const stuckInput = z.object({
 });
 
 // ===================== settings =====================
-/** Max titles with a picture (story_pictures). */
-export const MAX_STORY_PICTURES = 100;
-
-/** story_pictures: story title → files.id. Pictures are the owner's own, stored on their server only. */
-export const storyPictures = z
-  .record(z.string().min(1).max(200), z.string().min(1).max(64))
-  .refine((m) => Object.keys(m).length <= MAX_STORY_PICTURES, `At most ${MAX_STORY_PICTURES} pictures.`);
-
 export const scoringSettingsPartial = z
   .object({
     screenFreeMin: z.number().nonnegative(),
@@ -439,7 +431,6 @@ export const settingValueSchemas = {
   haptics_enabled: z.boolean(),
   afternoon_nudge: z.object({ enabled: z.boolean(), time: hhmm }),
   focus_week_target: z.number().int().min(0).max(5000), // minutes; scoreboard "Focus minutes (week)" bar
-  story_pictures: storyPictures, // story title → files.id of the owner's picture for it
 } as const;
 
 export type SettingKey = keyof typeof settingValueSchemas;
@@ -502,7 +493,7 @@ export const storyRefInput = z.object({
   title: z.string().min(1).max(200),
   medium: storyMedium,
   character: z.string().max(100).nullable().default(null),
-  lesson: z.string().min(1).max(160), // your own words or a short line of dialogue; the pack stays git-ignored
+  lesson: z.string().min(1).max(160), // your own paraphrase, never a quote
   moment: storyMoment,
   yourLine: z.string().max(160).nullable().default(null),
 });

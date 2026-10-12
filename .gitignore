@@ -18,7 +18,6 @@ data/
 !.env.example
 deploy/.env
 references/*.local.json
-references/pictures/
 
 # terraform
 infra/terraform/.terraform/

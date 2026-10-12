@@ -30,55 +30,6 @@ export function pickStory<T extends PickableStory>(
   return eligible[i] ?? null;
 }
 
-/**
- * Scene cards (web): each screen shows one line + picture from the owner's pack, drawn from the
- * moments that fit that screen's job. Never Morning (one screen) and never Login (signed out).
- */
-export const SCENE_MOMENTS = {
-  today: ["p1_done", "minimum_done"],
-  ritual: ["p1_done", "weekly_review"],
-  shutdown: ["rest_day"],
-  focus: ["stuck_inertia", "stuck_fear"],
-  focus_done: ["minimum_done", "p1_done"],
-  stuck: ["stuck_fear", "stuck_inertia"],
-  welcome_back: ["comeback"],
-  calendar: ["cycle_start", "weekly_review"],
-  inbox: ["stuck_inertia"],
-  cycle: ["cycle_start"],
-  weekly: ["weekly_review"],
-  monthly: ["weekly_review", "cycle_start"],
-  notes: ["minimum_done"],
-  japanese: ["minimum_done", "cycle_start"],
-  applications: ["stuck_fear", "p1_done"],
-  stories: ["p1_done", "comeback"],
-} as const satisfies Record<string, readonly StoryMoment[]>;
-
-export type Scene = keyof typeof SCENE_MOMENTS;
-
-/** 32-bit FNV-1a: a stable, well-spread index from a short string. */
-function hash32(s: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-/**
- * The scene card's ref for `scene` on `date`: the same all day, a different one most days, and
- * different screens usually differ. Skips muted and deleted refs; null when nothing fits. Unlike
- * pickStory there's no 1-in-3 roll and nothing is stamped: a scene is part of the screen.
- */
-export function pickScene<T extends PickableStory>(refs: readonly T[], scene: Scene, date: ISODate): T | null {
-  const moments: readonly StoryMoment[] = SCENE_MOMENTS[scene];
-  const pool = refs
-    .filter((r) => moments.includes(r.moment) && !r.muted && r.deletedAt == null)
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  if (pool.length === 0) return null;
-  return pool[hash32(`${date}|${scene}`) % pool.length] ?? null;
-}
-
 /** Ids shown within the last NO_REPEAT_DAYS (by `lastShownAt`), to pass as recentlyShownIds. */
 export function recentlyShownIds(
   refs: readonly Pick<StoryRef, "id" | "lastShownAt">[],

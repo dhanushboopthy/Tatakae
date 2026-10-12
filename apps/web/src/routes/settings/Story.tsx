@@ -1,19 +1,14 @@
 import { useRef, useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { storyPack, themeFor, type StoryMoment, type WatchQueueItem } from "@tatakae/core";
 import { TrashIcon, UploadIcon } from "../../components/icons";
-import { StoryPicture } from "../../components/StoryToast";
 import { useToast } from "../../components/Toast";
 import { importStoryPack, removeWatch, saveSetting, saveWatch, setStoryMuted, useSettings, useStoryRefs, useToday, useWatchQueue } from "../../lib/hooks";
-import { isNetworkError } from "../../lib/api";
-import { uploadFile } from "../../lib/rest";
 import { storyLine } from "../../lib/story";
 import { Row, Section, Toggle } from "./Section";
 
-// Story layer settings (docs/02 story layer, docs/05): on/off, reference pack import (validated: a short
-// line of dialogue or your own words ≤ 160 chars, known moments), a picture per title, muted refs, and the
-// reward watch queue. The pack file stays on this laptop (references/*.local.json is git-ignored); only
-// the parsed lines sync. Pictures go to /files on your server, never into git.
+// Story layer settings (docs/02 story layer, docs/05): on/off, reference pack import (validated: your own
+// paraphrase ≤ 160 chars, known moments), muted refs, and the reward watch queue. The pack file stays on
+// this laptop (references/*.local.json is git-ignored); only the parsed lines sync.
 
 const MOMENTS: Record<StoryMoment, string> = {
   p1_done: "P1 done",
@@ -60,7 +55,7 @@ export function StorySettings() {
     <Section
       id="story"
       title="Story"
-      description="One line from your shows after about one in three completions. Never in notifications, never on the morning screen."
+      description="One paraphrased line after about one in three completions. Never in notifications, never on the morning screen."
     >
       {s && !isPlaceholderData && (
         <Row label="Story lines" hint={theme ? `This month's theme: ${theme}.` : undefined}>
@@ -70,7 +65,7 @@ export function StorySettings() {
       <div className="card-inner space-y-3 text-sm">
         <p className="font-semibold">Reference pack</p>
         <p className="text-ink-2">
-          Titles, character names and a short line of dialogue or your own words, each ≤ 160 characters. Keep the file private (*.local.json). Format:{" "}
+          Titles and character names with your own paraphrase only — no quotes, art, logos or audio. Each lesson ≤ 160 characters. Format:{" "}
           <code className="rounded bg-surface px-1">{'{ "version": 1, "refs": [{ title, medium, character, lesson, moment, yourLine }] }'}</code>
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -109,8 +104,6 @@ export function StorySettings() {
         )}
       </div>
 
-      {refs.length > 0 && <StoryPictures titles={[...new Set(refs.map((r) => r.title))].sort((a, b) => a.localeCompare(b))} />}
-
       {muted.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-semibold">Muted</p>
@@ -129,79 +122,6 @@ export function StorySettings() {
 
       <WatchQueue />
     </Section>
-  );
-}
-
-const PICTURE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-const PICTURE_MAX_BYTES = 5 * 1024 * 1024;
-
-/** One picture per title, shown as the story card's icon. Uploaded to /files; stays on the server. */
-function StoryPictures({ titles }: { titles: readonly string[] }) {
-  const { data: s } = useSettings();
-  const qc = useQueryClient();
-  const toast = useToast();
-  const [busy, setBusy] = useState<string | null>(null);
-  const pictures = s?.story_pictures ?? {};
-
-  async function onPick(title: string, f: File) {
-    if (!PICTURE_TYPES.includes(f.type)) return toast("Pick a PNG, JPEG, WebP or GIF.");
-    if (f.size > PICTURE_MAX_BYTES) return toast("That picture is over 5 MB.");
-    setBusy(title);
-    try {
-      const meta = await uploadFile(qc, f, null);
-      await saveSetting("story_pictures", { ...pictures, [title]: meta.id });
-    } catch (e) {
-      toast(isNetworkError(e) ? "Adding a picture needs a connection." : "That upload didn't work. Try again.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  function remove(title: string) {
-    const { [title]: _gone, ...rest } = pictures;
-    void saveSetting("story_pictures", rest);
-  }
-
-  return (
-    <div className="space-y-2">
-      <div>
-        <p className="text-sm font-semibold">Pictures</p>
-        <p className="text-sm text-ink-2">One per title, shown beside its lines. They stay on your server.</p>
-        <p className="text-xs text-ink-2">Titles, character names and pictures belong to their respective owners. Private use only; no affiliation.</p>
-      </div>
-      <ul className="grid gap-1.5 sm:grid-cols-2">
-        {titles.map((title, i) => {
-          const has = pictures[title] != null;
-          const inputId = `story-pic-${i}`;
-          return (
-            <li key={title} className="flex items-center gap-3 rounded-card-inner bg-surface-2 py-1.5 pl-1.5 pr-1.5 text-sm">
-              <StoryPicture title={title} size={44} />
-              <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
-              <input
-                id={inputId}
-                type="file"
-                accept={PICTURE_TYPES.join(",")}
-                className="sr-only"
-                disabled={busy !== null}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void onPick(title, f);
-                  e.target.value = "";
-                }}
-              />
-              <label htmlFor={inputId} className="btn min-h-tap cursor-pointer bg-surface px-3 text-sm" aria-label={`${has ? "Change" : "Add"} picture for ${title}`}>
-                {busy === title ? "Uploading…" : has ? "Change" : "Add"}
-              </label>
-              {has && (
-                <button type="button" className="icon-btn-sm bg-surface" aria-label={`Remove picture for ${title}`} onClick={() => remove(title)}>
-                  <TrashIcon size={16} />
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
   );
 }
 

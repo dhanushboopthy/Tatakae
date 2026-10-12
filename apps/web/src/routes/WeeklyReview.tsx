@@ -17,7 +17,6 @@ import { AreaBlock } from "../components/AreaBlock";
 import { HatchedStackBar } from "../components/HatchedStackBar";
 import { ChevronLeftIcon, ChevronRightIcon, OpenIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
-import { SceneCard } from "../components/SceneCard";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
 import { PillBar } from "../components/PillBar";
@@ -82,7 +81,6 @@ export function WeeklyReview() {
             </>
           }
         />
-        <SceneCard scene="weekly" className="max-w-read" />
         {stats ? (
           <>
             <WeekScoreboard stats={stats} />

@@ -5,7 +5,6 @@ import type { Note, NotePatch, NoteSummary } from "@tatakae/core";
 import { EmptyState } from "../components/EmptyState";
 import { ArrowLeftIcon, CheckIcon, CloseIcon, DownloadIcon, NoteIcon, PlusIcon, SearchIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { LibraryTabs } from "../components/LibraryTabs";
-import { SceneCard } from "../components/SceneCard";
 import { Modal } from "../components/Modal";
 import { Kural } from "../components/Kural";
 import { PageHeader } from "../components/PageHeader";
@@ -68,7 +67,6 @@ export function Notes() {
         }
       />
       <LibraryTabs />
-      <SceneCard scene="notes" className="max-w-read" />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
         <div className={id ? "hidden lg:block" : ""}>
           <NoteList activeId={id} />

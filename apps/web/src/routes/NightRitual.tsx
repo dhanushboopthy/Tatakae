@@ -15,7 +15,6 @@ import {
 import { CapacityBar } from "../components/CapacityBar";
 import { MoonIcon, PlusIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
-import { SceneCard } from "../components/SceneCard";
 import { Modal } from "../components/Modal";
 import { FORGE_PROBLEM_COPY, IfThenTemplates } from "../components/P1Card";
 import { StatusChips } from "../components/StatusChips";
@@ -153,7 +152,6 @@ export function NightRitual() {
           />
         )}
       </div>
-      <SceneCard scene="ritual" className="mt-4" />
     </div>
   );
 }
@@ -1060,7 +1058,6 @@ function ShutdownComplete({ fresh, date, onRestarted }: { fresh: boolean; date: 
       <p className="text-ink-2">
         {fresh ? "Tomorrow is locked. Sleep well." : "Tomorrow is already locked. Changing it needs a reason, from Today."}
       </p>
-      <SceneCard scene="shutdown" className="mt-2 w-full" />
       <Kural n={664} className="mt-2" />
       <Link to="/today" className="btn-secondary mt-4">
         Back to Today

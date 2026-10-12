@@ -11,8 +11,7 @@ INSERT OR IGNORE INTO settings (key, value, editable_from, updated_at, deleted_a
   ('story_enabled', 'true', NULL, '1970-01-01T00:00:00.000Z', NULL),
   ('haptics_enabled', 'true', NULL, '1970-01-01T00:00:00.000Z', NULL),
   ('afternoon_nudge', '{"enabled":false,"time":"14:00"}', NULL, '1970-01-01T00:00:00.000Z', NULL),
-  ('focus_week_target', '600', NULL, '1970-01-01T00:00:00.000Z', NULL),
-  ('story_pictures', '{}', NULL, '1970-01-01T00:00:00.000Z', NULL);
+  ('focus_week_target', '600', NULL, '1970-01-01T00:00:00.000Z', NULL);
 
 INSERT OR IGNORE INTO recharge_items (id, name, kind, updated_at, deleted_at) VALUES
   ('0000000000RECHARGE00000001', 'Walk', 'walk', '1970-01-01T00:00:00.000Z', NULL),
