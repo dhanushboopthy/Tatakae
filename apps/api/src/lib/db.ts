@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defaultRechargeRows, defaultSettingRows } from "@tatakae/core";
+import { blocksToText, defaultRechargeRows, defaultSettingRows } from "@tatakae/core";
 import * as schema from "../../../../db/schema";
 
 type Sqlite = Database.Database;
@@ -67,6 +67,29 @@ export function resolveMigrationsFolder(override?: string): string {
 export function runMigrations(db: Db, migrationsFolder: string = resolveMigrationsFolder(process.env["MIGRATIONS_DIR"])): void {
   migrate(db, { migrationsFolder });
   seedDefaults(db);
+  backfillNoteText(db);
+}
+
+/** Notes saved before migration 0003 have no body_text yet; fill it so search sees plain text. */
+function backfillNoteText(db: Db): void {
+  const sqlite = sqliteOf(db);
+  const rows = sqlite.prepare(`SELECT id, body_json FROM notes WHERE body_text IS NULL AND body_json IS NOT NULL`).all() as {
+    id: string;
+    body_json: string;
+  }[];
+  if (rows.length === 0) return;
+  const update = sqlite.prepare(`UPDATE notes SET body_text = ? WHERE id = ?`);
+  transaction(db, () => {
+    for (const r of rows) {
+      let blocks: unknown = null;
+      try {
+        blocks = JSON.parse(r.body_json);
+      } catch {
+        // not JSON: index nothing rather than the raw text
+      }
+      update.run(blocksToText(blocks), r.id);
+    }
+  });
 }
 
 /** INSERT OR IGNORE: never overwrites the owner's edits. Same values as db/seed.sql. */

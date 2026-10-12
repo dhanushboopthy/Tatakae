@@ -8,3 +8,4 @@ export * from "./sync";
 export * from "./syncClient";
 export * from "./stats";
 export * from "./icons";
+export * from "./notes";

@@ -202,6 +202,79 @@ export type StoryMoment =
   | "p1_done" | "minimum_done" | "comeback" | "stuck_fear"
   | "stuck_inertia" | "weekly_review" | "cycle_start" | "rest_day";
 
+// ===================== v3 (REST only, not synced) =====================
+export type ApplicationStatus = "wishlist" | "applied" | "interview" | "offer" | "rejected" | "withdrawn";
+export type JapaneseKind = "anki" | "reading" | "listening" | "speaking" | "writing";
+
+/** Second-brain note. `bodyJson` is a BlockNote document (array of blocks). */
+export interface Note extends RowMeta {
+  id: string;
+  title: string;
+  type: string | null;
+  status: string | null;
+  tags: string[];
+  areaId: string | null;
+  goalId: string | null;
+  sourceUrl: string | null;
+  bodyJson: unknown[] | null;
+  canExplain: boolean | null;
+  canImplement: boolean | null;
+  misunderstood: string | null;
+  publishedUrl: string | null;
+}
+
+/** Note list entry: everything but the body, plus a plain-text excerpt. */
+export type NoteSummary = Omit<Note, "bodyJson"> & { excerpt: string };
+
+export interface NoteSearchHit {
+  id: string;
+  title: string;
+  snippet: string;
+  updatedAt: ISOTime;
+}
+
+/** Uploaded file (FILES_DIR on the VM, optional Object Storage copy). Served at `/api/files/:id`. */
+export interface FileMeta extends RowMeta {
+  id: string;
+  name: string;
+  noteId: string | null;
+  mime: string;
+  size: number;
+}
+
+export interface Application extends RowMeta {
+  id: string;
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+  appliedOn: ISODate | null;
+  url: string | null;
+  source: string | null;
+  nextStep: string | null;
+  nextStepOn: ISODate | null;
+  notes: string | null;
+}
+
+/** Interview story in STAR form (table `stories`). */
+export interface InterviewStory extends RowMeta {
+  id: string;
+  title: string;
+  situation: string | null;
+  task: string | null;
+  action: string | null;
+  result: string | null;
+  tags: string[];
+  goalId: string | null;
+}
+
+export interface JapaneseLogEntry extends RowMeta {
+  id: string;
+  date: ISODate;
+  minutes: number;
+  kind: JapaneseKind;
+  note: string | null;
+}
+
 /** Row type for each synced table (keys = SQL table names, see SYNC_TABLES in sync.ts). */
 export interface SyncRowMap {
   days: Day;

@@ -490,6 +490,45 @@ export const noteInput = z.object({
 });
 export const notePatch = noteInput.partial();
 export const noteSearchQuery = z.object({ q: z.string().min(1).max(200) });
+export const noteListQuery = z.object({
+  tag: z.string().min(1).max(50).optional(),
+  goalId: z.string().min(1).optional(),
+});
+
+export const applicationStatus = z.enum(["wishlist", "applied", "interview", "offer", "rejected", "withdrawn"]);
+export const applicationInput = z.object({
+  company: z.string().min(1).max(200),
+  role: z.string().min(1).max(200),
+  status: applicationStatus.default("applied"),
+  appliedOn: isoDate.nullable().default(null),
+  url: z.string().url().max(2000).nullable().default(null),
+  source: z.string().max(100).nullable().default(null),
+  nextStep: z.string().max(300).nullable().default(null),
+  nextStepOn: isoDate.nullable().default(null),
+  notes: z.string().max(5000).nullable().default(null),
+});
+export const applicationPatch = applicationInput.partial();
+
+export const interviewStoryInput = z.object({
+  title: z.string().min(1).max(200),
+  situation: z.string().max(3000).nullable().default(null),
+  task: z.string().max(3000).nullable().default(null),
+  action: z.string().max(3000).nullable().default(null),
+  result: z.string().max(3000).nullable().default(null),
+  tags: z.array(z.string().min(1).max(50)).max(20).default([]),
+  goalId: z.string().nullable().default(null),
+});
+export const interviewStoryPatch = interviewStoryInput.partial();
+
+export const japaneseKind = z.enum(["anki", "reading", "listening", "speaking", "writing"]);
+export const japaneseLogInput = z.object({
+  date: isoDate,
+  minutes: z.number().int().min(1).max(600),
+  kind: japaneseKind,
+  note: z.string().max(500).nullable().default(null),
+});
+export const japaneseLogPatch = japaneseLogInput.partial();
+export const dateRangeQuery = z.object({ from: isoDate.optional(), to: isoDate.optional() });
 
 // ===================== sync =====================
 export const outboxItem = z.object({
@@ -557,5 +596,11 @@ export type StoryPack = z.infer<typeof storyPack>;
 export type WatchQueueInput = z.infer<typeof watchQueueInput>;
 export type NoteInput = z.infer<typeof noteInput>;
 export type NotePatch = z.infer<typeof notePatch>;
+export type ApplicationInput = z.infer<typeof applicationInput>;
+export type ApplicationPatch = z.infer<typeof applicationPatch>;
+export type InterviewStoryInput = z.infer<typeof interviewStoryInput>;
+export type InterviewStoryPatch = z.infer<typeof interviewStoryPatch>;
+export type JapaneseLogInput = z.infer<typeof japaneseLogInput>;
+export type JapaneseLogPatch = z.infer<typeof japaneseLogPatch>;
 export type LoginInput = z.infer<typeof loginInput>;
 export type LoginMobileResponse = z.infer<typeof loginMobileResponse>;

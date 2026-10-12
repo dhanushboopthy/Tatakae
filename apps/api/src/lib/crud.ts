@@ -5,6 +5,7 @@ import type { AppBindings } from "../env";
 import type { Db } from "./db";
 import { Conflict, NotFound } from "./errors";
 import { newId } from "./ids";
+import { allLocal, getLocal, putLocal, type LocalRow, type LocalTable } from "./local.service";
 import { allRows, bumpUpdatedAt, getRow, softDeleteRow, upsertRow, withoutUndefined } from "./rows.service";
 import { idParam, parseBody } from "./validate";
 
@@ -74,6 +75,72 @@ export function crudRoutes<T extends IdTable, I extends z.ZodTypeAny, P extends 
     const db = c.get("db");
     const prev = requireLive(db, opts.table, idParam(c), opts.label);
     return c.json({ item: softDeleteRow(db, opts.table, prev.id, bumpUpdatedAt(prev.updatedAt)) });
+  });
+
+  return r;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Same routes for the REST-only tables (lib/local.service.ts). Rows are decoded to the core type
+// (`Out`) for responses and encoded back for storage (JSON columns, derived columns).
+
+type LiveMeta = { id: string; updatedAt: string; deletedAt: string | null };
+
+export interface LocalCrudOptions<T extends LocalTable, Out extends LiveMeta, I extends z.ZodTypeAny, P extends z.ZodTypeAny> {
+  table: T;
+  input: I;
+  patch: P;
+  label: string;
+  decode: (row: LocalRow<T>) => Out;
+  encode: (item: Out) => LocalRow<T>;
+  sort?: (a: Out, b: Out) => number;
+  /** Shapes GET / (filter by query, map to summaries). Defaults to every live item. */
+  list?: (items: Out[], query: Record<string, string>) => unknown[];
+}
+
+export function requireLocal<T extends LocalTable>(db: Db, table: T, id: string, label: string): LocalRow<T> {
+  const row = getLocal(db, table, id);
+  if (!row || row.deletedAt != null) throw new NotFound(`No such ${label}.`);
+  return row;
+}
+
+export function localCrudRoutes<T extends LocalTable, Out extends LiveMeta, I extends z.ZodTypeAny, P extends z.ZodTypeAny>(
+  opts: LocalCrudOptions<T, Out, I, P>,
+) {
+  const r = new Hono<AppBindings>();
+  const createSchema = z.intersection(opts.input, z.object({ id: z.string().min(1).max(64).optional() }));
+  const save = (db: Db, item: Out): Out => opts.decode(putLocal(db, opts.table, opts.encode(item)));
+
+  r.get("/", (c) => {
+    const items = allLocal(c.get("db"), opts.table, { includeDeleted: false }).map(opts.decode);
+    if (opts.sort) items.sort(opts.sort);
+    return c.json({ items: opts.list ? opts.list(items, c.req.query()) : items });
+  });
+
+  r.get("/:id", (c) => c.json({ item: opts.decode(requireLocal(c.get("db"), opts.table, idParam(c), opts.label)) }));
+
+  r.post("/", async (c) => {
+    const db = c.get("db");
+    const body = (await parseBody(c, createSchema)) as Record<string, unknown> & { id?: string };
+    const id = body.id ?? newId();
+    if (getLocal(db, opts.table, id)) throw new Conflict(`A ${opts.label} with this id already exists.`, "exists");
+    const item = { ...body, id, updatedAt: new Date().toISOString(), deletedAt: null } as unknown as Out;
+    return c.json({ item: save(db, item) }, 201);
+  });
+
+  r.patch("/:id", async (c) => {
+    const db = c.get("db");
+    const prev = opts.decode(requireLocal(db, opts.table, idParam(c), opts.label));
+    const patch = (await parseBody(c, opts.patch)) as Record<string, unknown>;
+    const next = { ...prev, ...withoutUndefined(patch), id: prev.id, updatedAt: bumpUpdatedAt(prev.updatedAt) } as Out;
+    return c.json({ item: save(db, next) });
+  });
+
+  r.delete("/:id", (c) => {
+    const db = c.get("db");
+    const prev = opts.decode(requireLocal(db, opts.table, idParam(c), opts.label));
+    const at = bumpUpdatedAt(prev.updatedAt);
+    return c.json({ item: save(db, { ...prev, updatedAt: at, deletedAt: at }) });
   });
 
   return r;

@@ -231,6 +231,7 @@ export const notes = sqliteTable("notes", {
   goalId: text("goal_id"),
   sourceUrl: text("source_url"),
   bodyJson: text("body_json"),        // BlockNote document
+  bodyText: text("body_text"),        // plain text of body_json (core blocksToText); indexed by notes_fts
   canExplain: integer("can_explain", { mode: "boolean" }),
   canImplement: integer("can_implement", { mode: "boolean" }),
   misunderstood: text("misunderstood"),
@@ -240,7 +241,8 @@ export const notes = sqliteTable("notes", {
 
 export const files = sqliteTable("files", {
   id: text("id").primaryKey(),
-  r2Key: text("r2_key").notNull(),
+  r2Key: text("r2_key").notNull(),      // path under FILES_DIR and the Object Storage key (files/<id>)
+  name: text("name"),                   // original filename (v3 upload)
   noteId: text("note_id"),
   mime: text("mime").notNull(),
   size: integer("size").notNull(),

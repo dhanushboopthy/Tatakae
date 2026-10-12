@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { isoDate, slot, type InboxItem, type InboxPatch, type Mission, type MuraEvent } from "@tatakae/core";
+import { blocksToText, isoDate, slot, textToBlocks, type InboxItem, type InboxPatch, type Mission, type MuraEvent } from "@tatakae/core";
 import { inbox, notes } from "../../../../db/schema";
 import { transaction, type Db } from "./db";
 import { Conflict, NotFound } from "./errors";
@@ -61,13 +61,6 @@ export function patchItem(db: Db, id: string, patch: InboxPatch, now: Date = new
 }
 
 /** BlockNote document with one paragraph per line. */
-function textToBlocks(text: string): unknown[] {
-  return text.split(/\r?\n/).map((line) => ({
-    type: "paragraph",
-    content: line ? [{ type: "text", text: line, styles: {} }] : [],
-  }));
-}
-
 export interface ProcessResult {
   item: InboxItem;
   mission?: Mission;
@@ -105,12 +98,14 @@ export function processItem(db: Db, id: string, action: InboxProcess, now: Date 
       // Notes are REST-only (v3) and not synced, so they skip the change log.
       const firstLine = prev.text.split(/\r?\n/)[0]?.trim() || prev.text.trim();
       const noteId = newId();
+      const blocks = textToBlocks(prev.text);
       db.insert(notes)
         .values({
           id: noteId,
           title: (action.title ?? firstLine).slice(0, 300),
           tags: "[]",
-          bodyJson: JSON.stringify(textToBlocks(prev.text)),
+          bodyJson: JSON.stringify(blocks),
+          bodyText: blocksToText(blocks),
           updatedAt: at,
           deletedAt: null,
         })
