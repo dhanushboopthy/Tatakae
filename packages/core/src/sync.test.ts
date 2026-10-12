@@ -80,7 +80,8 @@ describe("SYNC_TABLES", () => {
   it("lists v1 and v2 synced tables and never notes/sessions", () => {
     expect(SYNC_TABLES).toContain("days");
     expect(SYNC_TABLES).toContain("watch_queue");
-    expect(SYNC_TABLES).toHaveLength(16);
+    expect(SYNC_TABLES).toContain("focus_sessions");
+    expect(SYNC_TABLES).toHaveLength(17);
     expect(isSyncTable("notes")).toBe(false);
     expect(isSyncTable("sessions")).toBe(false);
     expect(isSyncTable("missions")).toBe(true);

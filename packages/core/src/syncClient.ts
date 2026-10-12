@@ -273,7 +273,7 @@ export function createSyncClient(opts: SyncClientOptions): SyncClient {
       ...(lockReason ? { meta: { lockReason } } : {}),
     };
     await store.enqueue(item);
-    opts.onChange(new Set([table]));
+    opts.onChange(new Set<SyncTable>([table]));
     await refreshPending();
     schedule(flushDelay);
   }

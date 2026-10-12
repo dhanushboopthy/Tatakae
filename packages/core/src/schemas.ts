@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { SYNC_TABLES, type SyncTable } from "./sync";
 import type {
-  Anchor, Area, Day, Experiment, Goal, Habit, HabitLog, InboxItem, Mission, MuraEvent, RechargeItem,
+  Anchor, Area, Day, Experiment, FocusSession, Goal, Habit, HabitLog, InboxItem, Mission, MuraEvent, RechargeItem,
   Review, SettingRow, StoryRef, StuckEvent, SyncRowMap, WatchQueueItem,
 } from "./types";
 
@@ -119,6 +119,17 @@ export const muraEventRow = z.object({
   ...rowMeta,
 }) satisfies RowSchema<MuraEvent>;
 
+export const focusSessionRow = z.object({
+  id: z.string().min(1),
+  missionId: z.string().nullable(),
+  areaId: z.string().nullable(),
+  startedAt: isoTime,
+  endedAt: isoTime.nullable(),
+  plannedMin: z.number().int().positive().max(600),
+  completed: z.boolean(),
+  ...rowMeta,
+}) satisfies RowSchema<FocusSession>;
+
 // ===================== v2 rows =====================
 export const stuckEventRow = z.object({
   id: z.string().min(1),
@@ -227,6 +238,7 @@ export const rowSchemas: { readonly [T in SyncTable]: RowSchema<SyncRowMap[T]> }
   settings: settingRow,
   inbox: inboxRow,
   mura_events: muraEventRow,
+  focus_sessions: focusSessionRow,
   stuck_events: stuckEventRow,
   recharge_items: rechargeItemRow,
   areas: areaRow,
@@ -324,6 +336,27 @@ export const anchorInput = anchorRow.pick({ name: true, startTime: true, endTime
 export const inboxInput = z.object({ text: z.string().min(1).max(1000) });
 export const inboxPatch = z.object({ text: z.string().min(1).max(1000).optional(), processed: z.boolean().optional() });
 
+/** POST /focus: start a block (startedAt defaults to server time). */
+export const focusInput = z.object({
+  missionId: z.string().nullable().default(null),
+  areaId: z.string().nullable().default(null),
+  startedAt: isoTime.optional(),
+  plannedMin: z.number().int().positive().max(600),
+});
+/** PATCH /focus/:id: end a block (completed = ran to the end) or relink it. */
+export const focusPatch = z.object({
+  missionId: z.string().nullable().optional(),
+  areaId: z.string().nullable().optional(),
+  endedAt: isoTime.nullable().optional(),
+  completed: z.boolean().optional(),
+});
+
+/** GET /stats/series query. */
+export const seriesQuery = z.object({
+  metric: z.enum(["final", "screen_min", "focus_min"]),
+  days: z.coerce.number().int().min(1).max(400).default(14),
+});
+
 export const stuckInput = z.object({
   missionId: z.string(),
   blocker,
@@ -355,6 +388,7 @@ export const settingValueSchemas = {
   story_enabled: z.boolean(),
   haptics_enabled: z.boolean(),
   afternoon_nudge: z.object({ enabled: z.boolean(), time: hhmm }),
+  focus_week_target: z.number().int().min(0).max(5000), // minutes; scoreboard "Focus minutes (week)" bar
 } as const;
 
 export type SettingKey = keyof typeof settingValueSchemas;
@@ -506,6 +540,8 @@ export type AnchorInput = z.infer<typeof anchorInput>;
 export type InboxInput = z.infer<typeof inboxInput>;
 export type InboxPatch = z.infer<typeof inboxPatch>;
 export type StuckInput = z.infer<typeof stuckInput>;
+export type FocusInput = z.infer<typeof focusInput>;
+export type FocusPatch = z.infer<typeof focusPatch>;
 export type ScoringSettingsPartial = z.infer<typeof scoringSettingsPartial>;
 export type GoalInput = z.infer<typeof goalInput>;
 export type AreaInput = z.infer<typeof areaInput>;

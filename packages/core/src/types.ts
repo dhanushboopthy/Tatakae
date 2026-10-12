@@ -97,6 +97,17 @@ export interface MuraEvent extends RowMeta {
   at: ISOTime;
 }
 
+/** One focus block (Focus screen). endedAt null = still running. Minutes count from startedAt → endedAt. */
+export interface FocusSession extends RowMeta {
+  id: string;
+  missionId: string | null;
+  areaId: string | null;
+  startedAt: ISOTime;
+  endedAt: ISOTime | null;
+  plannedMin: number;
+  completed: boolean;
+}
+
 // ===================== v2 =====================
 export interface StuckEvent extends RowMeta {
   id: string;
@@ -201,6 +212,7 @@ export interface SyncRowMap {
   settings: SettingRow;
   inbox: InboxItem;
   mura_events: MuraEvent;
+  focus_sessions: FocusSession;
   stuck_events: StuckEvent;
   recharge_items: RechargeItem;
   areas: Area;

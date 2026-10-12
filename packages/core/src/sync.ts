@@ -13,6 +13,7 @@ export const SYNC_TABLES = [
   "settings",
   "inbox",
   "mura_events",
+  "focus_sessions",
   "stuck_events",
   "recharge_items",
   // v2
@@ -36,6 +37,7 @@ export const SYNC_TABLE_PK: { readonly [T in SyncTable]: readonly (keyof SyncRow
   settings: ["key"],
   inbox: ["id"],
   mura_events: ["id"],
+  focus_sessions: ["id"],
   stuck_events: ["id"],
   recharge_items: ["id"],
   areas: ["id"],

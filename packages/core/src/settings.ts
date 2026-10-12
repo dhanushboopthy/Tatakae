@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
   story_enabled: true,
   haptics_enabled: true,
   afternoon_nudge: { enabled: false, time: "14:00" },
+  focus_week_target: 600,
 };
 
 /** Keys whose rows are only writable when canEditScoring(todayIST()). */
