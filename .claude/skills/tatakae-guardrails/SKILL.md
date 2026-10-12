@@ -13,7 +13,7 @@ Run this checklist against the diff (or the screen being built). Report each ite
 3. Misses render grey (`missed` token). Red appears only on destructive actions — including delta pills (negative = grey ↘).
 3b. Visual system follows docs/10-design-system.md: tokens only (no raw hex in components), ink text on lime/lavender/pastel fills, chart marks use *-deep colours, no avatars or brand logos.
 4. No streak counters, no resets to zero, no XP, levels, coins, badges-as-currency. Use "days shown up" (cumulative).
-5. Max 3 ranked missions + 1 side quest. Planned time above 80 % warns, never blocks.
+5. Ranked missions: 5 shown by default, at most 9 (P1–P9), + 1 side quest. Planned time above 80 % warns, never blocks.
 6. Locked-plan edits require a typed reason (mura event) — soft lock, never a hard block.
 7. Habits are not part of the score.
 8. Scoring code uses `@tatakae/core` only — never re-implemented in a client.

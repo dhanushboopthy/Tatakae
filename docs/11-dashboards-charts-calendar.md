@@ -10,7 +10,7 @@ Rules that still apply: misses are grey, no streaks, no red, every chart has a o
 
 | Dashboard | Client | Layout | Contents | Phase |
 |---|---|---|---|---|
-| **Today** | phone | Stack of cards + floating pill nav (ref 02/03) | Week strip · count chips · P1 hero · P2/P3 cards · habits pills · mini scoreboard row (2 boxes) | v1 |
+| **Today** | phone | Stack of cards + floating pill nav (ref 02/03) | Week strip · count chips · P1 hero · P2…P9 cards · habits pills · mini scoreboard row (2 boxes) | v1 |
 | **Calendar** | phone tab | Month grid + scoreboard (ref 01/03) | Month `DayCircle` grid · legend · 4 scoreboard boxes · tap a day → Day sheet | v1 |
 | **Week** | phone (Calendar → Week pill) | Segmented Day/Week/Month (ref 03) | `HatchedStackBar` 7 days · focus minutes by area · habits % | v2 |
 | **Dashboard (Today)** | web | Bento grid (ref 05) | P1 hero · today score · screen-minutes stripe · inbox box · habits box · cycle gauge · goal rings | v1 (first 4), v2 (rest) |

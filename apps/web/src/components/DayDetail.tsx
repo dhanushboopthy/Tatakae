@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { focusMinutes, type ISODate, type MissionStatus } from "@tatakae/core";
+import { focusMinutes, slotRank, type ISODate, type MissionStatus } from "@tatakae/core";
 import { STATE_LABEL } from "../lib/colors";
 import { formatDay } from "../lib/format";
 import { useCalendarDay, useFocusSessions, useHabits, useMissionsRange } from "../lib/hooks";
@@ -42,7 +42,7 @@ export function DayDetail({ date, today }: { date: ISODate; today: ISODate }) {
     ["What made me drift?", d?.qDrift],
     ["What did I practise?", d?.qPractised],
   ];
-  const sorted = [...missions].sort((a, b) => ["P1", "P2", "P3", "side"].indexOf(a.slot) - ["P1", "P2", "P3", "side"].indexOf(b.slot));
+  const sorted = [...missions].sort((a, b) => slotRank(a.slot) - slotRank(b.slot));
 
   return (
     <section aria-labelledby="day-detail-title" className="card space-y-5">

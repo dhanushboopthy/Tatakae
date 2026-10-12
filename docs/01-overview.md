@@ -3,7 +3,7 @@
 ## What TATAKAE is
 A personal execution system for one person (Dhanush): software that **enforces a method** rather than storing tasks. It starts fresh (nothing is imported):
 
-1. **Plan the night before** (laptop, ≤ 5 minutes): close today, pick three ranked missions for tomorrow, lock the plan.
+1. **Plan the night before** (laptop, ≤ 5 minutes): close today, pick ranked missions for tomorrow (5 by default, up to 9), lock the plan.
 2. **Start strict in the morning** (phone, ≤ 10 seconds): one screen, one P1 mission, one Start button.
 3. **Execute during the day** (phone): status chips, focus timer, Stuck button, quick capture.
 4. **Reflect weekly / monthly / per 12-week cycle** (laptop): find overload, unevenness and waste; run one experiment at a time.

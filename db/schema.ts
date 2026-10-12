@@ -27,7 +27,7 @@ export const missions = sqliteTable("missions", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   dayDate: text("day_date"),
-  slot: text("slot", { enum: ["P1", "P2", "P3", "side", "backlog"] }).notNull(),
+  slot: text("slot", { enum: ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "side", "backlog"] }).notNull(), // TS-only enum, no CHECK
   points: integer("points"),
   status: text("status", { enum: ["open", "done", "minimum", "missed", "rescheduled", "backlog"] }).notNull().default("open"),
   minimum: text("minimum"),

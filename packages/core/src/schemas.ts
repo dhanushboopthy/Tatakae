@@ -2,7 +2,7 @@ import { z } from "zod";
 import { SYNC_TABLES, type SyncTable } from "./sync";
 import type {
   Anchor, Area, Day, Experiment, FocusSession, Goal, Habit, HabitLog, InboxItem, Mission, MuraEvent, RechargeItem,
-  Review, SettingRow, StoryRef, StuckEvent, SyncRowMap, WatchQueueItem,
+  RankedSlot, Review, SettingRow, Slot, StoryRef, StuckEvent, SyncRowMap, WatchQueueItem,
 } from "./types";
 
 // Zod schemas for every API input/output and every synced row.
@@ -16,7 +16,29 @@ export const isoTime = z.string().refine((s) => !Number.isNaN(Date.parse(s)), "e
 export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
 
 export const dayKind = z.enum(["normal", "rest", "write_off"]);
-export const slot = z.enum(["P1", "P2", "P3", "side", "backlog"]);
+/** Ranked slots in order. The ritual shows DEFAULT_RANKED rows and lets the owner add up to MAX_RANKED. */
+export const RANKED_SLOTS = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"] as const satisfies readonly RankedSlot[];
+export const DEFAULT_RANKED = 5;
+export const MAX_RANKED = RANKED_SLOTS.length;
+export const slot = z.enum([...RANKED_SLOTS, "side", "backlog"]);
+
+export const isRankedSlot = (s: string): s is RankedSlot => (RANKED_SLOTS as readonly string[]).includes(s);
+
+/** Sort key: P1…P9 → 0…8, side quest → 9, backlog → 10. */
+export function slotRank(s: Slot): number {
+  if (s === "side") return MAX_RANKED;
+  if (s === "backlog") return MAX_RANKED + 1;
+  return RANKED_SLOTS.indexOf(s);
+}
+
+/** First ranked slot (after P1 unless `includeP1`) not used by a live mission; null when all nine are taken. */
+export function firstFreeRanked(
+  missions: readonly { slot: Slot; deletedAt?: string | null; status?: string }[],
+  opts: { includeP1?: boolean } = {},
+): RankedSlot | null {
+  const used = new Set(missions.filter((m) => m.deletedAt == null && m.status !== "rescheduled").map((m) => m.slot));
+  return RANKED_SLOTS.find((s) => (opts.includeP1 || s !== "P1") && !used.has(s)) ?? null;
+}
 export const missionStatus = z.enum(["open", "done", "minimum", "missed", "rescheduled", "backlog"]);
 export const blocker = z.enum(["uncertainty", "fear", "inertia"]);
 export const reviewType = z.enum(["week", "month", "cycle"]);
@@ -284,7 +306,7 @@ export type ForgeMission = Pick<Mission, "slot" | "status" | "minimum" | "ifThen
 
 /**
  * Forge validation for a day's missions (ignores soft-deleted and rescheduled ones):
- * exactly one P1 with Minimum + if-then, at most one each of P1/P2/P3 and one side quest.
+ * exactly one P1 with Minimum + if-then, at most one mission per ranked slot (P1…P9) and one side quest.
  */
 export function validateForge(missions: readonly ForgeMission[]): ForgeProblem[] {
   const live = missions.filter((m) => m.deletedAt == null && m.status !== "rescheduled" && m.status !== "backlog");
@@ -296,7 +318,7 @@ export function validateForge(missions: readonly ForgeMission[]): ForgeProblem[]
     if (!p1.minimum?.trim()) problems.push("p1_missing_minimum");
     if (!p1.ifThen?.trim()) problems.push("p1_missing_if_then");
   }
-  if (count("P1") > 1 || count("P2") > 1 || count("P3") > 1) problems.push("duplicate_slot");
+  if (RANKED_SLOTS.some((s) => count(s) > 1)) problems.push("duplicate_slot");
   if (count("side") > 1) problems.push("too_many_side");
   return problems;
 }

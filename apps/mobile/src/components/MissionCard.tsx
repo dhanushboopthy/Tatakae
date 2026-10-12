@@ -1,9 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { Mission, MissionStatus, Slot } from "@tatakae/core";
+import { RANKED_SLOTS, type Mission, type MissionStatus, type RankedSlot, type Slot } from "@tatakae/core";
 import { colors, minTarget, legacyRadius, space, text, type } from "../theme";
 import { STATUS_GLYPH, STATUS_LABEL, StatusChips } from "./StatusChips";
 
-export const SLOT_LABEL: Record<Slot, string> = { P1: "P1", P2: "P2", P3: "P3", side: "Side quest", backlog: "Backlog" };
+export const SLOT_LABEL: Record<Slot, string> = {
+  ...(Object.fromEntries(RANKED_SLOTS.map((s) => [s, s])) as Record<RankedSlot, string>),
+  side: "Side quest",
+  backlog: "Backlog",
+};
 
 export interface MissionCardProps {
   mission: Mission;

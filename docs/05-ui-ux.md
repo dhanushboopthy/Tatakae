@@ -24,8 +24,8 @@ Dashboards, charts, calendar, scoreboard and icons: **[11-dashboards-charts-cale
 ## Phone screens
 | Screen | Must show | Must NOT show | Target |
 |---|---|---|---|
-| Morning | Intention question, P1 card (title, Minimum, if-then), Start 25/50/90 | Other missions (behind "Show P2/P3"), stats, story | ≤ 10 s to Start |
-| Today | P1–P3 + side quest with chips; habits strip; days-shown-up count | Red, streaks, daily score before shutdown | each action ≤ 5 s |
+| Morning | Intention question, P1 card (title, Minimum, if-then), Start 25/50/90 | Other missions (behind "Show the rest"), stats, story | ≤ 10 s to Start |
+| Today | P1–P9 (5 by default) + side quest with chips; habits strip; days-shown-up count | Red, streaks, daily score before shutdown | each action ≤ 5 s |
 | Focus | Countdown ring, mission title, resume note, Pause / Done / Stuck | Notifications from app | — |
 | Stuck | 3 big choices → one follow-up field or timer | Lectures | ≤ 15 s |
 | Capture | One autofocused field, Save | Categorisation | ≤ 5 s |

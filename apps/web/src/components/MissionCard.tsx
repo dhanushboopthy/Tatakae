@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { FocusLength, Mission, MissionStatus } from "@tatakae/core";
+import { RANKED_SLOTS, type FocusLength, type Mission, type MissionStatus, type RankedSlot } from "@tatakae/core";
 import { editLocked, needsLockReason, patchMissionFree, setStatus, upsertMission, useSettings } from "../lib/hooks";
 import { EditedElsewhere } from "./ConflictNotice";
 import { ArrowRightIcon, FocusIcon, LockIcon, PencilIcon, StuckIcon } from "./icons";
@@ -11,16 +11,15 @@ import { useToast } from "./Toast";
 
 /**
  * A mission card (docs/10 §5): P1 = charcoal hero with a lime Start circle and 25 · 50 · 90 pills;
- * P2 = lavender, P3 = lime-soft, side quest = surface-2. Ink text on every coloured fill.
+ * P2 = lavender, P3 = lime-soft, P4–P9 = plain surface with an ink rank pill, side quest = surface-2.
+ * Ink text on every coloured fill.
  * One-tap status chips, Start focus, Stuck, resume note and edit. Status / resume note are free fields;
  * editing title, Minimum, if-then, points or moving it off a locked (forged) day asks for a reason
  * first (LockReasonDialog → mura event).
  */
 
 export const SLOT_LABEL: Record<Mission["slot"], string> = {
-  P1: "P1",
-  P2: "P2",
-  P3: "P3",
+  ...(Object.fromEntries(RANKED_SLOTS.map((s) => [s, s])) as Record<RankedSlot, string>),
   side: "Side quest",
   backlog: "Backlog",
 };
@@ -34,7 +33,23 @@ interface Tone {
   onColor: boolean;
 }
 
+/** P4–P9: white card, ink rank pill (the top three keep their colours). */
+const LOWER: Tone = {
+  card: "bg-surface text-ink",
+  sub: "text-ink-2",
+  action: "bg-surface-2 text-ink hover:bg-line",
+  pill: "bg-ink text-surface",
+  outline: "border-ink text-ink",
+  onColor: false,
+};
+
 const TONE: Record<Mission["slot"], Tone> = {
+  P4: LOWER,
+  P5: LOWER,
+  P6: LOWER,
+  P7: LOWER,
+  P8: LOWER,
+  P9: LOWER,
   P1: {
     card: "bg-charcoal text-on-charcoal",
     sub: "text-on-charcoal-2",

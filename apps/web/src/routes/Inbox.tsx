@@ -10,7 +10,7 @@ import { useToast } from "../components/Toast";
 import { api, isNetworkError } from "../lib/api";
 import { appDayAge } from "../lib/format";
 import { discardInbox, editInbox, markProcessed, restoreInbox, upsertMission, useDay, useInbox, useToday } from "../lib/hooks";
-import { firstFreeSlot } from "../lib/plan";
+import { AFTER_P1, firstFreeSlot } from "../lib/plan";
 import { flushNow } from "../sync/engine";
 
 // Inbox (docs/05): captured items → mission (backlog / today / tomorrow), note, or discard.
@@ -198,7 +198,7 @@ function ToMissionForm({ item, onClose }: { item: InboxItem; onClose: () => void
   const [needReason, setNeedReason] = useState(false);
 
   const view = target === "today" ? todayView : target === "tomorrow" ? tomorrowView : null;
-  const slot: Slot | null = view ? firstFreeSlot(view.missions, ["P2", "P3", "side"]) : "backlog";
+  const slot: Slot | null = view ? firstFreeSlot(view.missions, AFTER_P1) : "backlog";
   const date: ISODate | null = target === "today" ? today : target === "tomorrow" ? tomorrow : null;
 
   async function save(reason?: string) {
@@ -250,7 +250,7 @@ function ToMissionForm({ item, onClose }: { item: InboxItem; onClose: () => void
             ? "Pick it up in a ritual or the week planner."
             : slot
               ? `Goes in as ${slot === "side" ? "the side quest" : slot}.${view?.forged ? " That plan is locked, so you'll note why." : ""}`
-              : "That day already has three missions and a side quest. Use the backlog."}
+              : "That day already has nine missions and a side quest. Use the backlog."}
         </p>
       </fieldset>
       <div className="flex justify-end gap-2">

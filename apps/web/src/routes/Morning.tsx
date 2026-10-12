@@ -30,7 +30,7 @@ export function Morning() {
         </section>
       )}
       <Link to="/today" className="btn-ghost">
-        Show P2 and P3
+        Show the rest of today
       </Link>
     </div>
   );

@@ -5,7 +5,9 @@ export type ISODate = string; // YYYY-MM-DD in Asia/Kolkata
 export type ISOTime = string; // full ISO timestamp
 
 export type DayKind = "normal" | "rest" | "write_off";
-export type Slot = "P1" | "P2" | "P3" | "side" | "backlog";
+/** Ranked missions P1…P9 (5 shown by default, up to 9 a day), one unscored side quest, or the backlog. */
+export type RankedSlot = "P1" | "P2" | "P3" | "P4" | "P5" | "P6" | "P7" | "P8" | "P9";
+export type Slot = RankedSlot | "side" | "backlog";
 export type MissionStatus =
   | "open" | "done" | "minimum" | "missed" | "rescheduled" | "backlog";
 export type Mark = "Strong" | "Solid" | "Light" | "Unplanned";

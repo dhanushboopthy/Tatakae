@@ -7,6 +7,7 @@ import {
   monthRange,
   readSettings,
   scoreDay,
+  slotRank,
   SEED_UPDATED_AT,
   todayIST,
   validateForge,
@@ -22,8 +23,7 @@ import { transaction, type Db } from "./db";
 import { BadRequest } from "./errors";
 import { allRows, bumpUpdatedAt, getRow, upsertRow, withoutUndefined } from "./rows.service";
 
-const SLOT_ORDER: Record<Mission["slot"], number> = { P1: 0, P2: 1, P3: 2, side: 3, backlog: 4 };
-const bySlot = (a: Mission, b: Mission): number => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || a.id.localeCompare(b.id);
+const bySlot = (a: Mission, b: Mission): number => slotRank(a.slot) - slotRank(b.slot) || a.id.localeCompare(b.id);
 
 /** What a date looks like before anything is saved. updatedAt is the epoch so any real edit wins LWW. */
 export function defaultDay(date: ISODate): Day {
@@ -54,7 +54,7 @@ export function isForged(db: Db, date: ISODate | null | undefined): boolean {
   return getDay(db, date)?.forgedAt != null;
 }
 
-/** Live missions of a day, P1 → P2 → P3 → side → backlog. */
+/** Live missions of a day, P1 → … → P9 → side → backlog. */
 export function missionsOn(db: Db, date: ISODate): Mission[] {
   return db
     .select()

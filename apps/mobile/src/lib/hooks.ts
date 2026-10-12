@@ -15,6 +15,7 @@ import {
   readSettings,
   reschedule,
   scoreDay,
+  slotRank,
   todayIST,
   type Day,
   type DayKind,
@@ -39,10 +40,8 @@ import { focusedMinutes, newSession, parseSession, pause, resume, type FocusSess
 // "meta:focus" and "meta:flags".
 
 const FOCUS_KEY = "focus";
-const SLOT_ORDER: Record<Slot, number> = { P1: 0, P2: 1, P3: 2, side: 3, backlog: 4 };
-
 export const sortMissions = (ms: readonly Mission[]): Mission[] =>
-  [...ms].sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || a.title.localeCompare(b.title));
+  [...ms].sort((a, b) => slotRank(a.slot) - slotRank(b.slot) || a.title.localeCompare(b.title));
 
 export type DayFields = Omit<Day, "date" | "forgedAt" | "updatedAt" | "deletedAt">;
 

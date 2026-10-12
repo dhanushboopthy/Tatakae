@@ -25,3 +25,5 @@
 - v4 api: `GET /export`, `GET /system/jobs`, nightly JSON backup (local newest 7 + Object Storage newest 30) logged to `job_runs`, public `GET /app/version`, laptop web push (`/push/*`, 06:30 morning message).
 - v4 web: Settings → Notifications (push opt-in + test), service-worker push handler, "edited elsewhere" note from sync conflicts, Playwright smoke test (written; dependency not installed yet).
 - Dropped: Notion import (no Notion data; the app starts fresh). `scripts/notion-import/` removed.
+- Ranked missions: P1…P9. The night ritual shows 5 by default with "Add" up to 9 (core `RANKED_SLOTS`, `DEFAULT_RANKED`, `MAX_RANKED`, `slotRank`, `firstFreeRanked`); no migration needed (the slot column has no CHECK).
+- Local Docker run: `deploy/docker-compose.local.yml`, `deploy/Caddyfile.local`, `scripts/local-up.sh` (first free port from 8080), `.dockerignore`.

@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  DEFAULT_RANKED,
+  MAX_RANKED,
+  RANKED_SLOTS,
   dayRow,
+  firstFreeRanked,
   missionRow,
+  slotRank,
   outboxItem,
   p1Ready,
   rowSchemas,
@@ -30,7 +35,7 @@ import {
   type SyncTable,
 } from "./sync";
 import { SyncHttpError, createSyncClient, newId, reschedule, type LocalStore, type SyncStatus } from "./syncClient";
-import type { Day, Mission } from "./types";
+import type { Day, Mission, Slot } from "./types";
 
 const T0 = "2026-10-20T08:00:00.000Z";
 const T1 = "2026-10-20T09:00:00.000Z";
@@ -202,10 +207,32 @@ describe("p1Ready / validateForge", () => {
     ["no P1", [fm({ slot: "P2" })], ["no_p1"]],
     ["P1 incomplete", [fm({ minimum: null, ifThen: "" })], ["p1_missing_minimum", "p1_missing_if_then"]],
     ["two P2", [fm({}), fm({ slot: "P2" }), fm({ slot: "P2" })], ["duplicate_slot"]],
+    [
+      "nine ranked missions",
+      (["P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"] as const).reduce((ms, slot) => [...ms, fm({ slot })], [fm({})]),
+      [],
+    ],
+    ["two P7", [fm({}), fm({ slot: "P7" }), fm({ slot: "P7" })], ["duplicate_slot"]],
     ["two side quests", [fm({}), fm({ slot: "side" }), fm({ slot: "side" })], ["too_many_side"]],
     ["deleted P1 does not count", [fm({ deletedAt: T0 })], ["no_p1"]],
   ])("validateForge: %s", (_name, missions, expected) => {
     expect(validateForge(missions)).toEqual(expected);
+  });
+
+  it("ranked slots: 5 by default, up to 9, ordered before side and backlog", () => {
+    expect(DEFAULT_RANKED).toBe(5);
+    expect(MAX_RANKED).toBe(9);
+    expect(missionRow.shape.slot.safeParse("P9").success).toBe(true);
+    expect(missionRow.shape.slot.safeParse("P10").success).toBe(false);
+    expect(["backlog", "side", "P9", "P2", "P1"].sort((a, b) => slotRank(a as Slot) - slotRank(b as Slot))).toEqual(["P1", "P2", "P9", "side", "backlog"]);
+  });
+
+  it("firstFreeRanked skips used, deleted-free and rescheduled slots", () => {
+    expect(firstFreeRanked([{ slot: "P1" }, { slot: "P2" }])).toBe("P3");
+    expect(firstFreeRanked([{ slot: "P1" }, { slot: "P2", status: "rescheduled" }])).toBe("P2");
+    expect(firstFreeRanked([{ slot: "P2", deletedAt: T0 }])).toBe("P2");
+    expect(firstFreeRanked([], { includeP1: true })).toBe("P1");
+    expect(firstFreeRanked(RANKED_SLOTS.map((slot) => ({ slot })))).toBeNull();
   });
 });
 

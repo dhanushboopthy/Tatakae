@@ -27,7 +27,7 @@ import {
   useNow,
   useToday,
 } from "../lib/hooks";
-import { RAIL, anchorsFor, firstFreeSlot, hhmmOf, istMinutesOf, railSpan, railTimeAt, toMinutes } from "../lib/plan";
+import { AFTER_P1, RAIL, anchorsFor, firstFreeSlot, hhmmOf, istMinutesOf, railSpan, railTimeAt, toMinutes } from "../lib/plan";
 import { AreaBlock } from "./AreaBlock";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import { LockReasonDialog } from "./LockReasonDialog";
@@ -91,7 +91,7 @@ export function WeekPlanner(props: { initialWeek: { year: number; week: number }
     else {
       const onDay = missions.filter((m) => m.dayDate === p.date && m.deletedAt == null && m.id !== p.mission.id);
       const keep = p.mission.slot !== "backlog" && firstFreeSlot(onDay, [p.mission.slot]) === p.mission.slot ? p.mission.slot : null;
-      const slot = keep ?? firstFreeSlot(onDay, ["P2", "P3", "side"]);
+      const slot = keep ?? firstFreeSlot(onDay, AFTER_P1);
       if (!slot || slot === "backlog") {
         toast("That day already has its three missions and a side quest.");
         return;

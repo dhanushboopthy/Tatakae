@@ -33,7 +33,7 @@ This file overrides the older "dark by default" palette in earlier docs. Constra
 | `lime` | `#CDE37A` | **Primary accent**: done, selected day, P1 arrow button, positive deltas |
 | `lime-soft` | `#EEF5D3` | Lime-tinted chips/backgrounds |
 | `lime-deep` | `#7E9A1E` | Lime meaning in charts/borders on white (3.2:1) |
-| `lavender` | `#A9A3DB` | **Secondary accent**: minimum, P2/P3 cards, notifications button |
+| `lavender` | `#A9A3DB` | **Secondary accent**: minimum, P2 card (P3 lime-soft, P4–P9 plain surface with an ink rank pill), notifications button |
 | `lavender-soft` | `#E9E7F8` | Bell/settings circle, soft chips |
 | `lavender-deep` | `#6E66B8` | Lavender meaning in charts/borders (4.9:1) |
 | `missed` | `#8A8A90` | Missed icon/border (3.4:1) — fill stays `surface-2` |
@@ -129,7 +129,7 @@ The night ritual always uses the dark variant.
 ### Web (laptop)
 **Dashboard (Today)** (ref 05) — icon rail left; top: "Good evening, Dhanush" (40, light), date-range pill, search + bell circles. Bento grid:
 - Row 1: `P1HeroCard` (wide) · `MetricCard` Score today (hero number, appears after shutdown) · `MetricCard` Screen minutes with `StripeTrend`.
-- Row 2: P2/P3 cards · Inbox count card with ↗ · Habits card.
+- Row 2: P2…P9 cards · Inbox count card with ↗ · Habits card.
 - Row 3: `SegmentGauge` (cycle) · `RingProgress` list of cycle goals (ref 04 right panel).
 
 **Night ritual** — dark variant, centred 720 px column, step dots as pills at top, each step one white(dark-surface) card; capacity bar as a thick pill track with lime fill and an 80 % tick.

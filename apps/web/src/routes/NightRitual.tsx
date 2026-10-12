@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { addDays, type Anchor, type ISODate, type Mission, type ResolvedSettings, type Slot } from "@tatakae/core";
+import {
+  DEFAULT_RANKED,
+  MAX_RANKED,
+  RANKED_SLOTS,
+  addDays,
+  type Anchor,
+  type ISODate,
+  type Mission,
+  type RankedSlot,
+  type ResolvedSettings,
+} from "@tatakae/core";
 import { CapacityBar } from "../components/CapacityBar";
-import { MoonIcon } from "../components/icons";
+import { MoonIcon, PlusIcon } from "../components/icons";
 import { FORGE_PROBLEM_COPY, IfThenTemplates } from "../components/P1Card";
 import { StatusChips } from "../components/StatusChips";
 import { useToast } from "../components/Toast";
@@ -21,7 +31,7 @@ import {
   useToday,
   type DayView,
 } from "../lib/hooks";
-import { anchorsFor, freeMinutes, plannedMinutes } from "../lib/plan";
+import { AFTER_P1, anchorsFor, freeMinutes, plannedMinutes } from "../lib/plan";
 import { storage } from "../lib/storage";
 import { useForcedDark } from "../lib/theme";
 
@@ -35,7 +45,7 @@ const STEPS = [
   "Three questions",
   "Close loops",
   "Capacity",
-  "Pick three",
+  "Pick missions",
   "Side quest",
   "Shutdown",
 ] as const;
@@ -458,7 +468,7 @@ function Capacity(props: {
   );
 }
 
-// ---------- 6. pick three ----------
+// ---------- 6. pick missions (5 by default, up to 9) ----------
 
 interface SlotDraft {
   /** Existing mission (tomorrow's, or picked from the backlog). */
@@ -470,7 +480,13 @@ interface SlotDraft {
   points: number;
 }
 
-const RANKED: readonly Exclude<Slot, "side" | "backlog">[] = ["P1", "P2", "P3"];
+const RANKED: readonly RankedSlot[] = RANKED_SLOTS;
+
+/** Rows shown: DEFAULT_RANKED, or more when tomorrow already uses a later slot. */
+function initialRows(slots: DayView["slots"]): number {
+  const last = RANKED.reduce((n, s, i) => (slots[s] ? i + 1 : n), 0);
+  return Math.min(MAX_RANKED, Math.max(DEFAULT_RANKED, last));
+}
 
 function draftFrom(m: Mission | undefined): SlotDraft {
   return {
@@ -490,6 +506,8 @@ function PickThree(props: { tomorrow: DayView; settings: ResolvedSettings; freeM
     Object.fromEntries(RANKED.map((s) => [s, draftFrom(props.tomorrow.slots[s])] as const)),
   );
   const [error, setError] = useState<string | null>(null);
+  const [rows, setRows] = useState(() => initialRows(props.tomorrow.slots));
+  const shown = RANKED.slice(0, rows);
 
   const set = (slot: string, patch: Partial<SlotDraft>) => setDrafts((d) => ({ ...d, [slot]: { ...(d[slot] ?? draftFrom(undefined)), ...patch } }));
   const usedIds = new Set(Object.values(drafts).map((d) => d.source?.id).filter(Boolean));
@@ -534,8 +552,10 @@ function PickThree(props: { tomorrow: DayView; settings: ResolvedSettings; freeM
 
   return (
     <StepForm onBack={props.onBack} onSubmit={onSubmit}>
-      <p className="text-sm text-ink-2">Three at most, ranked. P1 is the one that makes tomorrow a win.</p>
-      {RANKED.map((slot) => {
+      <p className="text-sm text-ink-2">
+        Ranked, {DEFAULT_RANKED} to start and up to {MAX_RANKED}. P1 is the one that makes tomorrow a win. Leave the rest blank if the day is full.
+      </p>
+      {shown.map((slot) => {
         const d = drafts[slot] ?? draftFrom(undefined);
         const isP1 = slot === "P1";
         const id = (k: string) => `pick-${slot}-${k}`;
@@ -657,6 +677,11 @@ function PickThree(props: { tomorrow: DayView; settings: ResolvedSettings; freeM
           </fieldset>
         );
       })}
+      {rows < MAX_RANKED && (
+        <button type="button" className="btn-secondary self-start" onClick={() => setRows((n) => Math.min(MAX_RANKED, n + 1))}>
+          <PlusIcon size={18} /> Add {RANKED[rows]}
+        </button>
+      )}
       <CapacityBar plannedMin={plannedMin} freeMin={props.freeMin} scoring={props.settings.scoring} />
       {error && (
         <p role="alert" className="text-sm">
@@ -740,7 +765,7 @@ function Shutdown(props: { tomorrow: DayView; onBack: () => void; onFixPlan: () 
           <p className="text-ink-2">No P1 yet.</p>
         )}
         <ul className="space-y-2">
-          {(["P2", "P3", "side"] as const).map((s) =>
+          {AFTER_P1.map((s) =>
             slots[s] ? (
               <li key={s} className="flex items-center gap-2 text-sm">
                 <span className="pill bg-surface-2 text-ink">{s === "side" ? "Side quest" : s}</span>
@@ -757,7 +782,7 @@ function Shutdown(props: { tomorrow: DayView; onBack: () => void; onFixPlan: () 
             <p key={p}>{p}</p>
           ))}
           <button type="button" className="btn-secondary" onClick={props.onFixPlan}>
-            Back to Pick three
+            Back to Pick missions
           </button>
         </div>
       )}

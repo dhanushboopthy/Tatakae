@@ -1,12 +1,12 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { blocksToText, isoDate, slot, textToBlocks, type InboxItem, type InboxPatch, type Mission, type MuraEvent } from "@tatakae/core";
+import { blocksToText, firstFreeRanked, isoDate, slot, textToBlocks, type InboxItem, type InboxPatch, type Mission, type MuraEvent } from "@tatakae/core";
 import { inbox, notes } from "../../../../db/schema";
 import { transaction, type Db } from "./db";
 import { Conflict, NotFound } from "./errors";
 import { newId } from "./ids";
 import { createMission } from "./missions.service";
-import { bumpUpdatedAt, getRow, upsertRow, withoutUndefined } from "./rows.service";
+import { allRows, bumpUpdatedAt, getRow, upsertRow, withoutUndefined } from "./rows.service";
 
 // Quick capture. Processing turns an item into a mission (backlog by default), a note, or discards it.
 
@@ -77,12 +77,15 @@ export function processItem(db: Db, id: string, action: InboxProcess, now: Date 
     if (action.to === "mission") {
       const m = action.mission;
       const dayDate = m.dayDate ?? null;
+      // A dated mission without a slot takes the first free ranked slot after P1 (P2…P9).
+      const freeSlot = dayDate ? firstFreeRanked(allRows(db, "missions", { includeDeleted: false }).filter((x) => x.dayDate === dayDate)) : null;
+      if (dayDate && !m.slot && !freeSlot) throw new Conflict("All nine slots on that day are taken. Send it to the backlog instead.", "day_full");
       const write = createMission(
         db,
         {
           title: m.title ?? prev.text.slice(0, 200),
           dayDate,
-          slot: m.slot ?? (dayDate ? "P3" : "backlog"),
+          slot: m.slot ?? freeSlot ?? "backlog",
           points: m.points ?? null,
           minimum: m.minimum ?? null,
           ifThen: m.ifThen ?? null,

@@ -6,6 +6,7 @@ import {
   isoWeek,
   isoWeekRange,
   parseIsoWeek,
+  slotRank,
   type Experiment,
   type ISODate,
   type MetricBox,
@@ -158,7 +159,7 @@ function WeekColumns({ start, end, today }: { start: ISODate; end: ISODate; toda
           {dates.map((d) => {
             const ms = missions
               .filter((m) => m.dayDate === d)
-              .sort((a, b) => ["P1", "P2", "P3", "side"].indexOf(a.slot) - ["P1", "P2", "P3", "side"].indexOf(b.slot));
+              .sort((a, b) => slotRank(a.slot) - slotRank(b.slot));
             return (
               <div key={d} className="space-y-2">
                 <p className="text-center text-[13px] font-semibold">

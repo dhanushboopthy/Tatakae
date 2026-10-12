@@ -11,7 +11,7 @@ The software exists to run this method. If a feature does not serve a step below
 | Hara Hachi Bu | Okinawa | Plan to 80 % of free time |
 | Wabi-Sabi | Japanese aesthetics | Grey misses, imperfect days count, Minimum = half credit |
 | Implementation intentions | Gollwitzer & Sheeran (d ≈ .65 across 94 tests) | P1 requires an if-then plan |
-| Ivy Lee method | Classic | Max 3 ranked missions |
+| Ivy Lee method | Classic | A short ranked list: 5 missions by default, up to 9 (owner's choice, 12 Oct 2026) |
 | Shutdown ritual | Cal Newport | "Shutdown complete" locks the plan |
 | Feel-good productivity | Ali Abdaal | Recharge menu, Stuck diagnosis (uncertainty / fear / inertia), play in the story layer |
 | Habit formation | Lally et al. 2010 | One miss doesn't matter → "don't miss twice" as a soft rule |
@@ -24,7 +24,7 @@ The software exists to run this method. If a feature does not serve a step below
 3. **Three questions** — Did I do P1? What made me drift? What did I practise?
 4. **Close loops** — resume note for every unfinished mission.
 5. **Capacity** — tomorrow's anchors and free minutes; bar against 80 %.
-6. **Pick 3 ranked** — P1 needs a **Minimum** version and an **if-then** plan. Points default 1.
+6. **Pick ranked missions** — 5 rows by default (P1–P5), "Add" for more up to P9. P1 needs a **Minimum** version and an **if-then** plan; the others are optional. Points default 1. The capacity bar still warns above 80 %.
 7. **Side quest** — optional, one, unscored.
 8. **Shutdown complete** — lock tomorrow (`forged_at`). Screen says: phone outside the room.
 

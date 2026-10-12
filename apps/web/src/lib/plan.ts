@@ -1,4 +1,4 @@
-import { weekdayOf, type Anchor, type Day, type ISODate, type Mission, type Slot } from "@tatakae/core";
+import { RANKED_SLOTS, slotRank, weekdayOf, type Anchor, type Day, type ISODate, type Mission, type Slot } from "@tatakae/core";
 
 // Pure helpers for web screens (routing, ritual capacity, templates, timers). No I/O, no React,
 // so they are unit-tested in plan.test.ts. Scoring/time rules themselves come from @tatakae/core.
@@ -92,13 +92,18 @@ export function plannedMinutes(missions: readonly Pick<Mission, "estMin" | "slot
 
 // ---------- missions ----------
 
-export const SLOT_ORDER: readonly Slot[] = ["P1", "P2", "P3", "side"];
+export type DaySlot = Exclude<Slot, "backlog">;
 
-/** Missions on a date, live, in slot order (P1, P2, P3, side). Backlog-slot rows are excluded. */
+/** Day slots in order: P1…P9, then the side quest (core RANKED_SLOTS). */
+export const SLOT_ORDER: readonly DaySlot[] = [...RANKED_SLOTS, "side"];
+/** Where a mission moved onto a day lands when it has no slot yet: P2…P9, then the side quest. */
+export const AFTER_P1: readonly DaySlot[] = SLOT_ORDER.slice(1);
+
+/** Missions on a date, live, in slot order (P1…P9, side). Backlog-slot rows are excluded. */
 export function missionsOn(missions: readonly Mission[], date: ISODate): Mission[] {
   return missions
     .filter((m) => m.deletedAt == null && m.dayDate === date && m.slot !== "backlog")
-    .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+    .sort((a, b) => slotRank(a.slot) - slotRank(b.slot));
 }
 
 /** One mission per slot, preferring the one that wasn't rescheduled away. */

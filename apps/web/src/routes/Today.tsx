@@ -26,11 +26,11 @@ import {
   useToday,
   useWeekStats,
 } from "../lib/hooks";
-import { shouldPromptRitual } from "../lib/plan";
+import { AFTER_P1, shouldPromptRitual } from "../lib/plan";
 import { greeting, useDisplayName } from "../lib/profile";
 
 // Web Dashboard (docs/10 §6, docs/11 §1, ref 05): greeting + week pill; bento grid —
-// row 1 P1 hero · today's score · days shown up; row 2 P2 / P3 / side quest · habits + inbox;
+// row 1 P1 hero · today's score · days shown up; row 2 P2…P9 / side quest · habits + inbox;
 // row 3 screen-minutes stripe · 7-day average · focus this week; row 4 week bars · cycle gauge · goal rings.
 // No score before shutdown: today's box says "Shown after shutdown" until the day is closed.
 
@@ -58,7 +58,7 @@ export function Today() {
   const { start: ws, end: we } = isoWeekRange(week.year, week.week);
   const ranked = day?.missions.filter((m) => m.slot !== "side") ?? [];
   const p1 = day?.slots.P1;
-  const others = day ? (["P2", "P3", "side"] as const).map((s) => day.slots[s]).filter((m) => m !== undefined) : [];
+  const others = day ? AFTER_P1.map((s) => day.slots[s]).filter((m) => m !== undefined) : [];
   const weekIndex = cycle ? cycle.weeks.findIndex((w) => today >= w.start && today <= w.end) + 1 : 0;
 
   async function lockToday() {

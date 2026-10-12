@@ -8,7 +8,7 @@ Source of truth: `db/schema.ts`. Conventions: ULID text ids, IST `YYYY-MM-DD` da
 | 0 | sessions | id (hashed), client web/mobile, device_name, expires_at |
 | 0 | job_runs | job, started_at, ok, detail |
 | v1 | days | date PK, kind normal/rest/write_off, screen_min, small_win, q_p1, q_drift, q_practised, intention, energy, forged_at |
-| v1 | missions | id, title, day_date (null = backlog), slot P1/P2/P3/side/backlog, points, status, minimum, if_then, resume_note, goal_id, est_min, actual_min, reschedule_count |
+| v1 | missions | id, title, day_date (null = backlog), slot P1…P9/side/backlog, points, status, minimum, if_then, resume_note, goal_id, est_min, actual_min, reschedule_count |
 | v1 | habits / habit_logs | anchor, behaviour, minimum, frequency, area_id, active / (habit_id, date) done |
 | v1 | anchors | name, start_time, end_time, weekdays |
 | v1 | settings | key, value JSON, editable_from |

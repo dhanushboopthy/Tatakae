@@ -260,6 +260,17 @@ describe("habits and inbox routes", () => {
     expect((await call(app, "GET", "/inbox")).body["items"]).toEqual([]);
   });
 
+  it("a dated inbox mission takes the first free ranked slot after P1", async () => {
+    const { app } = await setup();
+    await call(app, "POST", "/missions", { title: "Main", dayDate: "2026-10-20", slot: "P1", minimum: "a", ifThen: "b" });
+    await call(app, "POST", "/missions", { title: "Second", dayDate: "2026-10-20", slot: "P2" });
+    const created = await call(app, "POST", "/inbox", { text: "Book the dentist" });
+    const id = String((created.body["item"] as Json)["id"]);
+    const res = await call(app, "PATCH", `/inbox/${id}`, { to: "mission", mission: { dayDate: "2026-10-20" } });
+    expect(res.status).toBe(200);
+    expect(res.body["mission"]).toMatchObject({ dayDate: "2026-10-20", slot: "P3", status: "open" });
+  });
+
   it("discards an inbox item", async () => {
     const { app } = await setup();
     const created = await call(app, "POST", "/inbox", { text: "random thought" });

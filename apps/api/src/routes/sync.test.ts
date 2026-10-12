@@ -105,7 +105,7 @@ describe("POST /sync", () => {
 
   it("an invalid row is a conflict", async () => {
     const { app } = await setup();
-    const bad = item("missions", { ...mission(), slot: "P9" });
+    const bad = item("missions", { ...mission(), slot: "P10" });
     const res = await sync(app, [bad]);
     expect(res.conflicts).toEqual([{ id: bad.id, server: null }]);
   });
