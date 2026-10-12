@@ -5,6 +5,7 @@ import { BlockBarChart, type BlockSeries } from "../components/BlockBarChart";
 import { TrashIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
 import { LibraryTabs } from "../components/LibraryTabs";
+import { SceneCard } from "../components/SceneCard";
 import { PageHeader } from "../components/PageHeader";
 import { SegmentedPills } from "../components/SegmentedPills";
 import { useToast } from "../components/Toast";
@@ -67,6 +68,7 @@ export function Japanese() {
     <div className="page">
       <PageHeader eyebrow="Library" title="Japanese" />
       <LibraryTabs />
+      <SceneCard scene="japanese" className="max-w-read" />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <form onSubmit={onLog} className="card space-y-4" aria-labelledby="jp-log-title">
           <h2 id="jp-log-title" className="text-base font-semibold">

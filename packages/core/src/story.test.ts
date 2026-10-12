@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STORY_CHANCE, pickStory, recentlyShownIds, rewardTarget, themeFor, type PickableStory } from "./story";
+import { STORY_CHANCE, pickScene, pickStory, recentlyShownIds, rewardTarget, themeFor, type PickableStory } from "./story";
 
 const ref = (id: string, moment: PickableStory["moment"], muted = false, deletedAt: string | null = null): PickableStory => ({
   id,
@@ -100,5 +100,25 @@ describe("rewardTarget", () => {
   });
   it("is null when nothing can be unlocked", () => {
     expect(rewardTarget([w("A", "done", 5, 5), w("B", "dropped", 0, 4)])).toBeNull();
+  });
+});
+
+describe("pickScene", () => {
+  const pool = ["k", "c", "h", "a", "f", "i", "b", "e", "g", "j"].map((id) => ref(id, "weekly_review"));
+
+  it("only picks live, unmuted refs of the scene's moments", () => {
+    expect(pickScene(refs, "welcome_back", "2026-10-12")?.id).toBe("d");
+    expect(["a", "b"]).toContain(pickScene(refs, "today", "2026-10-12")?.id);
+    expect(pickScene(refs, "shutdown", "2026-10-12")).toBeNull(); // no rest_day refs
+  });
+
+  it("is stable for a day whatever the input order", () => {
+    const first = pickScene(pool, "weekly", "2026-10-12");
+    expect(pickScene([...pool].reverse(), "weekly", "2026-10-12")).toEqual(first);
+  });
+
+  it("rotates across days", () => {
+    const week = ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18"];
+    expect(new Set(week.map((d) => pickScene(pool, "weekly", d)?.id)).size).toBeGreaterThan(2);
   });
 });

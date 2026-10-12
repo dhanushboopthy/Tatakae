@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Kural } from "../components/Kural";
 import { P1QuickPlan } from "../components/P1Card";
+import { SceneCard } from "../components/SceneCard";
 import { useToast } from "../components/Toast";
 import { formatDay, weekdayInitial, welcomeBackSeenKey } from "../lib/format";
 import { useDay, useRecentHistory, useToday, useWriteOffs, writeOff } from "../lib/hooks";
@@ -31,6 +32,7 @@ export function WelcomeBack() {
           <p className="mt-3 text-lg">One mission today — that's the whole plan.</p>
         </div>
 
+        <SceneCard scene="welcome_back" size="sm" />
         <Kural n={621} />
 
         <figure className="m-0">

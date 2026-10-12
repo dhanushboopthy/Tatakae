@@ -4,6 +4,7 @@ import { normalizeTags, type InterviewStory } from "@tatakae/core";
 import { EmptyState } from "../components/EmptyState";
 import { PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { LibraryTabs } from "../components/LibraryTabs";
+import { SceneCard } from "../components/SceneCard";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { useToast } from "../components/Toast";
@@ -42,6 +43,7 @@ export function Stories() {
         }
       />
       <LibraryTabs />
+      <SceneCard scene="stories" className="max-w-read" />
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by tag">
           {tags.map((t) => (

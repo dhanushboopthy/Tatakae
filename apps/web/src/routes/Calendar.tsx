@@ -6,6 +6,7 @@ import { DayLegend } from "../components/DayCircle";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/icons";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { PageHeader } from "../components/PageHeader";
+import { SceneCard } from "../components/SceneCard";
 import { Scoreboard } from "../components/Scoreboard";
 import { SegmentedPills } from "../components/SegmentedPills";
 import { WeekPlanner } from "../components/WeekPlanner";
@@ -72,6 +73,7 @@ export function Calendar() {
       ) : (
         <WeekPlanner key={view} mode={view} initialDate={selected} />
       )}
+      <SceneCard scene="calendar" className="max-w-read" />
     </div>
   );
 }

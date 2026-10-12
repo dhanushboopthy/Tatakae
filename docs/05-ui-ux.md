@@ -70,6 +70,7 @@ If two consecutive notifications are ignored, ask once whether to change the tim
 Text 4.5:1, UI and chart marks 3:1 (check the grey!), targets ≥ 44 px/dp, visible focus rings, full keyboard on web, screen-reader labels on chips and charts, every chart has a one-line text summary, `prefers-reduced-motion` / OS reduce-motion respected, dynamic type on phone.
 
 ## Story layer UX
+**Scene cards (web):** every screen except Morning and Login shows one line from the pack with the title's picture, chosen for that screen's job (core `SCENE_MOMENTS`: Today → P1/Minimum, Night ritual → P1/review, Shutdown → rest, Focus → inertia/fear, Block complete → Minimum, Stuck → fear/inertia, Welcome back → comeback, Calendar → cycle/review, Inbox → inertia, Cycle → cycle start, reviews → review, Library tabs → Minimum/fear/P1) and rotating daily (`pickScene`). Action screens put it at the foot, calm screens under the header; the Kural stays below it. Off with the Story toggle.
 One line in a toast after a completion (~1/3 chance): the title's picture (48 px, when the owner added one in Settings → Story; else the sparkle icon), then "<Character>, <Title> — <line>" + optional "your line". Tap to dismiss; long-press to mute that reference. Never in notifications, never on Morning. Seasonal rotation per 12-week cycle.
 
 ## Anti-patterns (reject in review)

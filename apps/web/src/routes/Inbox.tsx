@@ -4,6 +4,7 @@ import { CaptureForm } from "../components/CaptureDialog";
 import { EmptyState } from "../components/EmptyState";
 import { InboxIcon, NoteIcon, PencilIcon, TrashIcon } from "../components/icons";
 import { Kural } from "../components/Kural";
+import { SceneCard } from "../components/SceneCard";
 import { LockReasonDialog } from "../components/LockReasonDialog";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
@@ -145,6 +146,7 @@ export function Inbox() {
         </>
       )}
 
+      <SceneCard scene="inbox" />
       <Kural n={672} size="sm" />
 
       <ToMissionDialog item={toMission} onClose={() => setToMission(null)} />

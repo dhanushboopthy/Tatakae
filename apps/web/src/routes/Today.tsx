@@ -9,6 +9,7 @@ import { FORGE_PROBLEM_COPY, P1Card, P1QuickPlan } from "../components/P1Card";
 import { PageHeader } from "../components/PageHeader";
 import { RingProgress } from "../components/RingProgress";
 import { SegmentGauge } from "../components/SegmentGauge";
+import { SceneCard } from "../components/SceneCard";
 import { StripeLegend, StripeTrend, stripeSummary } from "../components/StripeTrend";
 import { useToast } from "../components/Toast";
 import { AREA_COLORS, isAreaColor } from "../lib/colors";
@@ -267,6 +268,7 @@ export function Today() {
           </div>
         </>
       )}
+      <SceneCard scene="today" className="max-w-read" />
     </div>
   );
 }

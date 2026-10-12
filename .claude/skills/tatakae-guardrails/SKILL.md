@@ -22,7 +22,7 @@ Run this checklist against the diff (or the screen being built). Report each ite
 
 ## Notifications & story
 11. Total scheduled notifications ≤ 3/day; none mention streaks, failure or guilt.
-12. Story lines: random (~1/3), text only, ≤ 160 chars, paraphrased, never on Morning or in notifications, respect "story off".
+12. Story lines: random (~1/3), ≤ 160 chars, never on Morning or in notifications, respect "story off". The only image is the owner's own picture for the title (settings `story_pictures`).
 
 ## Copy
 13. Calm, short, second person. No "failed" (use "not this time"). No exclamation marks outside story lines.
@@ -33,6 +33,6 @@ Run this checklist against the diff (or the screen being built). Report each ite
 16. Screen-reader labels on chips, buttons, charts; reduced motion respected.
 
 ## IP
-17. No character art, logos, screenshots, audio, verbatim quotes, or franchise names in app name/icon/repo.
+17. No character art, logos, screenshots, audio, quotes or franchise names in the app name/icon or anything committed. Franchise lines and pictures live only in the owner's git-ignored `references/*.local.json` and `references/pictures/`.
 
 Reference: docs/01-overview.md, docs/02-method.md, docs/05-ui-ux.md, docs/10-design-system.md.
