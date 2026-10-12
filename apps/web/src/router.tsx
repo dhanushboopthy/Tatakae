@@ -14,11 +14,26 @@ import { Notes } from "./routes/Notes";
 import { Settings } from "./routes/Settings";
 import { Login } from "./routes/Login";
 import { Calendar } from "./routes/Calendar";
+import { welcomeBackSeenKey } from "./lib/format";
+import { useDay, useToday } from "./lib/hooks";
+import { decideHome } from "./lib/plan";
+import { storage } from "./lib/storage";
 
-/** "/" decides: lapse → /welcome-back, before P1 started → /morning, after 21:00 → /ritual, else /today. */
+/**
+ * "/" decides (shared design, web flavour): missed yesterday and nothing started today → /welcome-back
+ * (once a day); otherwise /today. Morning is the phone's screen, and ritual time shows a prompt on
+ * Today instead of redirecting.
+ */
 function Home() {
-  // TODO(v1)
-  return <Navigate to="/today" replace />;
+  const today = useToday();
+  const { data: day } = useDay(today);
+  if (!day) return <p className="text-ink-2">Opening…</p>;
+  const target = decideHome({
+    yesterdayMissed: day.yesterdayMissed,
+    todayStarted: day.started,
+    welcomeBackSeen: storage.get(welcomeBackSeenKey(today)) === "1",
+  });
+  return <Navigate to={target} replace />;
 }
 
 export const router = createBrowserRouter([

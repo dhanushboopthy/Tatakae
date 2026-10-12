@@ -181,6 +181,16 @@ export async function discardInbox(item: InboxItem): Promise<void> {
   await remove("inbox", item.id);
 }
 
+/** Undo a discard / processing: the item comes back unprocessed. */
+export async function restoreInbox(item: InboxItem): Promise<void> {
+  await write("inbox", { ...item, processed: false, deletedAt: null });
+}
+
+export async function editInbox(item: InboxItem, text: string): Promise<void> {
+  const t = text.trim();
+  if (t) await write("inbox", { ...item, text: t.slice(0, 1000) });
+}
+
 /** Inbox item → mission (backlog, or a slot on a date) and mark the item processed. */
 export async function inboxToMission(item: InboxItem, target: { dayDate: ISODate | null; slot: Slot }): Promise<void> {
   await upsertMission({ title: item.text.slice(0, 200), dayDate: target.dayDate, slot: target.slot });
