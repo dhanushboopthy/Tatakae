@@ -7,7 +7,7 @@ import { Section } from "./Section";
 // Data (v4): full JSON export (GET /api/export) and the backup job log (GET /api/system/jobs).
 
 interface JobRun {
-  id: number;
+  id: string;
   job: string;
   startedAt: string;
   ok: boolean;

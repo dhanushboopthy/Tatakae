@@ -3,6 +3,8 @@ dist/
 build/
 .expo/
 coverage/
+test-results/
+playwright-report/
 *.tsbuildinfo
 .DS_Store
 

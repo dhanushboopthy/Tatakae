@@ -10,6 +10,7 @@ import {
   type SyncTable,
 } from "@tatakae/core";
 import { notifyUnauthorized } from "../lib/api";
+import { recordConflict } from "../lib/conflicts";
 import { platform, requestPersistentStorage } from "../lib/platform";
 import { onSessionEvent } from "../lib/session";
 import { createIdbStore } from "./outbox";
@@ -56,6 +57,7 @@ export function getSyncClient(): SyncClient {
     post,
     onChange: invalidate,
     onAuthError: notifyUnauthorized,
+    onConflict: recordConflict,
   });
   return client;
 }

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { FocusLength, Mission, MissionStatus } from "@tatakae/core";
 import { editLocked, needsLockReason, patchMissionFree, setStatus, upsertMission, useSettings } from "../lib/hooks";
+import { EditedElsewhere } from "./ConflictNotice";
 import { ArrowRightIcon, FocusIcon, LockIcon, PencilIcon, StuckIcon } from "./icons";
 import { LockReasonDialog } from "./LockReasonDialog";
 import { StatusChips, STATUS_LABEL } from "./StatusChips";
@@ -143,6 +144,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
               <LockIcon size={14} /> Locked
             </span>
           )}
+          <EditedElsewhere table="missions" pk={m.id} className={tone.sub} />
         </div>
         {!editing && (
           <button

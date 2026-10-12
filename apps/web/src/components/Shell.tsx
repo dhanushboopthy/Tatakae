@@ -6,6 +6,7 @@ import { useThemeController } from "../lib/theme";
 import { AuthGate } from "./AuthGate";
 import { CaptureDialog } from "./CaptureDialog";
 import { CommandPalette, openCommandPalette } from "./CommandPalette";
+import { ConflictNoticeHost } from "./ConflictNotice";
 import {
   CalendarIcon,
   ChartIcon,
@@ -203,6 +204,7 @@ export function Shell() {
         <CommandPalette />
         <CaptureDialog />
         <StoryToastHost />
+        <ConflictNoticeHost />
       </ToastProvider>
     </AuthGate>
   );

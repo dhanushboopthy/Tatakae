@@ -7,6 +7,7 @@ import { DataSettings } from "./settings/Data";
 import { DevicesSettings } from "./settings/Devices";
 import { GeneralSettings } from "./settings/General";
 import { HabitsSettings } from "./settings/Habits";
+import { NotificationSettings } from "./settings/Notifications";
 import { RechargeSettings } from "./settings/Recharge";
 import { ScoringSettings } from "./settings/Scoring";
 import { StorySettings } from "./settings/Story";
@@ -23,6 +24,7 @@ const SECTIONS = [
   ["areas", "Areas"],
   ["story", "Story"],
   ["scoring", "Scoring"],
+  ["notifications", "Notifications"],
   ["devices", "Devices"],
   ["data", "Data"],
 ] as const;
@@ -58,6 +60,7 @@ export function Settings() {
           <AreasSettings />
           <StorySettings />
           <ScoringSettings />
+          <NotificationSettings />
           <DevicesSettings />
           <DataSettings />
         </div>
