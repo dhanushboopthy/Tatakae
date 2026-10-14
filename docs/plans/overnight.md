@@ -107,6 +107,14 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
   - Final checks: typecheck clean (core, api, web); tests core 285, api 95, web 37; `vite build` OK.
   - **Not done:** passkeys (R2-12), Playwright install (R2-13), visual check (R2-17), mobile (out of scope for Run 2).
 - **Next:** passkeys once the registry is reachable; then mobile (v1 Focus onward).
+- [x] **Run 3 (14 Oct, finishing the website)**, one commit per task on `main`:
+  - `e844cc8` first on-screen check (laptop + phone, light + dark) and its fixes (R3-1…R3-4).
+  - `fd1c1c0` Playwright installed, e2e on its own ports, note-autosave data-loss fix (R3-5…R3-7).
+  - `ac13503` passkeys: table, routes, Login button, Settings → Passkeys (R3-8).
+  - `9618794` default focus length 5–240 (R3-9).
+  - `cc941ce` story pop-ups and Settings → Story removed; reward queue in General (R3-10).
+  - Final checks: typecheck clean (core, api, web, mobile); tests core 290, api 108, web 41, mobile 8; e2e 5/5; `vite build` and the api tsup bundle OK. Docker not rebuilt (owner's rule): http://localhost:8080 still serves the pre-Run-3 build.
+  - **Not done:** mobile (out of scope); deployment (manual, owner); production needs `PUBLIC_ORIGIN` = the real https domain before passkeys work there.
 
 ## Decisions log
 - D1: Git author is the existing git config (`dhanush-superdom <dhanush.boopathy@superdom.ai>`), which is a work email. It was left unchanged as instructed. Run `git config user.email` in this repo if you want your personal email instead.
