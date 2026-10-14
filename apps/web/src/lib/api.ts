@@ -44,6 +44,8 @@ export interface ApiOptions {
   /** Skip the global 401 redirect (the login form handles its own 401). */
   skipAuthRedirect?: boolean;
   signal?: AbortSignal;
+  /** Let the request outlive the page (pagehide saves); the body must stay under 64 KB. */
+  keepalive?: boolean;
 }
 
 async function readBody(res: Response): Promise<unknown> {
@@ -64,6 +66,7 @@ export async function api(path: string, opts: ApiOptions = {}): Promise<unknown>
     headers: opts.body !== undefined ? { "content-type": "application/json" } : undefined,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     signal: opts.signal,
+    keepalive: opts.keepalive,
   };
   let res: Response;
   try {

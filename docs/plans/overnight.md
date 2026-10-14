@@ -199,6 +199,9 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
   - Side-quest and night-ritual status chips were invisible (surface-2 on surface-2). New `onMuted` variant on `StatusChips`.
   - Today's habits + inbox column left a three-column hole when there were four other missions; it now fills the rest of the row.
   - Mission card labels ("Minimum ·", "If-then ·") wrapped mid-word; Settings' nudge time was cut off; "1 areas".
+- R3-5: The e2e run starts its own API (8797) and Vite (5297, `API_PROXY_TARGET` → that API) and never reuses a running server; before, `reuseExistingServer` answered the tests from another project on 5173. Two selectors were tightened (a note's `<article>` is also labelled "Title"; search hits show the text twice).
+- R3-6: The e2e run found real data loss: a note edit made less than 800 ms before a reload or tab close was dropped (unmount effects don't run on unload). `useNoteAutosave` now sends the pending patch on `pagehide` with `fetch(keepalive)` (new `keepalive` option on `api()`); a 4th e2e test covers it. Bodies over 64 KB can't use keepalive and stay "Not saved yet".
+- R3-7: `@simplewebauthn/server` and `@simplewebauthn/browser` were installed in the same lockfile change as `@playwright/test` (one `pnpm-lock.yaml`), so that commit carries them; they are used from the passkeys commit.
 - R3-4: On phones the ritual's eight 44 px step buttons don't fit, so below `sm` the dots are a passive progress bar (Back / Next move between steps); from `sm` up they stay jump buttons.
 
 ## Core API reference (`@tatakae/core`)

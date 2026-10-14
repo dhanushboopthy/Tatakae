@@ -29,5 +29,6 @@ export default defineConfig({
       },
     }),
   ],
-  server: { proxy: { "/api": "http://localhost:8787" } }, // prod: Caddy serves dist + proxies /api
+  // prod: Caddy serves dist + proxies /api. API_PROXY_TARGET lets the e2e run use its own API port.
+  server: { proxy: { "/api": process.env["API_PROXY_TARGET"] ?? "http://localhost:8787" } },
 });

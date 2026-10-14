@@ -38,15 +38,27 @@ test("capture lands in the inbox and becomes a note", async ({ page }) => {
   await expect(page.getByText(text)).toHaveCount(0);
   await page.goto("/notes");
   await page.getByLabel("Search notes").fill(text.split(" ")[0] ?? text);
-  await expect(page.getByRole("list", { name: "Search results" }).getByText(text)).toBeVisible();
+  // The hit shows the text twice (title + snippet); match the result link itself.
+  await expect(page.getByRole("list", { name: "Search results" }).getByRole("link", { name: new RegExp(text) })).toBeVisible();
 });
 
 test("a new note autosaves its title", async ({ page }) => {
   await page.goto("/notes");
   await page.getByRole("button", { name: "New note" }).first().click();
-  const title = page.getByLabel("Title");
+  const title = page.getByRole("textbox", { name: "Title" }); // the note <article> is labelled "Title" too
   await title.fill("Raft notes");
-  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByRole("status").filter({ hasText: "Not saved yet" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 5000 });
   await page.reload();
-  await expect(page.getByLabel("Title")).toHaveValue("Raft notes");
+  await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue("Raft notes");
+});
+
+test("an edit survives a reload inside the autosave delay", async ({ page }) => {
+  await page.goto("/notes");
+  await page.getByRole("button", { name: "New note" }).first().click();
+  const title = page.getByRole("textbox", { name: "Title" });
+  await expect(title).toHaveValue("Untitled note");
+  await title.fill("Quick reload");
+  await page.reload(); // before the 800 ms debounce: the pagehide keepalive save sends it
+  await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue("Quick reload");
 });

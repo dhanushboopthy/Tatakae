@@ -5,6 +5,7 @@ build/
 coverage/
 test-results/
 playwright-report/
+.playwright-browsers/
 *.tsbuildinfo
 .DS_Store
 

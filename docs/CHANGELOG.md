@@ -29,6 +29,7 @@
 - Local Docker run: `deploy/docker-compose.local.yml`, `deploy/Caddyfile.local`, `scripts/local-up.sh` (first free port from 8080), `.dockerignore`.
 - Calendar: drag to create, resize, live move preview, Day view. Focus timer: in the nav rail; length from the mission's plan or any 5–240 minutes (no fixed presets). Thirukkural 619 on login, shutdown and welcome back.
 - Run 3 visual check (laptop + phone, light + dark): fixed the cycle gauge animation, block bar charts, planner block titles and focus/planned overlap, phone-width horizontal scroll, invisible side-quest/ritual chips, the Today row-2 gap, mission-card label wrapping and small Settings/Weekly copy and width issues (R3-3).
+- Playwright installed; the web smoke test runs on its own ports and passes 4/4. Notes: an edit made just before a reload or tab close is now saved (pagehide keepalive).
 - Thirukkural for each calm moment (13 Kurals; 619 stays on Login): shutdown, restart, capacity, welcome back, focus complete, stuck, inbox, cycle, reviews, notes, Japanese (docs/05 § Copy).
 - Removed (owner, 12 Oct 2026): the show references (scene cards, story pictures, imported lines). Only the Thirukkural stays; the story layer is back to its original paraphrase-only rules.
 - Night ritual restart: `POST /days/:date/restart` + a high-friction flow on "Shutdown complete" (reason, 15 s pause, typed word, 3 s hold; once per plan, 2 per week; logged for Sunday).

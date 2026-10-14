@@ -135,6 +135,21 @@ export function useNoteAutosave(id: string, delayMs = 800) {
 
   useEffect(() => () => void flush(), [flush]);
 
+  // Reload or tab close inside the debounce: unmount effects don't run, so send what's pending with
+  // keepalive (best effort; a body over 64 KB is refused by the browser and stays "not saved").
+  useEffect(() => {
+    const onPageHide = () => {
+      const patch = pending.current;
+      if (Object.keys(patch).length === 0) return;
+      pending.current = {};
+      void api(`/notes/${encodeURIComponent(id)}`, { method: "PATCH", body: patch, keepalive: true }).catch(() => {
+        pending.current = { ...patch, ...pending.current };
+      });
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [id]);
+
   // Saves that failed offline go out as soon as the connection is back.
   useEffect(() => {
     const onOnline = () => void flush();
