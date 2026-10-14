@@ -75,6 +75,7 @@ export const MoonIcon = wrap(Moon);
 export const InboxIcon = wrap(Inbox);
 export const ChartIcon = wrap(ChartColumn);
 export const CycleIcon = wrap(Target);
+export const FitnessIcon = wrap(Dumbbell);
 export const NoteIcon = wrap(NotebookPen);
 export const OpenIcon = wrap(ArrowUpRight);
 export const BellIcon = wrap(Bell);

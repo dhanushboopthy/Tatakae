@@ -58,6 +58,7 @@ import { anchorsFor, bySlot, freeMinutes, ifThenTemplates, isDayClosed, isDaySta
 // invalidates ["local", tables, …] keys when rows of those tables change. Write helpers live in
 // ./actions and are re-exported here so screens import from one place.
 export * from "./actions";
+export * from "./fitnessData";
 
 const NORMAL_DAY: Pick<Day, "kind" | "screenMin"> = { kind: "normal", screenMin: null };
 
