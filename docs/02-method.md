@@ -32,7 +32,7 @@ The software exists to run this method. If a feature does not serve a step below
 If the laptop ritual is missed, the phone offers **Quick close** (statuses, habits, screen minutes — ≤ 45 s). It does not plan tomorrow; next morning shows "No plan locked — pick one Minimum now."
 
 ### Morning — phone
-One screen: "What would make today a win?" → P1 card (title, Minimum, if-then) → **Start** (25 / 50 / 90 min, default 50). Nothing else until P1 is started or deferred.
+One screen: "What would make today a win?" → P1 card (title, Minimum, if-then) → **Start** (25 / 50 / 90 min presets; the default is a setting, any 5–240 min, 50 out of the box). Nothing else until P1 is started or deferred.
 
 ### During the day — phone
 - **Status chips** on every mission.

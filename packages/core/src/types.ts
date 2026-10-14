@@ -13,7 +13,8 @@ export type MissionStatus =
 export type Mark = "Strong" | "Solid" | "Light" | "Unplanned";
 export type Blocker = "uncertainty" | "fear" | "inertia";
 export type ReviewType = "week" | "month" | "cycle";
-export type FocusLength = 25 | 50 | 90;
+/** Whole minutes, FOCUS_MIN (5) to FOCUS_MAX (240); validated by the `focusLength` schema. */
+export type FocusLength = number;
 export type StoryMedium = "anime" | "film" | "series" | "kdrama" | "book";
 export type GoalStatus = "active" | "paused" | "done" | "dropped";
 export type WatchStatus = "queued" | "watching" | "done" | "dropped";

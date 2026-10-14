@@ -77,6 +77,7 @@ Order (each builds on the previous):
 5. 🟡 Optional laptop web push.
 6. 🟡 Conflict UI (subtle "edited elsewhere" note) ✅ code; on-screen visual check, laptop + phone, light + dark ✅ (R3-3); Playwright smoke test ✅ 4/4 (`pnpm --filter web e2e`, R3-5/R3-6); offline edge cases + accessibility audit pending.
 7. Area alignment scores; monthly review polish.
+8. ✅ Settings: default focus length takes any 5–240 minutes (core schema + Settings → General, R3-9).
 - **Gate:** restore rehearsed and documented.
 
 ## Later (not scheduled)

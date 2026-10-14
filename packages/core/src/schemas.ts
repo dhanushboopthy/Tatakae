@@ -48,7 +48,10 @@ export const storyMoment = z.enum([
 ]);
 export const goalStatus = z.enum(["active", "paused", "done", "dropped"]);
 export const watchStatus = z.enum(["queued", "watching", "done", "dropped"]);
-export const focusLength = z.union([z.literal(25), z.literal(50), z.literal(90)]);
+/** Focus block lengths, in whole minutes: 5 min to 4 h (the default setting and custom blocks). */
+export const FOCUS_MIN = 5;
+export const FOCUS_MAX = 240;
+export const focusLength = z.number().int().min(FOCUS_MIN).max(FOCUS_MAX);
 export const clientKind = z.enum(["web", "mobile"]);
 export const syncTable = z.enum(SYNC_TABLES);
 

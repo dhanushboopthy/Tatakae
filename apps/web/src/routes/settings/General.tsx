@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FocusLength } from "@tatakae/core";
+import { FOCUS_MAX, FOCUS_MIN, focusLength } from "@tatakae/core";
 import { SegmentedPills } from "../../components/SegmentedPills";
 import { useToast } from "../../components/Toast";
 import { saveSetting, useSettings } from "../../lib/hooks";
@@ -73,17 +73,12 @@ export function GeneralSettings() {
           />
         </div>
       </Row>
-      <Row label="Default focus length">
-        <SegmentedPills<string>
-          label="Default focus length"
-          value={String(s.focus_default)}
-          onChange={(v) => void saveSetting("focus_default", Number(v) as FocusLength)}
-          options={[
-            { value: "25", label: "25" },
-            { value: "50", label: "50" },
-            { value: "90", label: "90" },
-          ]}
-        />
+      <Row
+        label="Default focus length"
+        htmlFor="focus-default"
+        hint={`Minutes, ${FOCUS_MIN} to ${FOCUS_MAX}. Used when a mission has no planned length.`}
+      >
+        <FocusDefaultInput value={s.focus_default} onSaved={() => toast("Saved.", { durationMs: 1500 })} />
       </Row>
       <Row label="Weekly focus target" htmlFor="focus-target" hint="Minutes; the bar on the focus scoreboard box.">
         <input
@@ -101,5 +96,44 @@ export function GeneralSettings() {
         <Toggle label="Haptics" checked={s.haptics_enabled} onChange={(v) => void saveSetting("haptics_enabled", v)} />
       </Row>
     </Section>
+  );
+}
+
+/** Any whole number of minutes from FOCUS_MIN to FOCUS_MAX (core `focusLength`); saves on blur or Enter. */
+function FocusDefaultInput(props: { value: number; onSaved: () => void }) {
+  const [draft, setDraft] = useState(String(props.value));
+  const parsed = focusLength.safeParse(/^\d+$/.test(draft.trim()) ? Number(draft.trim()) : Number.NaN);
+
+  async function commit() {
+    if (!parsed.success || parsed.data === props.value) return;
+    await saveSetting("focus_default", parsed.data);
+    props.onSaved();
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1 sm:items-end">
+      <div className="flex items-center gap-2">
+        <input
+          id="focus-default"
+          className="input tnum w-28"
+          inputMode="numeric"
+          maxLength={3}
+          aria-invalid={!parsed.success}
+          aria-describedby={parsed.success ? undefined : "focus-default-error"}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => void commit()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void commit();
+          }}
+        />
+        <span className="text-sm text-ink-2">min</span>
+      </div>
+      {!parsed.success && (
+        <p id="focus-default-error" className="text-sm text-ink-2">
+          Pick {FOCUS_MIN} to {FOCUS_MAX} minutes.
+        </p>
+      )}
+    </div>
   );
 }

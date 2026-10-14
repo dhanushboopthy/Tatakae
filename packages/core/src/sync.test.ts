@@ -19,7 +19,7 @@ import {
   type SyncResponse,
 } from "./schemas";
 import { DEFAULT_SCORING } from "./scoring";
-import { DEFAULT_SETTINGS, defaultRechargeRows, defaultSettingRows, readSettings } from "./settings";
+import { DEFAULT_SETTINGS, defaultRechargeRows, defaultSettingRows, parseSettingValue, readSettings } from "./settings";
 import {
   FREE_MISSION_FIELDS,
   LOCKED_MISSION_FIELDS,
@@ -290,6 +290,13 @@ describe("settings defaults", () => {
     expect(s.ritual_time).toBe("21:30");
     expect(s.focus_default).toBe(50);
     expect(s.scoring).toEqual({ ...DEFAULT_SCORING, strongAt: 85 });
+  });
+
+  it("focus_default takes any whole number of minutes from 5 to 240", () => {
+    for (const ok of [5, 25, 37, 50, 90, 240]) expect(parseSettingValue("focus_default", ok)).toEqual({ ok: true, value: ok });
+    for (const bad of [4, 241, 37.5, 0, "50"]) expect(parseSettingValue("focus_default", bad).ok).toBe(false);
+    expect(readSettings([{ key: "focus_default", value: "37", deletedAt: null }]).focus_default).toBe(37);
+    expect(readSettings([{ key: "focus_default", value: "300", deletedAt: null }]).focus_default).toBe(50); // out of range → default
   });
 });
 

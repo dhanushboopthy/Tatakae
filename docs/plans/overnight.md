@@ -209,6 +209,7 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
   - Login: "Sign in with a passkey" first, then "or use your password" with the same form as before; browsers without WebAuthn see only the password form. Closing the passkey sheet shows no error.
   - Settings → Passkeys: add (named), rename, remove (two-step). Removing the last one is fine because the password still works.
   - Tests: 7 API tests run real verification against a software authenticator (P-256, hand-rolled CBOR); an e2e test uses Chromium's virtual authenticator to add a passkey, sign in with it and remove it.
+- R3-9: `focus_default` accepts any whole number of minutes from 5 to 240. Core owns the limits (`FOCUS_MIN`, `FOCUS_MAX`, `focusLength` = int 5–240; `FocusLength` is now `number`), and web's `lib/plan` re-exports them, so the Focus screen and the setting share one range. Settings → General has a numeric field (saves on blur or Enter, grey hint when out of range) instead of the 25/50/90 pills. Stored 25/50/90 values stay valid. The phone's own 25/50/90 presets still type-check and were left alone (mobile out of scope).
 - R3-4: On phones the ritual's eight 44 px step buttons don't fit, so below `sm` the dots are a passive progress bar (Back / Next move between steps); from `sm` up they stay jump buttons.
 
 ## Core API reference (`@tatakae/core`)

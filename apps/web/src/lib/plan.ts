@@ -1,4 +1,4 @@
-import { RANKED_SLOTS, slotRank, weekdayOf, type Anchor, type Day, type ISODate, type Mission, type Slot } from "@tatakae/core";
+import { FOCUS_MAX, FOCUS_MIN, RANKED_SLOTS, slotRank, weekdayOf, type Anchor, type Day, type ISODate, type Mission, type Slot } from "@tatakae/core";
 
 // Pure helpers for web screens (routing, ritual capacity, templates, timers). No I/O, no React,
 // so they are unit-tested in plan.test.ts. Scoring/time rules themselves come from @tatakae/core.
@@ -241,9 +241,8 @@ export function rangeLabel(startMin: number, durationMin: number): string {
 
 // ---------- focus timer ----------
 
-/** Custom focus lengths: 5 min to 4 h. */
-export const FOCUS_MIN = 5;
-export const FOCUS_MAX = 240;
+/** Custom focus lengths: 5 min to 4 h (from core, which validates the focus_default setting too). */
+export { FOCUS_MAX, FOCUS_MIN };
 
 export const clampFocus = (min: number): number => Math.max(FOCUS_MIN, Math.min(FOCUS_MAX, Math.round(min)));
 

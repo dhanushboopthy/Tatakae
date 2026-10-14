@@ -210,6 +210,14 @@ describe("settings routes", () => {
     expect(res.body["scoring"]).toMatchObject({ writeOffsPerMonth: 2, strongAt: 80 });
   });
 
+  it("focus_default takes any whole number of minutes from 5 to 240", async () => {
+    const { app } = await setup();
+    expect((await call(app, "PUT", "/settings/focus_default", { value: 37 })).status).toBe(200);
+    expect((await call(app, "GET", "/settings")).body["focus_default"]).toBe(37);
+    expect((await call(app, "PUT", "/settings/focus_default", { value: 300 })).status).toBe(400);
+    expect((await call(app, "PUT", "/settings/focus_default", { value: 4 })).status).toBe(400);
+  });
+
   it("PUT validates per key", async () => {
     const { app } = await setup();
     expect((await call(app, "PUT", "/settings/wake_time", { value: "6:30am" })).status).toBe(400);
