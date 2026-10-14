@@ -278,6 +278,94 @@ export interface JapaneseLogEntry extends RowMeta {
   note: string | null;
 }
 
+// ===================== Fitness (docs/plans/fitness.md) =====================
+// Row types only. They join SyncRowMap / SYNC_TABLES in F2 (tables, migration, sync wiring).
+export type MicroKey =
+  | "fibre" | "sugar" | "satFat" | "sodium" | "potassium" | "calcium" | "iron" | "magnesium"
+  | "zinc" | "vitA" | "vitB12" | "vitC" | "vitD";
+/** Micronutrient amounts by key, in the units of MICRO_KEYS. Missing key = not entered. */
+export type Micros = Partial<Record<MicroKey, number>>;
+export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
+export type PhaseKind = "cut" | "bulk" | "recomp";
+
+export interface BodyLog extends RowMeta {
+  id: string;
+  date: ISODate; // unique
+  weightKg: number | null;
+  steps: number | null;
+  waterMl: number | null;
+  sleepMin: number | null;
+  note: string | null;
+}
+
+export interface Food extends RowMeta {
+  id: string;
+  name: string;
+  servingLabel: string;
+  servingG: number | null;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+  micros: Micros;
+  favourite: boolean;
+}
+
+/** One logged food. Nutrients are a snapshot per serving, so editing a food never rewrites history. */
+export interface FoodLog extends RowMeta {
+  id: string;
+  date: ISODate;
+  meal: MealSlot;
+  foodId: string | null;
+  name: string;
+  servings: number;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+  micros: Micros;
+}
+
+export interface FitnessPhase extends RowMeta {
+  id: string;
+  kind: PhaseKind;
+  startDate: ISODate;
+  endDate: ISODate | null;
+  ratePctPerWeek: number; // signed: cut < 0, bulk > 0, recomp 0
+  proteinGPerKg: number;
+  fatGPerKg: number;
+  startWeightKg: number;
+  note: string | null;
+}
+
+export interface Workout extends RowMeta {
+  id: string;
+  date: ISODate;
+  name: string;
+  durationMin: number | null;
+  note: string | null;
+}
+
+export interface WorkoutSet extends RowMeta {
+  id: string;
+  workoutId: string;
+  exercise: string;
+  muscle: string;
+  order: number;
+  reps: number;
+  kg: number;
+  rpe: number | null;
+}
+
+export interface MaintenanceWeek extends RowMeta {
+  id: string;
+  isoWeek: string; // "2026-W42", unique
+  kcal: number;
+  note: string | null;
+}
+
 /** Row type for each synced table (keys = SQL table names, see SYNC_TABLES in sync.ts). */
 export interface SyncRowMap {
   days: Day;
