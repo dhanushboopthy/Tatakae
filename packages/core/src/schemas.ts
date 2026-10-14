@@ -256,7 +256,7 @@ export const watchQueueRow = z.object({
   ...rowMeta,
 }) satisfies RowSchema<WatchQueueItem>;
 
-// ===================== Fitness rows (synced from F2) =====================
+// ===================== Fitness rows (synced) =====================
 export const mealSlot = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export const phaseKind = z.enum(["cut", "bulk", "recomp"]);
 const nonNeg = z.number().nonnegative().finite();
@@ -370,6 +370,13 @@ export const rowSchemas: { readonly [T in SyncTable]: RowSchema<SyncRowMap[T]> }
   experiments: experimentRow,
   story_refs: storyRefRow,
   watch_queue: watchQueueRow,
+  body_logs: bodyLogRow,
+  foods: foodRow,
+  food_logs: foodLogRow,
+  fitness_phases: fitnessPhaseRow,
+  workouts: workoutRow,
+  workout_sets: workoutSetRow,
+  maintenance_weeks: maintenanceWeekRow,
 };
 
 // ===================== v1 inputs (REST) =====================

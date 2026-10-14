@@ -18,6 +18,11 @@ Source of truth: `db/schema.ts`. Conventions: ULID text ids, IST `YYYY-MM-DD` da
 | v2 | areas, goals, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue | see schema |
 | v3 | notes (+ notes_fts), files, applications, stories, japanese_log | see schema |
 | v4 | push_subscriptions | endpoint, keys (laptop only) |
+| Fitness | body_logs | date PK (sync key), id, weight_kg, steps, water_ml, sleep_min, note |
+| Fitness | foods / food_logs | name, serving_label, serving_g, kcal, protein_g, carbs_g, fat_g, fibre_g, micros JSON, favourite / date, meal, food_id, name, servings + nutrient snapshot per serving |
+| Fitness | fitness_phases | kind cut/bulk/recomp, start_date, end_date, rate_pct_per_week, protein_g_per_kg, fat_g_per_kg, start_weight_kg |
+| Fitness | workouts / workout_sets | date, name, duration_min / workout_id, exercise, muscle, sort_order, reps, kg, rpe |
+| Fitness | maintenance_weeks | iso_week PK (sync key, "2026-W42"), id, kcal, note |
 
 Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 

@@ -82,11 +82,14 @@ function day(overrides: Partial<Day> = {}): Day {
 
 // ===================== pure helpers =====================
 describe("SYNC_TABLES", () => {
-  it("lists v1 and v2 synced tables and never notes/sessions", () => {
+  it("lists v1, v2 and fitness synced tables and never notes/sessions", () => {
     expect(SYNC_TABLES).toContain("days");
     expect(SYNC_TABLES).toContain("watch_queue");
     expect(SYNC_TABLES).toContain("focus_sessions");
-    expect(SYNC_TABLES).toHaveLength(17);
+    for (const t of ["body_logs", "foods", "food_logs", "fitness_phases", "workouts", "workout_sets", "maintenance_weeks"]) {
+      expect(isSyncTable(t)).toBe(true);
+    }
+    expect(SYNC_TABLES).toHaveLength(24);
     expect(isSyncTable("notes")).toBe(false);
     expect(isSyncTable("sessions")).toBe(false);
     expect(isSyncTable("missions")).toBe(true);
@@ -104,6 +107,9 @@ describe("primaryKeyOf / splitPrimaryKey", () => {
     ["settings", { key: "wake_time" }, "wake_time"],
     ["habit_logs", { habitId: "H1", date: "2026-10-20" }, "H1|2026-10-20"],
     ["watch_queue", { title: "Some Show" }, "Some Show"],
+    ["body_logs", { date: "2026-10-20" }, "2026-10-20"],
+    ["maintenance_weeks", { isoWeek: "2026-W43" }, "2026-W43"],
+    ["food_logs", { id: "FL1" }, "FL1"],
   ])("%s → %s", (table, row, pk) => {
     expect(primaryKeyOf(table, row)).toBe(pk);
     expect(splitPrimaryKey(table, pk)).toEqual(row);
