@@ -618,6 +618,60 @@ export const loginInput = z.object({
 });
 export const loginMobileResponse = z.object({ token: z.string(), expiresAt: z.string() });
 
+// ---- passkeys (v4, web only; password login stays as the fallback) ----
+// The browser's credential JSON (WebAuthn Level 3 `toJSON()` shape, base64url strings). The server
+// library does the real verification; these schemas only check the envelope.
+const b64url = z.string().regex(/^[A-Za-z0-9_-]*$/).max(16_384);
+const credentialEnvelope = {
+  id: b64url.min(1),
+  rawId: b64url.min(1),
+  type: z.literal("public-key"),
+  authenticatorAttachment: z.enum(["platform", "cross-platform"]).optional(),
+  clientExtensionResults: z.record(z.unknown()),
+};
+export const passkeyRegistrationResponse = z.object({
+  ...credentialEnvelope,
+  response: z
+    .object({
+      clientDataJSON: b64url,
+      attestationObject: b64url,
+      authenticatorData: b64url.optional(),
+      transports: z.array(z.string().max(32)).max(10).optional(),
+      publicKeyAlgorithm: z.number().int().optional(),
+      publicKey: b64url.optional(),
+    })
+    .passthrough(),
+});
+export const passkeyAuthenticationResponse = z.object({
+  ...credentialEnvelope,
+  response: z
+    .object({
+      clientDataJSON: b64url,
+      authenticatorData: b64url,
+      signature: b64url,
+      userHandle: b64url.optional(),
+    })
+    .passthrough(),
+});
+export const passkeyName = z.string().trim().min(1).max(40);
+export const passkeyRegisterInput = z.object({ response: passkeyRegistrationResponse, name: passkeyName });
+export const passkeyLoginInput = z.object({
+  response: passkeyAuthenticationResponse,
+  deviceName: z.string().trim().min(1).max(40),
+});
+export const passkeyPatch = z.object({ name: passkeyName });
+/** One registered passkey as Settings lists it (the public key never leaves the server). */
+export const passkeySummary = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  lastUsedAt: z.string().nullable(),
+  /** "multiDevice" = synced passkey (e.g. Google Password Manager); "singleDevice" = hardware key. */
+  deviceType: z.enum(["singleDevice", "multiDevice"]),
+  backedUp: z.boolean(),
+});
+export const passkeyList = z.object({ passkeys: z.array(passkeySummary) });
+
 // ===================== inferred types =====================
 export type OutboxItem = z.infer<typeof outboxItem>;
 export type SyncRequest = z.infer<typeof syncRequest>;
@@ -656,3 +710,9 @@ export type JapaneseLogPatch = z.infer<typeof japaneseLogPatch>;
 export type PushSubscribeInput = z.infer<typeof pushSubscribeInput>;
 export type LoginInput = z.infer<typeof loginInput>;
 export type LoginMobileResponse = z.infer<typeof loginMobileResponse>;
+export type PasskeyRegistrationResponse = z.infer<typeof passkeyRegistrationResponse>;
+export type PasskeyAuthenticationResponse = z.infer<typeof passkeyAuthenticationResponse>;
+export type PasskeyRegisterInput = z.infer<typeof passkeyRegisterInput>;
+export type PasskeyLoginInput = z.infer<typeof passkeyLoginInput>;
+export type PasskeyPatch = z.infer<typeof passkeyPatch>;
+export type PasskeySummary = z.infer<typeof passkeySummary>;

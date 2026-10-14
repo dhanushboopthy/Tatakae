@@ -73,7 +73,7 @@ Order (each builds on the previous):
 1. ✅ Nightly JSON backup job + `/api/export`; `job_runs` shown in Settings → Data.
 2. **Restore drill** on a fresh VM using `restore.sh` (Terraform → cloud-init → Litestream restore). Record time-to-restore.
 3. Signed release APK workflow on `mobile-v*` tags; `/api/app/version` (✅) + in-app "update available"; EAS Update channel for JS fixes.
-4. Web passkeys (WebAuthn) as primary login; password fallback. **Blocked:** `@simplewebauthn/server` + `@simplewebauthn/browser` could not be installed (registry unreachable in Run 2, R2-12).
+4. ✅ Web passkeys (WebAuthn) as primary login; password fallback (R3-8). Production: `PUBLIC_ORIGIN` must be the real https domain.
 5. 🟡 Optional laptop web push.
 6. 🟡 Conflict UI (subtle "edited elsewhere" note) ✅ code; on-screen visual check, laptop + phone, light + dark ✅ (R3-3); Playwright smoke test ✅ 4/4 (`pnpm --filter web e2e`, R3-5/R3-6); offline edge cases + accessibility audit pending.
 7. Area alignment scores; monthly review polish.

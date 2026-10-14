@@ -22,7 +22,8 @@ export default defineConfig({
       command: "pnpm --filter api dev",
       url: `http://localhost:${API_PORT}/api/health`,
       reuseExistingServer: false,
-      env: { NODE_ENV: "development", DEV_BYPASS_AUTH: "1", DATABASE_PATH: DB, PORT: API_PORT },
+      // PUBLIC_ORIGIN = the e2e web origin, so passkeys (RP ID "localhost") verify against it.
+      env: { NODE_ENV: "development", DEV_BYPASS_AUTH: "1", DATABASE_PATH: DB, PORT: API_PORT, PUBLIC_ORIGIN: `http://localhost:${WEB_PORT}` },
     },
     {
       command: `pnpm --filter web exec vite --port ${WEB_PORT} --strictPort`,

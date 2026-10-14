@@ -28,6 +28,9 @@ Phone local DB mirrors the v1 tables + `outbox` + `sync_meta`.
 | POST | /session/login | 0 | `{email,password,client,deviceName}`; web → cookie, mobile → `{token,expiresAt}` |
 | POST | /session/logout, GET /session/me | 0 | |
 | GET/DELETE | /session/devices[/:id] | v1 | revoke a device |
+| POST | /passkeys/login/options, /passkeys/login | v4 | public, 20/15 min per IP; `{response, deviceName}` → web cookie |
+| GET/POST | /passkeys, /passkeys/register/options | v4 | list; register `{response, name}` (auth) |
+| PATCH/DELETE | /passkeys/:id | v4 | rename `{name}` / remove (auth); the password keeps working |
 | GET | /app/version | v4 | public; `{minMobileVersion, latestApkUrl}` |
 | GET/PUT | /days/:date | v1 | GET includes missions + score |
 | POST | /days/:date/forge | v1 | validates P1 Minimum + if-then |

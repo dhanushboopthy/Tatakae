@@ -20,6 +20,10 @@ export const envSchema = z
     SESSION_DAYS: z.coerce.number().int().min(1).max(365).default(90),
     API_TOKEN: z.string().min(32).optional(), // bearer token for scripts (curl, one-off maintenance)
     DEV_BYPASS_AUTH: z.enum(["0", "1"]).default("0"),
+    // Passkeys (v4). Default: RP ID = PUBLIC_ORIGIN's host, allowed origin = PUBLIC_ORIGIN.
+    // WEBAUTHN_ORIGINS is a comma-separated list, e.g. a second dev port.
+    WEBAUTHN_RP_ID: z.string().min(1).optional(),
+    WEBAUTHN_ORIGINS: z.string().min(1).optional(),
 
     // Idle-reclaim guard (see cron/keepWarm.ts). Kept a no-op on purpose.
     KEEP_WARM: z.enum(["0", "1"]).default("0"),

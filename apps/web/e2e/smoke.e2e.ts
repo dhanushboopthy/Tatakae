@@ -62,3 +62,29 @@ test("an edit survives a reload inside the autosave delay", async ({ page }) => 
   await page.reload(); // before the 800 ms debounce: the pagehide keepalive save sends it
   await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue("Quick reload");
 });
+
+test("passkey: add one in Settings, sign in with it, remove it", async ({ page, context }) => {
+  // Chromium's virtual authenticator stands in for a fingerprint reader (user verified, auto-consent).
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+  });
+
+  const name = `E2E key ${Date.now()}`;
+  await page.goto("/settings#passkeys");
+  await page.getByLabel("Name for the new passkey").fill(name);
+  await page.getByRole("button", { name: "Add a passkey" }).click();
+  const row = page.getByRole("listitem").filter({ hasText: name });
+  await expect(row).toContainText("last used never");
+
+  await page.goto("/login?next=/inbox");
+  await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+  await expect(page).toHaveURL(/\/inbox$/);
+
+  await page.goto("/settings#passkeys");
+  await expect(row).not.toContainText("last used never");
+  await row.getByRole("button", { name: "Remove…" }).click();
+  await row.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(row).toHaveCount(0);
+});

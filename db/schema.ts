@@ -112,6 +112,19 @@ export const sessions = sqliteTable("sessions", {
   ...meta,
 });
 
+export const passkeys = sqliteTable("passkeys", { // v4, web login (WebAuthn); never synced
+  id: text("id").primaryKey(),               // credential ID, base64url
+  publicKey: text("public_key").notNull(),   // COSE public key, base64url
+  counter: integer("counter").notNull().default(0),
+  transports: text("transports"),            // JSON array, e.g. ["internal","hybrid"]
+  deviceType: text("device_type", { enum: ["singleDevice", "multiDevice"] }).notNull(),
+  backedUp: integer("backed_up", { mode: "boolean" }).notNull().default(false),
+  name: text("name").notNull(),              // "Laptop fingerprint", "Phone" — Settings → Passkeys
+  createdAt: text("created_at").notNull(),
+  lastUsedAt: text("last_used_at"),
+  ...meta,
+});
+
 export const jobRuns = sqliteTable("job_runs", {
   id: text("id").primaryKey(),
   job: text("job").notNull(),           // backup | morning_push

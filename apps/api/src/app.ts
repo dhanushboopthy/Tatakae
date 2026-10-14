@@ -6,6 +6,7 @@ import { errors } from "./middleware/errors";
 import { rateLimit } from "./middleware/rateLimit";
 import { health } from "./routes/health";
 import { session } from "./routes/session";
+import { passkeyRoutes } from "./routes/passkeys";
 import { days } from "./routes/days";
 import { missions } from "./routes/missions";
 import { habits } from "./routes/habits";
@@ -41,6 +42,11 @@ export function createApp(env: Env, db: Db) {
   // Login only (not /me): 10 attempts per 15 min per IP. One limiter per app instance.
   app.use("/session/login", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
   app.route("/session", session);                          // login public; me/logout/devices apply auth inside
+  // Passkey sign-in (options + verify): its own 20 per 15 min per IP; management applies auth inside.
+  const passkeyLimit = rateLimit({ windowSec: 900, max: 20, methods: ["POST"] });
+  app.use("/passkeys/login", passkeyLimit);
+  app.use("/passkeys/login/*", passkeyLimit);
+  app.route("/passkeys", passkeyRoutes());
   app.route("/app", appVersion);                           // public: mobile update check
   app.use("*", auth);                                      // everything below needs a session
 

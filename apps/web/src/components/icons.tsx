@@ -23,6 +23,7 @@ import {
   Feather,
   Inbox,
   Info,
+  KeyRound,
   Languages,
   LifeBuoy,
   Lock,
@@ -114,6 +115,7 @@ export const ChevronRightIcon = wrap(ChevronRight);
 export const ChevronDownIcon = wrap(ChevronDown);
 export const LogOutIcon = wrap(LogOut);
 export const RefreshIcon = wrap(RefreshCw);
+export const PasskeyIcon = wrap(KeyRound);
 
 const BY_NAME: Record<(typeof ICONS)[IconKey], Lucide> = {
   Sun,

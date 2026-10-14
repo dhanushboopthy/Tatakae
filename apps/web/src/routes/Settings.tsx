@@ -8,6 +8,7 @@ import { DevicesSettings } from "./settings/Devices";
 import { GeneralSettings } from "./settings/General";
 import { HabitsSettings } from "./settings/Habits";
 import { NotificationSettings } from "./settings/Notifications";
+import { PasskeysSettings } from "./settings/Passkeys";
 import { RechargeSettings } from "./settings/Recharge";
 import { ScoringSettings } from "./settings/Scoring";
 import { StorySettings } from "./settings/Story";
@@ -25,6 +26,7 @@ const SECTIONS = [
   ["story", "Story"],
   ["scoring", "Scoring"],
   ["notifications", "Notifications"],
+  ["passkeys", "Passkeys"],
   ["devices", "Devices"],
   ["data", "Data"],
 ] as const;
@@ -61,6 +63,7 @@ export function Settings() {
           <StorySettings />
           <ScoringSettings />
           <NotificationSettings />
+          <PasskeysSettings />
           <DevicesSettings />
           <DataSettings />
         </div>

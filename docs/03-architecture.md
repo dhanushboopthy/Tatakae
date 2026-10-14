@@ -49,7 +49,7 @@ flowchart LR
 - Web: `POST /api/session/login { client: "web" }` → HttpOnly Secure SameSite=Lax cookie, 90-day sliding.
 - Phone: same endpoint with `client: "mobile"` → token returned in body, stored in `expo-secure-store`, sent as `Authorization: Bearer`.
 - Scripts: separate `API_TOKEN` bearer.
-- Sessions table lists devices; any can be revoked from Settings. Login is rate-limited. Passkeys for web in v4.
+- Sessions table lists devices; any can be revoked from Settings. Login is rate-limited. Passkeys for web in v4: `POST /api/passkeys/login` (discoverable credential, no email) gives the same cookie; the password stays as the fallback.
 
 ## Time model
 All "today" calculations use **Asia/Kolkata** and a **04:00 day boundary** (`todayIST()` in core), so a 01:00 ritual still belongs to the previous day. Never use the container clock directly.

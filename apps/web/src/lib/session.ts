@@ -110,6 +110,41 @@ export async function login(input: { email: string; password: string; deviceName
   return { ok: true };
 }
 
+export type PasskeyLoginResult = { ok: true } | { ok: false; reason: "cancelled" | "unsupported" | "credentials" | "rate-limited" | "offline" | "server" };
+
+/**
+ * Passkey sign-in (v4): options from the server → the browser's passkey sheet → verify. The browser
+ * offers the owner's discoverable passkeys, so no email is needed. Password login stays the fallback.
+ */
+export async function loginWithPasskey(input: { deviceName: string }): Promise<PasskeyLoginResult> {
+  const { browserSupportsWebAuthn, startAuthentication } = await import("@simplewebauthn/browser");
+  if (!browserSupportsWebAuthn()) return { ok: false, reason: "unsupported" };
+  const deviceName = input.deviceName.trim() || DEFAULT_DEVICE_NAME;
+  storage.set(DEVICE_KEY, deviceName);
+  let body: unknown;
+  try {
+    const optionsJSON = (await api("/passkeys/login/options", { method: "POST", body: {}, skipAuthRedirect: true })) as Parameters<
+      typeof startAuthentication
+    >[0]["optionsJSON"];
+    let response;
+    try {
+      response = await startAuthentication({ optionsJSON });
+    } catch {
+      return { ok: false, reason: "cancelled" }; // closed the sheet, timed out, or no passkey here
+    }
+    body = await api("/passkeys/login", { method: "POST", body: { response, deviceName }, skipAuthRedirect: true });
+  } catch (e) {
+    const status = statusOf(e);
+    if (status === 401 || status === 400) return { ok: false, reason: "credentials" };
+    if (status === 429) return { ok: false, reason: "rate-limited" };
+    if (isNetworkError(e)) return { ok: false, reason: "offline" };
+    return { ok: false, reason: "server" };
+  }
+  writeCachedMe({ deviceName, email: parseMe(body).email ?? null, checkedAt: new Date().toISOString() });
+  for (const l of listeners) l("login");
+  return { ok: true };
+}
+
 /** Logs out on the server (best effort) and forgets the cached session. Local data and outbox stay. */
 export async function logout(): Promise<void> {
   try {

@@ -202,6 +202,13 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - R3-5: The e2e run starts its own API (8797) and Vite (5297, `API_PROXY_TARGET` → that API) and never reuses a running server; before, `reuseExistingServer` answered the tests from another project on 5173. Two selectors were tightened (a note's `<article>` is also labelled "Title"; search hits show the text twice).
 - R3-6: The e2e run found real data loss: a note edit made less than 800 ms before a reload or tab close was dropped (unmount effects don't run on unload). `useNoteAutosave` now sends the pending patch on `pagehide` with `fetch(keepalive)` (new `keepalive` option on `api()`); a 4th e2e test covers it. Bodies over 64 KB can't use keepalive and stay "Not saved yet".
 - R3-7: `@simplewebauthn/server` and `@simplewebauthn/browser` were installed in the same lockfile change as `@playwright/test` (one `pnpm-lock.yaml`), so that commit carries them; they are used from the passkeys commit.
+- R3-8 (owner: passkey first, password fallback): Passkeys built (R2-12).
+  - `passkeys` table (migration `0004_passkeys`, generated with `pnpm db:generate`): credential id, COSE public key, counter, transports, device type, backed-up flag, name. Not synced. Kept in the nightly export (public keys only), so a restore keeps passkey login working.
+  - Discoverable credentials (`residentKey: required`), so sign-in needs no email. `userVerification: preferred`, attestation `none`. Up to 10 passkeys. Challenges are one-time and kept in memory for 5 minutes, per router instance (one process).
+  - RP ID = `PUBLIC_ORIGIN`'s host, allowed origin = `PUBLIC_ORIGIN`. Optional overrides `WEBAUTHN_RP_ID` and `WEBAUTHN_ORIGINS` (comma-separated). **Production needs `PUBLIC_ORIGIN` set to the real https domain**; a passkey made for one domain doesn't work on another.
+  - Login: "Sign in with a passkey" first, then "or use your password" with the same form as before; browsers without WebAuthn see only the password form. Closing the passkey sheet shows no error.
+  - Settings → Passkeys: add (named), rename, remove (two-step). Removing the last one is fine because the password still works.
+  - Tests: 7 API tests run real verification against a software authenticator (P-256, hand-rolled CBOR); an e2e test uses Chromium's virtual authenticator to add a passkey, sign in with it and remove it.
 - R3-4: On phones the ritual's eight 44 px step buttons don't fit, so below `sm` the dots are a passive progress bar (Back / Next move between steps); from `sm` up they stay jump buttons.
 
 ## Core API reference (`@tatakae/core`)
@@ -243,6 +250,7 @@ _JSON in and out, with camelCase rows exactly as in core's row schemas (real boo
 - `POST /session/logout` → `{ ok }`. Deletes the session and clears the cookie.
 - `GET /session/devices` → `{ devices: [{ id, client, deviceName, createdAt, lastSeenAt, expiresAt, current }] }`
 - `DELETE /session/devices/:id` → `{ ok }` (404 if unknown)
+- Passkeys (v4, web): `POST /passkeys/login/options` → WebAuthn request options; `POST /passkeys/login` `passkeyLoginInput { response, deviceName }` → web cookie + `{ email, client, deviceName, expiresAt }` (401 `passkey_failed`). Both public, 20 per 15 min per IP. With auth: `GET /passkeys` → `{ passkeys: PasskeySummary[] }`, `POST /passkeys/register/options`, `POST /passkeys` `passkeyRegisterInput { response, name }` → 201 `PasskeySummary` (400 `passkey_invalid` / `passkey_limit`), `PATCH /passkeys/:id` `{ name }`, `DELETE /passkeys/:id`.
 
 **Days**: every route returns a DayView `{ day, missions, score: DayScore, yesterdayMissed, firstUseDate }`. The day is synthesised (epoch `updatedAt`) if unsaved, and missions are live ones ordered P1, P2, P3, side.
 - `GET /days/:date`
