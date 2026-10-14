@@ -22,7 +22,7 @@ export function BlockBarChart(props: {
   const blocks = props.columns.map((col) =>
     props.series.flatMap((s) => Array.from({ length: Math.ceil((col.values[s.key] ?? 0) / props.unit) }, () => s)),
   );
-  const tallest = Math.max(1, Math.min(props.maxBlocks ?? 12, ...blocks.map((b) => b.length)));
+  const tallest = Math.max(1, Math.min(props.maxBlocks ?? 12, Math.max(0, ...blocks.map((b) => b.length))));
   return (
     <figure className="m-0">
       <div role="img" aria-label={props.label} className="flex items-end gap-2 overflow-x-auto pb-1">

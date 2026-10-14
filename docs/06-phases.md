@@ -75,7 +75,7 @@ Order (each builds on the previous):
 3. Signed release APK workflow on `mobile-v*` tags; `/api/app/version` (✅) + in-app "update available"; EAS Update channel for JS fixes.
 4. Web passkeys (WebAuthn) as primary login; password fallback. **Blocked:** `@simplewebauthn/server` + `@simplewebauthn/browser` could not be installed (registry unreachable in Run 2, R2-12).
 5. 🟡 Optional laptop web push.
-6. 🟡 Conflict UI (subtle "edited elsewhere" note) ✅ code; Playwright smoke test written, `@playwright/test` not installed (R2-13); offline edge cases + accessibility audit pending.
+6. 🟡 Conflict UI (subtle "edited elsewhere" note) ✅ code; on-screen visual check, laptop + phone, light + dark ✅ (R3-3); Playwright smoke test written, `@playwright/test` not installed (R2-13); offline edge cases + accessibility audit pending.
 7. Area alignment scores; monthly review polish.
 - **Gate:** restore rehearsed and documented.
 

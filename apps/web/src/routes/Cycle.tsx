@@ -30,7 +30,7 @@ export function Cycle() {
       />
       <Kural n={595} className="max-w-read" />
       {cycle && (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section aria-labelledby="gauge-title" className="card flex flex-col items-center gap-3">
             <h2 id="gauge-title" className="self-start text-base font-semibold">
               Days shown up

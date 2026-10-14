@@ -37,9 +37,15 @@ export function StatusChips(props: {
   hideReschedule?: boolean;
   /** On a coloured card: unselected chips sit on white instead of surface-2. */
   onColor?: boolean;
+  /** On a surface-2 card (side quest, ritual rows): unselected chips sit on surface so they stay visible. */
+  onMuted?: boolean;
 }) {
   const chips = props.hideReschedule ? CHIPS.filter((c) => c.status !== "rescheduled") : CHIPS;
-  const idle = props.onColor ? "bg-white/70 text-on-accent hover:bg-white" : "bg-surface-2 text-ink hover:bg-line";
+  const idle = props.onColor
+    ? "bg-white/70 text-on-accent hover:bg-white"
+    : props.onMuted
+      ? "bg-surface text-ink hover:bg-line"
+      : "bg-surface-2 text-ink hover:bg-line";
   return (
     <div role="group" aria-label={`Status of ${props.label}`} className="flex flex-wrap gap-2">
       {chips.map(({ status, label, Icon, selected }) => {

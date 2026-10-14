@@ -165,7 +165,16 @@ function defaultFree(settings: ResolvedSettings, anchors: readonly Anchor[]): nu
 function ProgressDots(props: { step: number; reached: number; onGo: (i: number) => void }) {
   return (
     <div className="mt-3">
-      <ol className="flex items-center gap-1" aria-label="Ritual progress">
+      {/* Phones: eight 44 px jump buttons don't fit, so the dots are a passive bar there; Back/Next move between steps. */}
+      <p className="flex min-h-tap items-center gap-2 sm:hidden" aria-hidden="true">
+        {STEPS.map((name, i) => (
+          <span
+            key={name}
+            className={`block h-2.5 rounded-full ${i === props.step ? "w-8 bg-lime" : i < props.step || i <= props.reached ? "w-2.5 bg-ink" : "w-2.5 border border-missed"}`}
+          />
+        ))}
+      </p>
+      <ol className="hidden items-center gap-1 sm:flex" aria-label="Ritual progress">
         {STEPS.map((name, i) => {
           const current = i === props.step;
           const done = i < props.step || i <= props.reached;
@@ -261,7 +270,7 @@ function CloseToday({ day, onNext }: { day: DayView; onNext: () => void }) {
                 <span className="pill mr-2 bg-surface text-ink">{m.slot === "side" ? "Side quest" : m.slot}</span>
                 <span className="font-medium">{m.title}</span>
               </p>
-              <StatusChips value={m.status} onChange={(s) => void setStatus(m, s)} label={m.title} />
+              <StatusChips value={m.status} onChange={(s) => void setStatus(m, s)} label={m.title} onMuted />
             </li>
           ))}
         </ul>

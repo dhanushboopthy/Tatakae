@@ -67,7 +67,7 @@ export function Japanese() {
     <div className="page">
       <PageHeader eyebrow="Library" title="Japanese" />
       <LibraryTabs />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <form onSubmit={onLog} className="card space-y-4" aria-labelledby="jp-log-title">
           <h2 id="jp-log-title" className="text-base font-semibold">
             Log practice

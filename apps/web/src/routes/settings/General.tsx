@@ -66,7 +66,7 @@ export function GeneralSettings() {
           <input
             id="nudge-time"
             type="time"
-            className="input tnum w-32"
+            className="input tnum w-40"
             disabled={!s.afternoon_nudge.enabled}
             defaultValue={s.afternoon_nudge.time}
             onBlur={(e) => TIME.test(e.target.value) && void saveSetting("afternoon_nudge", { ...s.afternoon_nudge, time: e.target.value })}

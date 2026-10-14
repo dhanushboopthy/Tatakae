@@ -206,7 +206,8 @@ export function Shell() {
                 <SearchIcon />
               </button>
             </div>
-            <nav aria-label="Main" className="flex gap-2 overflow-x-auto px-4 py-3">
+            {/* relative: the chips' absolutely positioned sr-only text must be clipped by this scroller, not widen the page */}
+            <nav aria-label="Main" className="relative flex gap-2 overflow-x-auto px-4 py-3">
               {NAV.map((item) => (
                 <TopLink key={item.to} item={item} />
               ))}

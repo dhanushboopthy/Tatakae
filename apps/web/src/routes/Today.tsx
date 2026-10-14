@@ -36,6 +36,21 @@ import { greeting, useDisplayName } from "../lib/profile";
 
 const box = (boxes: readonly MetricBox[] | undefined, key: MetricBox["key"]) => boxes?.find((b) => b.key === key);
 
+/**
+ * Habits + inbox fill whatever is left of row 2 after `n` mission cards (2 columns at md, 4 at lg),
+ * side by side when they get two or more columns, so no empty hole is left beside them.
+ */
+function restSpan(n: number): string {
+  const md = n % 2 === 0 ? "md:col-span-2 md:grid-cols-2" : "md:grid-cols-1";
+  const LG: Record<number, string> = {
+    1: "lg:col-span-1 lg:grid-cols-1",
+    2: "lg:col-span-2 lg:grid-cols-1",
+    3: "lg:col-span-3 lg:grid-cols-2",
+    4: "lg:col-span-4 lg:grid-cols-2",
+  };
+  return `${md} ${LG[4 - (n % 4)]}`;
+}
+
 export function Today() {
   const today = useToday();
   const tomorrow = addDays(today, 1);
@@ -142,7 +157,7 @@ export function Today() {
             {others.map((m) => (
               <MissionCard key={m.id} mission={m} forged={day.forged} />
             ))}
-            <div className={`flex flex-col gap-4 ${others.length === 0 ? "lg:col-span-2" : ""}`}>
+            <div className={`grid content-start gap-4 ${restSpan(others.length)}`}>
               <HabitStrip date={today} title="Habits today" />
               <Link to="/inbox" className="card flex items-center justify-between gap-3 transition hover:bg-surface/80">
                 <span className="flex items-center gap-3">

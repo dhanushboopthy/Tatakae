@@ -188,6 +188,19 @@ Started 2026-10-11 ~23:00 IST. Owner asleep; work runs unattended. Read this fil
 - R2-16: Conflict UI: one calm toast per sync round plus an "Edited elsewhere" pill on the mission card for 10 minutes. Kinds: newer (another device saved later), kept (the server refused: plan lock, guards), undone (refused create).
 - R2-17: **Visual check skipped.** tsx can't create its IPC pipe in the sandbox, so the API was bundled with tsup into `apps/api/dist` (removed afterwards). Each sandboxed command gets its own loopback, so the servers must run inside the same command. Firefox is a Snap and `snap-confine` can't run in the sandbox. Demo data seeded over REST against the running API without errors, which exercised the v2/v3 routes live.
 
+### Run 3 decisions (R3-…)
+- R3-1 (owner, 14 Oct): Playwright's Chromium lives in `apps/web/.playwright-browsers/` (gitignored) via `PLAYWRIGHT_BROWSERS_PATH`, so nothing is installed outside the repo except pnpm's package store.
+- R3-2: The visual check ran against `tsx watch` + Vite outside the sandbox (tsx needs its IPC socket), with a throwaway SQLite file seeded with two weeks of demo data, at 1440 × 900 and 390 × 844, light and dark. Docker was not touched. Ports 5173/5174 belong to other local projects, so Vite ran on 5291.
+- R3-3: Bugs found and fixed on screen:
+  - The cycle gauge with `animate` stacked all 12 segments at the origin (a CSS `transform` animation overrides the SVG `transform` attribute). Position now sits on a wrapping `<g>`.
+  - Block bar charts (Japanese minutes per week, monthly focus by area) drew one block per column (`Math.min` over column heights).
+  - Week/Day planner blocks showed no title: the tag pill and the clamped title shrank to 0 px. Compact blocks now put the title first and drop the tag/time line under 44 px. A focus-done block that overlaps a planned block now sits beside it (planned left, focus right) instead of covering it.
+  - Every screen was 616 px wide on phones: the narrow nav's absolutely positioned sr-only badge text escaped its scroller. Calendar, Cycle and Japanese grids also needed `grid-cols-1` so cards can shrink.
+  - Side-quest and night-ritual status chips were invisible (surface-2 on surface-2). New `onMuted` variant on `StatusChips`.
+  - Today's habits + inbox column left a three-column hole when there were four other missions; it now fills the rest of the row.
+  - Mission card labels ("Minimum ·", "If-then ·") wrapped mid-word; Settings' nudge time was cut off; "1 areas".
+- R3-4: On phones the ritual's eight 44 px step buttons don't fit, so below `sm` the dots are a passive progress bar (Back / Next move between steps); from `sm` up they stay jump buttons.
+
 ## Core API reference (`@tatakae/core`)
 _Signatures only; see JSDoc in `packages/core/src`. Keep adding Progress / Decisions entries in their sections above, not here._
 

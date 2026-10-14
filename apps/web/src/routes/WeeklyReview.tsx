@@ -122,7 +122,7 @@ function WeekScoreboard({ stats }: { stats: WeekStats }) {
       progress: closed.length ? Math.round((100 * shown) / closed.length) : null,
       context: `of ${closed.length} closed ${closed.length === 1 ? "day" : "days"}`,
     },
-    { key: "focus_week", label: "Focus", value: stats.focusMinutes, unit: "min", delta: null, target: null, progress: null, context: `${stats.areaMinutes.length} areas` },
+    { key: "focus_week", label: "Focus", value: stats.focusMinutes, unit: "min", delta: null, target: null, progress: null, context: `${stats.areaMinutes.length} ${stats.areaMinutes.length === 1 ? "area" : "areas"}` },
     { key: "habits_week", label: "Habits", value: stats.habitsPct, unit: "%", delta: null, target: 100, progress: stats.habitsPct, context: "of due checks" },
   ];
   return (

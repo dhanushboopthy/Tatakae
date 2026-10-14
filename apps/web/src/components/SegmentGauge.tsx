@@ -28,22 +28,24 @@ export function SegmentGauge(props: {
         const px = cx + r * Math.cos(rad);
         const py = cy - r * Math.sin(rad);
         const { fill, stroke } = markFill(m);
+        // Position on the <g>: the rise animation sets a CSS transform on the rect, which would
+        // otherwise replace the SVG transform attribute and stack every segment at the origin.
         return (
-          <rect
-            key={i}
-            x={-23}
-            y={-14}
-            width={46}
-            height={28}
-            rx={10}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={m === "Future" || m === "Unplanned" || m === "Missed" || m === "Light" ? 2 : 1.5}
-            transform={`translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${(-theta).toFixed(1)})`}
-            style={props.animate ? { animation: `rise 220ms cubic-bezier(0.2,0,0,1) ${i * 60}ms both` } : undefined}
-          >
-            <title>{`Week ${i + 1}: ${m === "Future" ? "ahead" : m === "Unplanned" ? "rest" : m}`}</title>
-          </rect>
+          <g key={i} transform={`translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${(-theta).toFixed(1)})`}>
+            <rect
+              x={-23}
+              y={-14}
+              width={46}
+              height={28}
+              rx={10}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={m === "Future" || m === "Unplanned" || m === "Missed" || m === "Light" ? 2 : 1.5}
+              style={props.animate ? { animation: `rise 220ms cubic-bezier(0.2,0,0,1) ${i * 60}ms both` } : undefined}
+            >
+              <title>{`Week ${i + 1}: ${m === "Future" ? "ahead" : m === "Unplanned" ? "rest" : m}`}</title>
+            </rect>
+          </g>
         );
       })}
       <text x={cx} y={cy - 34} textAnchor="middle" fontSize="52" fontWeight="600" fill="rgb(var(--ink))" letterSpacing="-1.5">

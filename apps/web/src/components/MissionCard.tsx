@@ -181,14 +181,14 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
           <dl className={`mt-3 grid gap-1 text-sm ${tone.sub}`}>
             {m.minimum && (
               <div className="flex gap-1.5">
-                <dt className="font-semibold">Minimum ·</dt>
-                <dd>{m.minimum}</dd>
+                <dt className="shrink-0 whitespace-nowrap font-semibold">Minimum ·</dt>
+                <dd className="min-w-0">{m.minimum}</dd>
               </div>
             )}
             {m.ifThen && (
               <div className="flex gap-1.5">
-                <dt className="font-semibold">If-then ·</dt>
-                <dd>{m.ifThen}</dd>
+                <dt className="shrink-0 whitespace-nowrap font-semibold">If-then ·</dt>
+                <dd className="min-w-0">{m.ifThen}</dd>
               </div>
             )}
           </dl>
@@ -216,7 +216,7 @@ export function MissionCard(props: { mission: Mission; forged: boolean; prominen
         <p className={`text-sm ${tone.sub}`}>{STATUS_LABEL.rescheduled} — a copy waits in your backlog.</p>
       ) : (
         <>
-          <StatusChips value={m.status} onChange={(s) => void onStatus(s)} label={m.title} onColor={tone.onColor} />
+          <StatusChips value={m.status} onChange={(s) => void onStatus(s)} label={m.title} onColor={tone.onColor} onMuted={m.slot === "side"} />
 
           {noteOpen ? (
             <form onSubmit={saveNote} className="flex gap-2">

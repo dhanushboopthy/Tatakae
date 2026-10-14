@@ -86,7 +86,7 @@ function MonthView(props: { month: string; today: ISODate; selected: ISODate; on
 
   return (
     <>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <section aria-label={`${monthTitle(props.month)} calendar`} className="card space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">

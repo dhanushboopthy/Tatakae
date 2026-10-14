@@ -340,6 +340,9 @@ export function WeekPlanner(props: { mode: PlannerMode; initialDate: ISODate }) 
                         ? creating
                         : null;
                   const pspan = preview ? railSpan(preview.startMin, preview.durationMin) : null;
+                  const planned = live(d).filter((m) => m.plannedStart);
+                  const focusRanges = focus.map((f) => focusRange(f, d, now));
+                  const plannedRanges = planned.map(plannedRange);
                   return (
                     <div
                       key={d}
@@ -375,22 +378,32 @@ export function WeekPlanner(props: { mode: PlannerMode; initialDate: ISODate }) 
                           </div>
                         );
                       })}
-                      {live(d)
-                        .filter((m) => m.plannedStart)
-                        .map((m) => (
-                          <PlannedBlock
-                            key={m.id}
-                            mission={m}
-                            area={areaOf(m.id, null)}
-                            onOpen={() => setPlanning(m)}
-                            onDragStart={(e) => startDrag(e, m)}
-                            onDragEnd={endDrag}
-                            onResize={(min) => void resize(m, min)}
-                          />
-                        ))}
-                      {focus.map((f) => (
-                        <FocusBlock key={f.id} session={f} date={d} areaOf={areaOf} missions={missions} now={now} />
+                      {planned.map((m, i) => (
+                        <PlannedBlock
+                          key={m.id}
+                          mission={m}
+                          area={areaOf(m.id, null)}
+                          split={focusRanges.some((r) => r != null && overlaps(r, plannedRanges[i]!))}
+                          onOpen={() => setPlanning(m)}
+                          onDragStart={(e) => startDrag(e, m)}
+                          onDragEnd={endDrag}
+                          onResize={(min) => void resize(m, min)}
+                        />
                       ))}
+                      {focus.map((f, i) => {
+                        const r = focusRanges[i];
+                        if (!r) return null;
+                        return (
+                          <FocusBlock
+                            key={f.id}
+                            session={f}
+                            range={r}
+                            split={plannedRanges.some((p) => overlaps(p, r))}
+                            areaOf={areaOf}
+                            missions={missions}
+                          />
+                        );
+                      })}
                       {preview && pspan && (
                         <div
                           aria-hidden="true"
@@ -446,10 +459,32 @@ export function WeekPlanner(props: { mode: PlannerMode; initialDate: ISODate }) 
   );
 }
 
+type MinuteRange = { start: number; end: number };
+
+const overlaps = (a: MinuteRange, b: MinuteRange) => a.start < b.end && b.start < a.end;
+
+const plannedRange = (m: Mission): MinuteRange => {
+  const start = toMinutes(m.plannedStart ?? "09:00");
+  return { start, end: start + (m.estMin ?? 30) };
+};
+
+/** Minutes a focus session covers on `date`'s rail (IST, 04:00 boundary), or null on another day. */
+function focusRange(f: FocusSession, date: ISODate, now: Date): MinuteRange | null {
+  if (appDayOf(f.startedAt) !== date) return null;
+  const start = istMinutesOf(f.startedAt);
+  const minutes = f.endedAt ? focusMinutes(f) : Math.max(1, Math.round((now.getTime() - Date.parse(f.startedAt)) / 60_000));
+  return { start, end: start + minutes };
+}
+
+/** A planned block and an overlapping focus block share the column: planned left, focus right. */
+const SPLIT_LEFT = "left-1 right-[calc(50%+2px)]";
+const SPLIT_RIGHT = "left-[calc(50%+2px)] right-1";
+
 /** A mission with a planned start: drag to move, drag the bottom edge to resize, click to edit time. */
 function PlannedBlock(props: {
   mission: Mission;
   area: Area | null;
+  split: boolean;
   onOpen: () => void;
   onDragStart: (e: DragEvent<HTMLElement>) => void;
   onDragEnd: () => void;
@@ -463,6 +498,7 @@ function PlannedBlock(props: {
   const span = railSpan(startMin, duration);
   if (!span) return null;
   const c = areaColor(props.area, 0);
+  const heightPx = Math.max(28, span.height * RAIL_PX);
 
   function onHandleDown(e: ReactPointerEvent<HTMLSpanElement>) {
     if (e.button !== 0) return;
@@ -483,7 +519,7 @@ function PlannedBlock(props: {
   }
 
   return (
-    <div className="absolute inset-x-1 z-10" style={{ top: span.top * RAIL_PX, height: Math.max(28, span.height * RAIL_PX) }}>
+    <div className={`absolute z-10 ${props.split ? SPLIT_LEFT : "inset-x-1"}`} style={{ top: span.top * RAIL_PX, height: heightPx }}>
       <button
         type="button"
         draggable
@@ -496,6 +532,7 @@ function PlannedBlock(props: {
         <AreaBlock
           planned
           compact
+          heightPx={heightPx}
           tag={props.area?.name ?? m.slot}
           title={m.title}
           time={dur !== null ? rangeLabel(startMin, dur) : `${m.plannedStart}${m.estMin ? ` · ${durationLabel(m.estMin)}` : ""}`}
@@ -520,25 +557,29 @@ function PlannedBlock(props: {
 
 function FocusBlock(props: {
   session: FocusSession;
-  date: ISODate;
+  /** Only in the column of its app day; after-midnight blocks clip at the rail end. */
+  range: MinuteRange;
+  split: boolean;
   areaOf: (missionId: string | null, areaId: string | null) => Area | null;
   missions: readonly Mission[];
-  now: Date;
 }) {
   const f = props.session;
-  // Only in the column of its app day (IST, 04:00 boundary); after-midnight blocks clip at the rail end.
-  if (appDayOf(f.startedAt) !== props.date) return null;
-  const startMin = istMinutesOf(f.startedAt);
-  const minutes = f.endedAt ? focusMinutes(f) : Math.max(1, Math.round((props.now.getTime() - Date.parse(f.startedAt)) / 60_000));
+  const startMin = props.range.start;
+  const minutes = props.range.end - props.range.start;
   const span = railSpan(startMin, minutes);
   if (!span) return null;
   const area = props.areaOf(f.missionId, f.areaId);
   const c = areaColor(area, 0);
   const m = props.missions.find((x) => x.id === f.missionId);
+  const heightPx = Math.max(22, span.height * RAIL_PX);
   return (
-    <div className="pointer-events-none absolute left-3 right-1 z-[15]" style={{ top: span.top * RAIL_PX, height: Math.max(22, span.height * RAIL_PX) }}>
+    <div
+      className={`pointer-events-none absolute z-[15] ${props.split ? SPLIT_RIGHT : "left-3 right-1"}`}
+      style={{ top: span.top * RAIL_PX, height: heightPx }}
+    >
       <AreaBlock
         compact
+        heightPx={heightPx}
         tag={area?.name ?? "Focus"}
         title={m?.title ?? "Open focus"}
         time={`${hhmmOf(startMin)} · ${minutes} min${f.endedAt ? "" : " · running"}`}
