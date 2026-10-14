@@ -6,7 +6,6 @@ import { useToast } from "../components/Toast";
 import { formatDay, weekdayInitial, welcomeBackSeenKey } from "../lib/format";
 import { useDay, useRecentHistory, useToday, useWriteOffs, writeOff } from "../lib/hooks";
 import { storage } from "../lib/storage";
-import { announceMoment } from "../lib/story";
 
 // Welcome back (docs/02 lapse protocol, docs/05): calm line, grey history (no red, no count), Restart
 // plans only P1 for today, or write today off (max 2 a month, with a reason). Shown once per day.
@@ -85,7 +84,6 @@ export function WelcomeBack() {
           existing={day?.slots.P1}
           submitLabel="Restart"
           onDone={() => {
-            void announceMoment("comeback");
             toast("P1 locked. Do the Minimum and it counts.");
             navigate("/today");
           }}

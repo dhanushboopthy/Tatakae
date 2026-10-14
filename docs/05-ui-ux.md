@@ -45,7 +45,7 @@ Dashboards, charts, calendar, scoreboard and icons: **[11-dashboards-charts-cale
 | Settings | Everything incl. scoring constants (even-week Sundays), anchors, recharge menu, reference pack import + disclaimer, devices |
 
 ## Components (both clients)
-`MissionCard`, `StatusChips` (Done / Minimum / Missed / Reschedule — icon + label, never colour alone), `P1Card`, `BigButton`, `CapacityBar`, `StuckSheet`, `StoryToast`, `HabitStrip`, `DayGrid`, `Sparkline`, `CommandPalette` (web).
+`MissionCard`, `StatusChips` (Done / Minimum / Missed / Reschedule — icon + label, never colour alone), `P1Card`, `BigButton`, `CapacityBar`, `StuckSheet`, `StoryToast` (phone only; removed from the website, R3-10), `HabitStrip`, `DayGrid`, `Sparkline`, `CommandPalette` (web).
 
 ## Visual system
 **See [10-design-system.md](10-design-system.md)** — "Soft Bento": light soft-grey canvas, white rounded cards (24–28 px), big tabular numbers, pill chips, circle icon buttons, **lime** (primary/done) and **lavender** (secondary/minimum) accents, charcoal P1 hero card and floating pill nav, pastel area colours, hatched bars, 12-segment cycle gauge, ring progress. Dark variant from ritual time to wake time; the night ritual is always dark. Reference images: `docs/design/references/`.

@@ -11,10 +11,9 @@ import { NotificationSettings } from "./settings/Notifications";
 import { PasskeysSettings } from "./settings/Passkeys";
 import { RechargeSettings } from "./settings/Recharge";
 import { ScoringSettings } from "./settings/Scoring";
-import { StorySettings } from "./settings/Story";
 
 // Settings (docs/05): everything, including scoring constants (even-ISO-week Sundays), anchors, recharge
-// menu, areas, reference pack import + disclaimer, devices, data. Sections are anchors so other
+// menu, areas, passkeys, devices, data. The Story section was removed (R3-10); the reward queue is in General. Sections are anchors so other
 // screens can deep-link (e.g. /settings#habits).
 
 const SECTIONS = [
@@ -23,7 +22,6 @@ const SECTIONS = [
   ["anchors", "Anchors"],
   ["recharge", "Recharge"],
   ["areas", "Areas"],
-  ["story", "Story"],
   ["scoring", "Scoring"],
   ["notifications", "Notifications"],
   ["passkeys", "Passkeys"],
@@ -60,7 +58,6 @@ export function Settings() {
           <AnchorsSettings />
           <RechargeSettings />
           <AreasSettings />
-          <StorySettings />
           <ScoringSettings />
           <NotificationSettings />
           <PasskeysSettings />

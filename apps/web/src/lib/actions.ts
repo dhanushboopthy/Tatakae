@@ -12,8 +12,6 @@ import {
   type Experiment,
   type Goal,
   type Review,
-  type StoryPack,
-  type StoryRef,
   type WatchQueueItem,
   type Day,
   type DayPatch,
@@ -31,7 +29,6 @@ import {
 } from "@tatakae/core";
 import { remove, store, write } from "../sync/engine";
 import { missionsOn } from "./plan";
-import { announceMoment } from "./story";
 
 // Write helpers. Every write goes to IndexedDB + outbox first (optimistic) and syncs later.
 // The server stays authoritative for the plan lock (forgedAt, locked mission fields).
@@ -79,9 +76,6 @@ export async function setStatus(mission: Mission, status: MissionStatus): Promis
     return;
   }
   await write("missions", { ...mission, status });
-  if (status === mission.status) return;
-  if (status === "done" && mission.slot === "P1") void announceMoment("p1_done");
-  else if (status === "minimum") void announceMoment("minimum_done");
 }
 
 export async function rescheduleMission(mission: Mission): Promise<void> {
@@ -213,8 +207,6 @@ export async function inboxToMission(item: InboxItem, target: { dayDate: ISODate
 
 export async function logStuck(missionId: string, blocker: Blocker, unblocker: string | null): Promise<void> {
   await write("stuck_events", { id: newId(), missionId, blocker, unblocker: unblocker?.trim() || null, at: nowIso() });
-  if (blocker === "fear") void announceMoment("stuck_fear");
-  else if (blocker === "inertia") void announceMoment("stuck_inertia");
 }
 
 // ---------- focus sessions ----------
@@ -273,25 +265,6 @@ export async function removeArea(id: string): Promise<void> {
   await remove("areas", id);
 }
 
-/** Import a validated reference pack: one story_refs row per entry (new ids; existing refs untouched). */
-export async function importStoryPack(pack: StoryPack): Promise<number> {
-  const existing = await store.getAll("story_refs");
-  const seen = new Set(existing.map((r) => `${r.title}|${r.moment}|${r.lesson}`.toLowerCase()));
-  let added = 0;
-  for (const ref of pack.refs) {
-    const key = `${ref.title}|${ref.moment}|${ref.lesson}`.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    await write("story_refs", { id: newId(), ...ref, muted: false, lastShownAt: null });
-    added++;
-  }
-  return added;
-}
-
-export async function setStoryMuted(ref: StoryRef, muted: boolean): Promise<void> {
-  await write("story_refs", { ...ref, muted });
-}
-
 export async function saveWatch(w: Omit<WatchQueueItem, "updatedAt" | "deletedAt">): Promise<void> {
   await write("watch_queue", w);
 }
@@ -311,7 +284,6 @@ export type ReviewFields = Omit<Review, "id" | "updatedAt" | "deletedAt">;
 export async function saveReview(fields: ReviewFields, existing: Review | null): Promise<string | null> {
   await write("reviews", { ...(existing ?? { id: newId() }), ...fields });
   if (existing || fields.type !== "week") return null;
-  void announceMoment("weekly_review");
   const queue = await store.getAll("watch_queue");
   const target = rewardTarget(queue);
   if (!target) return null;

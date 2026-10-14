@@ -5,6 +5,7 @@ import { useToast } from "../../components/Toast";
 import { saveSetting, useSettings } from "../../lib/hooks";
 import { setDisplayName, useDisplayName } from "../../lib/profile";
 import { setThemePref, useThemePref, type ThemePref } from "../../lib/theme";
+import { RewardQueue } from "./RewardQueue";
 import { Row, Section, Toggle } from "./Section";
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -95,6 +96,7 @@ export function GeneralSettings() {
       <Row label="Haptics" hint="Phone vibration on taps.">
         <Toggle label="Haptics" checked={s.haptics_enabled} onChange={(v) => void saveSetting("haptics_enabled", v)} />
       </Row>
+      <RewardQueue />
     </Section>
   );
 }

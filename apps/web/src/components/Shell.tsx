@@ -23,7 +23,6 @@ import {
   type IconProps,
 } from "./icons";
 import { InstallBanner } from "./InstallBanner";
-import { StoryToastHost } from "./StoryToast";
 import { ToastProvider } from "./Toast";
 
 /**
@@ -224,7 +223,6 @@ export function Shell() {
         </div>
         <CommandPalette />
         <CaptureDialog />
-        <StoryToastHost />
         <ConflictNoticeHost />
       </ToastProvider>
     </AuthGate>

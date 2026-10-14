@@ -32,6 +32,7 @@
 - Playwright installed; the web smoke test runs on its own ports and passes 4/4. Notes: an edit made just before a reload or tab close is now saved (pagehide keepalive).
 - Passkeys (v4): `passkeys` table + migration 0004, `/api/passkeys` routes (sign-in public and rate-limited; register, rename, remove with auth), "Sign in with a passkey" first on Login with the password as fallback, Settings → Passkeys. RP ID and origin come from `PUBLIC_ORIGIN` (optional `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGINS`).
 - Settings: the default focus length takes any 5–240 minutes (core `focusLength` schema), not only 25/50/90.
+- Web: removed the story pop-up and Settings → Story (the pack is empty now); the reward queue moved to Settings → General. Story tables, API and core helpers stay.
 - Thirukkural for each calm moment (13 Kurals; 619 stays on Login): shutdown, restart, capacity, welcome back, focus complete, stuck, inbox, cycle, reviews, notes, Japanese (docs/05 § Copy).
 - Removed (owner, 12 Oct 2026): the show references (scene cards, story pictures, imported lines). Only the Thirukkural stays; the story layer is back to its original paraphrase-only rules.
 - Night ritual restart: `POST /days/:date/restart` + a high-friction flow on "Shutdown complete" (reason, 15 s pause, typed word, 3 s hold; once per plan, 2 per week; logged for Sunday).

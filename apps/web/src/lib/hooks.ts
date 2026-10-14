@@ -24,7 +24,6 @@ import {
   type Goal,
   type SeriesMetric,
   type StatsIndex,
-  type StoryRef,
   type WatchQueueItem,
   type Experiment,
   type Review,
@@ -487,13 +486,6 @@ export function useCapacityRange(from: ISODate, to: ISODate) {
       }
       return out;
     },
-  });
-}
-
-export function useStoryRefs() {
-  return useQuery({
-    queryKey: localKey(["story_refs"], "all"),
-    queryFn: async (): Promise<StoryRef[]> => (await store.getAll("story_refs")).sort((a, b) => a.title.localeCompare(b.title)),
   });
 }
 

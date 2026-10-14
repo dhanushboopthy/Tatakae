@@ -90,7 +90,6 @@ export const ScreenIcon = wrap(Smartphone);
 export const LockIcon = wrap(Lock);
 export const RestIcon = wrap(Coffee);
 export const WriteOffIcon = wrap(Feather);
-export const StoryIcon = wrap(Sparkles);
 
 // Status marks (shape encodes the state, never colour alone)
 export const DoneMarkIcon = CheckIcon;
