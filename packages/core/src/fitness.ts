@@ -399,6 +399,52 @@ export function bestByExercise(sets: readonly SetRow[]): BestLift[] {
   return [...best.values()].sort((a, b) => a.exercise.localeCompare(b.exercise));
 }
 
+/** Muscle groups offered when logging an exercise (free text is still accepted by the schema). */
+export const MUSCLE_GROUPS = [
+  "Chest", "Back", "Shoulders", "Quads", "Hamstrings", "Glutes", "Biceps", "Triceps", "Calves", "Core", "Forearms",
+] as const;
+
+type WorkoutRow = Pick<Workout, "id" | "date"> & { deletedAt?: string | null };
+type SetOrderRow = SetRow & { id?: string; order?: number };
+
+/** Sets that belong to a live workout (sets of a deleted session are ignored everywhere). */
+function setsOfLiveWorkouts<S extends SetRow>(workouts: readonly WorkoutRow[], sets: readonly S[]): S[] {
+  const ids = new Set(live(workouts).map((w) => w.id));
+  return live(sets).filter((s) => ids.has(s.workoutId));
+}
+
+/**
+ * The sets of an exercise from its most recent earlier session (before `beforeDate`), in the order they were done:
+ * the "last time 80 × 6, 6, 6, 5" line. Empty when the exercise has not been done before.
+ */
+export function lastSets<S extends SetOrderRow>(exercise: string, workouts: readonly WorkoutRow[], sets: readonly S[], beforeDate: ISODate): S[] {
+  const dateOf = new Map(live(workouts).map((w) => [w.id, w.date] as const));
+  const mine = setsOfLiveWorkouts(workouts, sets).filter((s) => s.exercise === exercise && (dateOf.get(s.workoutId) ?? "") < beforeDate);
+  if (mine.length === 0) return [];
+  const newest = mine.reduce((m, s) => {
+    const key = `${dateOf.get(s.workoutId)}|${s.workoutId}`;
+    return key > m ? key : m;
+  }, "");
+  return mine.filter((s) => `${dateOf.get(s.workoutId)}|${s.workoutId}` === newest).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export interface LiftSummary extends BestLift {
+  /** Best e1RM before `since` (null when the lift is new), and the change from it (kg, 0.1). */
+  previousE1rm: number | null;
+  delta: number | null;
+}
+
+/** Best e1RM per exercise over all sessions, with the change since a date (the start of the phase, say). */
+export function bestLifts(workouts: readonly WorkoutRow[], sets: readonly SetRow[], since: ISODate): LiftSummary[] {
+  const usable = setsOfLiveWorkouts(workouts, sets);
+  const dateOf = new Map(live(workouts).map((w) => [w.id, w.date] as const));
+  const before = new Map(bestByExercise(usable.filter((s) => (dateOf.get(s.workoutId) ?? "") < since)).map((b) => [b.exercise, b.e1rm] as const));
+  return bestByExercise(usable).map((b) => {
+    const prev = before.get(b.exercise) ?? null;
+    return { ...b, previousE1rm: prev, delta: prev != null ? round1(b.e1rm - prev) : null };
+  });
+}
+
 // ===================== phases, foods and day view =====================
 export type PhaseRow = Pick<FitnessPhase, "id" | "kind" | "startDate" | "endDate" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg" | "startWeightKg"> & {
   deletedAt?: string | null;
