@@ -16,9 +16,12 @@ export function MetricCard(props: {
   size?: "md" | "lg";
   children?: ReactNode;
   className?: string;
+  /** Replace the formatted number ("−5,710") and add a small unit after it ("kcal / day"). */
+  valueText?: string;
+  unitText?: string;
 }) {
   const { box } = props;
-  const value = box.value == null ? "—" : box.unit === "%" ? `${box.value}%` : String(box.value);
+  const value = props.valueText ?? (box.value == null ? "—" : box.unit === "%" ? `${box.value}%` : String(box.value));
   return (
     <section aria-labelledby={`metric-${box.key}`} className={`card flex flex-col gap-2.5 ${props.className ?? ""}`}>
       <div className="flex items-center justify-between gap-2">
@@ -37,7 +40,8 @@ export function MetricCard(props: {
       </div>
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
         <span className={`tnum ${props.size === "lg" ? "text-hero" : "text-hero-sm"}`}>{value}</span>
-        {box.unit === "min" && box.value != null && <span className="text-sm font-medium text-ink-2">min</span>}
+        {box.unit === "min" && box.value != null && !props.unitText && <span className="text-sm font-medium text-ink-2">min</span>}
+        {props.unitText && <span className="text-sm font-medium text-ink-2">{props.unitText}</span>}
         <DeltaPill delta={box.delta} unit={box.unit} />
       </div>
       <p className="text-sm text-ink-2">{box.context}</p>
