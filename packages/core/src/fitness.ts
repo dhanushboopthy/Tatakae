@@ -1,6 +1,6 @@
 import { addDays, daysBetween, formatIsoWeek, isoWeek, isoWeekRange, monthRange, parseIsoWeek } from "./time";
 import type {
-  BodyLog, FitnessPhase, FoodLog, ISODate, MaintenanceWeek, MicroKey, Micros, PhaseKind, Workout, WorkoutSet,
+  BodyLog, FitnessPhase, FoodLog, ISODate, MaintenanceWeek, MealSlot, MicroKey, Micros, PhaseKind, Workout, WorkoutSet,
 } from "./types";
 
 // Fitness maths (docs/plans/fitness.md §1). Pure TS: every number the Fitness screens show comes from here.
@@ -399,6 +399,20 @@ export function bestByExercise(sets: readonly SetRow[]): BestLift[] {
   return [...best.values()].sort((a, b) => a.exercise.localeCompare(b.exercise));
 }
 
+/** 80 → "80", 82.5 → "82.5". */
+export const kgText = (kg: number): string => String(Number(kg.toFixed(2)));
+
+/** Sets of one exercise as "80 × 6, 6, 6, 5" (consecutive sets at the same weight share it). */
+export function lastTimeText(sets: readonly { kg: number; reps: number }[]): string {
+  const groups: { kg: number; reps: number[] }[] = [];
+  for (const s of sets) {
+    const g = groups[groups.length - 1];
+    if (g && g.kg === s.kg) g.reps.push(s.reps);
+    else groups.push({ kg: s.kg, reps: [s.reps] });
+  }
+  return groups.map((g) => `${kgText(g.kg)} × ${g.reps.join(", ")}`).join(" · ");
+}
+
 /** Muscle groups offered when logging an exercise (free text is still accepted by the schema). */
 export const MUSCLE_GROUPS = [
   "Chest", "Back", "Shoulders", "Quads", "Hamstrings", "Glutes", "Biceps", "Triceps", "Calves", "Core", "Forearms",
@@ -613,6 +627,15 @@ export function maintenanceRuns(weeks: readonly MaintenanceRow[], throughWeek: s
     } else runs.push({ fromWeek: key, toWeek: key, kcal: m.kcal, setByHand: m.setForThisWeek });
   }
   return runs.reverse();
+}
+
+/** Meal slot to preselect for an IST wall-clock time "HH:MM": breakfast before 11, lunch to 15, snack to 18, then dinner. */
+export function mealForTime(hhmm: string): MealSlot {
+  const h = Number(hhmm.slice(0, 2));
+  if (h < 11) return "breakfast";
+  if (h < 15) return "lunch";
+  if (h < 18) return "snack";
+  return "dinner";
 }
 
 /** kcal left today (negative = over) and how far through the target the day is, as a 0–100+ percentage. */

@@ -10,3 +10,4 @@ export * from "./stats";
 export * from "./icons";
 export * from "./notes";
 export * from "./fitness";
+export * from "./fitnessDay";

@@ -22,6 +22,7 @@ import { flush } from "../../src/sync/engine";
 import { longDate } from "../../src/lib/format";
 import { MissionCard } from "../../src/components/MissionCard";
 import { HabitStrip } from "../../src/components/HabitStrip";
+import { FitnessCard } from "../../src/components/FitnessCard";
 import { DaysShownUp } from "../../src/components/DaysShownUp";
 import { LockReasonModal } from "../../src/components/LockReasonModal";
 import { BigButton } from "../../src/components/BigButton";
@@ -126,6 +127,8 @@ export default function Today() {
             onEdit={() => setEditing(m)}
           />
         ))}
+
+        <FitnessCard date={today} />
 
         <HabitStrip items={habitsQ.data ?? []} onToggle={(id, done) => void logHabit(id, today, done)} />
 

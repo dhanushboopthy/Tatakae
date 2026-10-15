@@ -11,14 +11,7 @@ export const MEALS: readonly { slot: MealSlot; label: string }[] = [
 
 export const mealLabel = (slot: MealSlot): string => MEALS.find((m) => m.slot === slot)?.label ?? slot;
 
-/** Meal slot to preselect for an IST wall-clock time "HH:MM". */
-export function mealForTime(hhmm: string): MealSlot {
-  const h = Number(hhmm.slice(0, 2));
-  if (h < 11) return "breakfast";
-  if (h < 15) return "lunch";
-  if (h < 18) return "snack";
-  return "dinner";
-}
+export { mealForTime } from "@tatakae/core";
 
 /** Chart tones per macro: soft fill + deep edge (ink text sits on neither). */
 export const MACRO_TONES = {
@@ -42,19 +35,7 @@ export function parseNum(text: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-/** 80 → "80", 82.5 → "82.5". */
-export const kgText = (kg: number): string => String(Number(kg.toFixed(2)));
-
-/** Sets of one exercise as "80 × 6, 6, 6, 5" (consecutive sets at the same weight share it). */
-export function lastTimeText(sets: readonly { kg: number; reps: number }[]): string {
-  const groups: { kg: number; reps: number[] }[] = [];
-  for (const s of sets) {
-    const g = groups[groups.length - 1];
-    if (g && g.kg === s.kg) g.reps.push(s.reps);
-    else groups.push({ kg: s.kg, reps: [s.reps] });
-  }
-  return groups.map((g) => `${kgText(g.kg)} × ${g.reps.join(", ")}`).join(" · ");
-}
+export { kgText, lastTimeText } from "@tatakae/core";
 
 /** 430 minutes → "7 h 10 m". */
 export function hm(min: number): string {
