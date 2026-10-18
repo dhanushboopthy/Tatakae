@@ -39,6 +39,13 @@ export function greeting(hhmm: string): string {
   return "Good evening";
 }
 
+/** "06:30" + 15 → "06:45", wrapping round midnight. */
+export function shiftHHMM(hhmm: string, minutes: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = ((((h ?? 0) * 60 + (m ?? 0) + minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
 /** "12 min" / "1 h 05 min" */
 export function minutesLabel(min: number): string {
   if (min < 60) return `${min} min`;
