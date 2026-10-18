@@ -723,9 +723,11 @@ export const syncResponse = z.object({
 });
 
 // ===================== auth =====================
+/** Upper bound so a public login can't make argon2 chew through megabytes. */
+export const PASSWORD_MAX = 256;
 export const loginInput = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email().max(254),
+  password: z.string().min(8).max(PASSWORD_MAX),
   client: clientKind,
   deviceName: z.string().min(1).max(40), // "laptop-1", "laptop-2", "phone"
 });

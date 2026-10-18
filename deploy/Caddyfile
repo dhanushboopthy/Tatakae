@@ -21,6 +21,10 @@
 	}
 
 	handle /api/* {
+		# Outer cap; the api sets tighter per-path limits (20 MB files, 64 KB sign-in).
+		request_body {
+			max_size 25MB
+		}
 		reverse_proxy api:8787
 	}
 

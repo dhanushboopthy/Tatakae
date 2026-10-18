@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppBindings, Env } from "./env";
 import type { Db } from "./lib/db";
 import { auth } from "./middleware/auth";
+import { bodyLimits } from "./middleware/bodyLimit";
 import { errors } from "./middleware/errors";
 import { rateLimit } from "./middleware/rateLimit";
 import { health } from "./routes/health";
@@ -37,6 +38,7 @@ export function createApp(env: Env, db: Db) {
     c.set("email", "");
     await next();
   });
+  app.use("*", bodyLimits);                                // per-path caps, see middleware/bodyLimit.ts
 
   app.route("/health", health);                            // public
   // Login only (not /me): 10 attempts per 15 min per IP. One limiter per app instance.
