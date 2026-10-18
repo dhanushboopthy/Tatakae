@@ -29,6 +29,11 @@ export default function Capture() {
     if (closing.current) clearTimeout(closing.current);
   }, []);
 
+  // A second share while the sheet is open replaces the empty field (never what you typed).
+  useEffect(() => {
+    if (typeof params.text === "string" && params.text !== "") setValue((v) => (v.trim() === "" ? params.text ?? "" : v));
+  }, [params.text]);
+
   async function save() {
     if (busy || value.trim() === "") return;
     setBusy(true);

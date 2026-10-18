@@ -47,7 +47,9 @@ const config: ExpoConfig = {
     ["expo-notifications", { color: "#7E9A1E" }],
     "expo-background-task",
     "expo-quick-actions",
-    // TODO(v2): "expo-share-intent", "react-native-android-widget"
+    // Share sheet → Capture: text and links only, Android only (iOS is not built).
+    ["expo-share-intent", { androidIntentFilters: ["text/*"], disableIOS: true }],
+    // TODO(v2): "react-native-android-widget"
   ],
   ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
   runtimeVersion: { policy: "appVersion" },

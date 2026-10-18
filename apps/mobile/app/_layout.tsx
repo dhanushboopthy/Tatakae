@@ -16,6 +16,8 @@ import { apiGet, ApiError } from "../src/api/client";
 import { initSync } from "../src/sync/engine"; // also defines the background sync task at module scope
 import { initNotifications } from "../src/notifications/local";
 import { clearQuickActions, registerQuickActions } from "../src/native/quickActions";
+import { ShareIntentProvider } from "expo-share-intent";
+import { useShareToCapture } from "../src/native/shareIntent";
 import { useSettings } from "../src/lib/hooks";
 import { ThemeProvider, useReducedMotion, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
@@ -36,13 +38,15 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold,
   });
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <Themed ready={fontsLoaded || fontError != null} />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <ShareIntentProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <Themed ready={fontsLoaded || fontError != null} />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </ShareIntentProvider>
   );
 }
 
@@ -119,6 +123,8 @@ function AuthGate({ ready }: { ready: boolean }) {
       void clearQuickActions();
     };
   }, [auth]);
+
+  useShareToCapture(auth === "in" && ready);
 
   const settings = useSettings();
   useEffect(() => {
