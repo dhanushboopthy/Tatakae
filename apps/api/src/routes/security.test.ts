@@ -54,6 +54,17 @@ describe("login throttling", () => {
   });
 });
 
+describe("stored links", () => {
+  it("only accept http(s) links", async () => {
+    const { app } = await setup();
+    const base = { company: "Acme", role: "SRE" };
+    expect((await call(app, "POST", "/applications", { ...base, url: "javascript:alert(1)" })).status).toBe(400);
+    expect((await call(app, "POST", "/applications", { ...base, url: "data:text/html,hi" })).status).toBe(400);
+    expect((await call(app, "POST", "/notes", { title: "x", sourceUrl: "javascript:alert(1)" })).status).toBe(400);
+    expect((await call(app, "POST", "/applications", { ...base, url: "https://jobs.example/1" })).status).toBe(201);
+  });
+});
+
 describe("cross-site requests (CSRF)", () => {
   const ORIGIN = "https://tatakae.example.me";
   const inbox = { id: "01JCSRFINBOX00000000000001", text: "from a test" };

@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Application, ApplicationStatus } from "@tatakae/core";
+import { isHttpUrl, type Application, type ApplicationStatus } from "@tatakae/core";
 import { EmptyState } from "../components/EmptyState";
 import { OpenIcon, PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { LibraryTabs } from "../components/LibraryTabs";
@@ -110,7 +110,7 @@ function ApplicationCard({ app, onEdit }: { app: Application; onEdit: () => void
           {app.appliedOn ? `Applied ${formatDay(app.appliedOn)}` : "Not applied yet"}
           {app.source ? ` · ${app.source}` : ""}
         </span>
-        {app.url && (
+        {app.url && isHttpUrl(app.url) && (
           <a href={app.url} target="_blank" rel="noreferrer" className="icon-btn-sm" aria-label={`Open the ${app.company} posting`}>
             <OpenIcon size={18} />
           </a>

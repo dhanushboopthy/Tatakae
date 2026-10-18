@@ -15,6 +15,12 @@ import type {
 // ===================== primitives =====================
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD");
 export const isoTime = z.string().refine((s) => !Number.isNaN(Date.parse(s)), "expected an ISO timestamp");
+/** True for an absolute http(s) link: the only kind the apps ever turn into a clickable href. */
+export function isHttpUrl(s: string): boolean {
+  return /^https?:\/\//i.test(s);
+}
+/** z.string().url() alone accepts `javascript:` and `data:`; links stored by the owner must be web pages. */
+export const httpUrl = z.string().url().max(2000).refine(isHttpUrl, "expected an http(s) link");
 /** 24-hour wall-clock time "HH:MM". */
 export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
 
@@ -636,12 +642,12 @@ export const noteInput = z.object({
   tags: z.array(z.string().min(1).max(50)).max(30).default([]),
   areaId: z.string().nullable().default(null),
   goalId: z.string().nullable().default(null),
-  sourceUrl: z.string().url().max(2000).nullable().default(null),
+  sourceUrl: httpUrl.nullable().default(null),
   bodyJson: z.array(z.unknown()).nullable().default(null), // BlockNote document (array of blocks)
   canExplain: z.boolean().nullable().default(null),
   canImplement: z.boolean().nullable().default(null),
   misunderstood: z.string().max(2000).nullable().default(null),
-  publishedUrl: z.string().url().max(2000).nullable().default(null),
+  publishedUrl: httpUrl.nullable().default(null),
 });
 export const notePatch = noteInput.partial();
 export const noteSearchQuery = z.object({ q: z.string().min(1).max(200) });
@@ -656,7 +662,7 @@ export const applicationInput = z.object({
   role: z.string().min(1).max(200),
   status: applicationStatus.default("applied"),
   appliedOn: isoDate.nullable().default(null),
-  url: z.string().url().max(2000).nullable().default(null),
+  url: httpUrl.nullable().default(null),
   source: z.string().max(100).nullable().default(null),
   nextStep: z.string().max(300).nullable().default(null),
   nextStepOn: isoDate.nullable().default(null),
