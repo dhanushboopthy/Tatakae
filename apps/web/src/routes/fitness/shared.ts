@@ -42,6 +42,20 @@ export function parseNum(text: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+/** 80 → "80", 82.5 → "82.5". */
+export const kgText = (kg: number): string => String(Number(kg.toFixed(2)));
+
+/** Sets of one exercise as "80 × 6, 6, 6, 5" (consecutive sets at the same weight share it). */
+export function lastTimeText(sets: readonly { kg: number; reps: number }[]): string {
+  const groups: { kg: number; reps: number[] }[] = [];
+  for (const s of sets) {
+    const g = groups[groups.length - 1];
+    if (g && g.kg === s.kg) g.reps.push(s.reps);
+    else groups.push({ kg: s.kg, reps: [s.reps] });
+  }
+  return groups.map((g) => `${kgText(g.kg)} × ${g.reps.join(", ")}`).join(" · ");
+}
+
 /** 430 minutes → "7 h 10 m". */
 export function hm(min: number): string {
   const h = Math.floor(min / 60);

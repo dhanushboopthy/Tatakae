@@ -59,6 +59,7 @@ import { anchorsFor, bySlot, freeMinutes, ifThenTemplates, isDayClosed, isDaySta
 // ./actions and are re-exported here so screens import from one place.
 export * from "./actions";
 export * from "./fitnessData";
+export * from "./trainingData";
 
 const NORMAL_DAY: Pick<Day, "kind" | "screenMin"> = { kind: "normal", screenMin: null };
 

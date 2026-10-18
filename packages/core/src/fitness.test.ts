@@ -3,6 +3,9 @@ import {
   activePhaseOn,
   balanceKg,
   bestByExercise,
+  bestLifts,
+  lastSets,
+  MUSCLE_GROUPS,
   bodyAverages,
   maintenanceRuns,
   phaseProgress,
@@ -432,6 +435,46 @@ describe("bestByExercise", () => {
       { exercise: "Bench", muscle: "chest", e1rm: 93.5, kg: 85, reps: 3 },
       { exercise: "Squat", muscle: "chest", e1rm: 100, kg: 100, reps: 1 },
     ]);
+  });
+});
+
+describe("lastSets / bestLifts", () => {
+  const workouts = [
+    { id: "w1", date: "2026-10-01" },
+    { id: "w2", date: "2026-10-08" },
+    { id: "w3", date: "2026-10-14" },
+    { id: "wx", date: "2026-10-10", deletedAt: "2026-10-10T20:00:00.000Z" },
+  ];
+  const s = (workoutId: string, exercise: string, kg: number, reps: number, order: number, extra = {}) => ({
+    id: `${workoutId}-${exercise}-${order}`, workoutId, exercise, muscle: "Chest", kg, reps, order, ...extra,
+  });
+  const sets = [
+    s("w1", "Bench", 75, 8, 0), s("w1", "Bench", 75, 7, 1),
+    s("w2", "Bench", 80, 6, 1), s("w2", "Bench", 80, 6, 0), s("w2", "Bench", 80, 5, 2), s("w2", "Squat", 100, 5, 3),
+    s("w3", "Bench", 82.5, 5, 0),
+    s("wx", "Bench", 200, 5, 0), // belongs to a deleted session
+    s("w2", "Bench", 300, 1, 4, { deletedAt: "2026-10-08T20:00:00.000Z" }),
+  ];
+
+  it("lastSets: the most recent earlier session of the exercise, in the order done", () => {
+    expect(lastSets("Bench", workouts, sets, "2026-10-14").map((x) => `${x.kg}×${x.reps}`)).toEqual(["80×6", "80×6", "80×5"]);
+    expect(lastSets("Bench", workouts, sets, "2026-10-08").map((x) => `${x.kg}×${x.reps}`)).toEqual(["75×8", "75×7"]);
+    expect(lastSets("Bench", workouts, sets, "2026-10-01")).toEqual([]);
+    expect(lastSets("Squat", workouts, sets, "2026-10-14")).toHaveLength(1);
+    expect(lastSets("Curl", workouts, sets, "2026-10-14")).toEqual([]);
+  });
+
+  it("bestLifts: best e1RM now and the change since a date, ignoring deleted sessions and sets", () => {
+    const lifts = bestLifts(workouts, sets, "2026-10-08");
+    expect(lifts.map((l) => l.exercise)).toEqual(["Bench", "Squat"]);
+    // Bench: now 82.5×5 = 96.3; before 8 Oct: 75×8 = 95
+    expect(lifts[0]).toMatchObject({ exercise: "Bench", e1rm: 96.3, kg: 82.5, reps: 5, previousE1rm: 95, delta: 1.3 });
+    expect(lifts[1]).toMatchObject({ exercise: "Squat", e1rm: 116.7, previousE1rm: null, delta: null });
+  });
+
+  it("MUSCLE_GROUPS has the groups the Training tab offers", () => {
+    expect(MUSCLE_GROUPS).toContain("Chest");
+    expect(new Set(MUSCLE_GROUPS).size).toBe(MUSCLE_GROUPS.length);
   });
 });
 

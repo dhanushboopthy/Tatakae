@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { addDays, formatIsoWeek, isIsoDate, isoWeek, isoWeekRange, monthOf, monthRange, type ISODate } from "@tatakae/core";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/icons";
-import { EmptyState } from "../components/EmptyState";
 import { PageHeader } from "../components/PageHeader";
 import { SegmentedPills } from "../components/SegmentedPills";
 import { formatDay } from "../lib/format";
@@ -9,6 +8,7 @@ import { useFitnessDay, useToday } from "../lib/hooks";
 import { DayTab } from "./fitness/Day";
 import { MonthTab } from "./fitness/Month";
 import { PhaseTab } from "./fitness/Phase";
+import { TrainingTab } from "./fitness/Training";
 import { WeekTab } from "./fitness/Week";
 
 // Fitness (docs/plans/fitness.md, design canvas "Fitness"): Day · Week · Month · Training · Phase.
@@ -105,7 +105,7 @@ export function Fitness() {
       {tab === "week" && <WeekTab key={formatIsoWeek(week)} date={date} today={today} />}
       {tab === "month" && <MonthTab date={date} today={today} />}
       {tab === "phase" && <PhaseTab today={today} onTab={(t) => go({ tab: t })} />}
-      {tab === "training" && <EmptyState title="Training is coming next" body="This view arrives in a later step." />}
+      {tab === "training" && <TrainingTab today={today} />}
     </div>
   );
 }
