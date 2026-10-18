@@ -5,6 +5,7 @@ import { addDays, readSettings, todayIST, type ISODate } from "@tatakae/core";
 import { sqliteStore as store } from "../sync/outbox";
 import { addChangeListener, notifyLocalChange, setAfterBackgroundFlush } from "../sync/engine";
 import { ignoredInARow, planReminders, type DayInput, type Reminder } from "./plan";
+import { ongoingText, parseSession } from "../focus/timer";
 
 /**
  * LOCAL notifications only (no server push to the phone), docs/05:
@@ -159,12 +160,41 @@ export async function markAskedAboutTimes(): Promise<void> {
 function openFrom(response: Notifications.NotificationResponse | null): void {
   const data = response?.notification.request.content.data as { url?: unknown; key?: unknown } | undefined;
   if (typeof data?.key === "string") void recordOpened(data.key);
-  if (data?.url === "/morning" || data?.url === "/quick-close" || data?.url === "/") {
+  if (data?.url === "/morning" || data?.url === "/quick-close" || data?.url === "/" || data?.url === "/focus") {
     try {
       router.push(data.url);
     } catch {
       // Navigator not mounted yet; the home redirect still lands on the right screen.
     }
+  }
+}
+
+// ---------- ongoing focus notification (v2.5) ----------
+
+const FOCUS_CHANNEL = "focus";
+const FOCUS_ID = "focus-ongoing";
+
+/**
+ * While a focus block runs, one quiet sticky notification says what you're on and when it ends.
+ * It's a status line, not a reminder (low importance, no sound, not counted in the 3 a day).
+ * Updated on start / pause / resume, removed when the block ends.
+ */
+export async function syncFocusNotification(): Promise<void> {
+  try {
+    const session = parseSession(await store.getMeta("focus"));
+    if (!session || !(await notificationsAllowed())) {
+      await Notifications.dismissNotificationAsync(FOCUS_ID);
+      return;
+    }
+    const mission = await store.get("missions", session.missionId);
+    const { title, body } = ongoingText(session, mission?.title ?? null);
+    await Notifications.scheduleNotificationAsync({
+      identifier: FOCUS_ID,
+      content: { title, body, sticky: true, autoDismiss: false, sound: false, data: { url: "/focus" } },
+      trigger: { channelId: FOCUS_CHANNEL },
+    });
+  } catch {
+    // Native module missing or refused; the Focus tab still shows the timer.
   }
 }
 
@@ -174,13 +204,26 @@ const RESCHEDULE_ON = new Set(["settings", "missions", "days", "meta:flags"]);
 export function initNotifications(): () => void {
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+      // The ongoing focus line goes to the shade only; reminders show as a banner too.
+      handleNotification: async (n) => ({
+        shouldShowBanner: n.request.identifier !== FOCUS_ID,
+        shouldShowList: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
     });
     if (Platform.OS === "android") {
       void Notifications.setNotificationChannelAsync(CHANNEL, {
         name: "Reminders",
         description: "Morning, optional afternoon and ritual reminders. At most three a day.",
         importance: Notifications.AndroidImportance.DEFAULT,
+      });
+      void Notifications.setNotificationChannelAsync(FOCUS_CHANNEL, {
+        name: "Focus block",
+        description: "Shows the running focus block and when it ends. Silent.",
+        importance: Notifications.AndroidImportance.LOW,
+        sound: null,
+        enableVibrate: false,
       });
     }
   } catch {
@@ -194,7 +237,9 @@ export function initNotifications(): () => void {
   };
 
   void scheduleDaily();
+  void syncFocusNotification();
   const offChange = addChangeListener((tables) => {
+    if (tables.has("meta:focus")) void syncFocusNotification();
     for (const t of tables) if (RESCHEDULE_ON.has(t)) return soon();
   });
   const appSub = AppState.addEventListener("change", (s) => {
