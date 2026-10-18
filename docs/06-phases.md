@@ -31,9 +31,9 @@ No Notion import: there is no Notion data, the app starts fresh (decision R2-14,
 | 🟡 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
 | 🟡 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
 | 🟡 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
-| 🟡 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
-| 0.10 | Web: Login screen, 401 handling, desktop install prompt | web | Installed on both laptops |
-| 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
+| ✅ 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
+| ✅ 0.10 | Web: Login screen, 401 handling, desktop install prompt (code done; install on the laptops after deploy) | web | Installed on both laptops |
+| 🟡 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
 | **Gate** | Logged in on all 3 devices over HTTPS; a commit to `main` redeploys automatically | | |
 
 ## v1 — Daily loop (19 Oct – 1 Nov)
@@ -41,11 +41,11 @@ No Notion import: there is no Notion data, the app starts fresh (decision R2-14,
 
 Order (each builds on the previous):
 1. ✅ **core:** `todayIST`, `addDays`, `stats.ts` v1 functions (calendarState, monthGrid, pointBreakdown, scoreboard, summarizeWeek — done in Run 2), full `scoring.ts` + table-driven tests (100 % branch coverage), `mergeLww`, `isServerAuthoritative`.
-2. 🟡 **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
+2. ✅ **db:** v1 migrations (days, missions, habits, habit_logs, anchors, settings, inbox, mura_events, sessions, job_runs) + seed (scoring defaults, wake 06:30, ritual 21:30, focus 50, recharge menu).
 3. ✅ **api:** `/stats/scoreboard`, `/stats/calendar`, `/stats/series`, `/stats/week` (points), `/focus` (done in Run 2); days (GET with score, PUT, forge), missions (CRUD, 423 on locked without reason, `edit-locked` → mura), habits + logs, inbox, settings (even-Sunday guard), `/sync`, devices list/revoke. Route tests.
-4. 🟡 **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
-5. 🟡 **web screens:** Night ritual wizard (all 8 steps, CapacityBar, P1 validation, forge), **bento Dashboard** (P1 hero, score box, screen StripeTrend, inbox box), **Calendar month view**, Inbox, Welcome back, Settings (basic), Cmd+K palette.
-6. **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks.
+4. ✅ **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
+5. ✅ **web screens:** Night ritual wizard (all 8 steps, CapacityBar, P1 validation, forge), **bento Dashboard** (P1 hero, score box, screen StripeTrend, inbox box), **Calendar month view**, Inbox, Welcome back, Settings (basic), Cmd+K palette.
+6. 🟡 **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks. (Code written and typechecked; not yet run on a device.)
 7. **mobile screens:** Morning, Today (week strip, chips, P1 hero, 2 scoreboard boxes), **Calendar tab** (month DayCircles, 4 scoreboard boxes, Day sheet), Focus (FocusRing, logs focus_sessions) (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
 8. **mobile notifications:** local schedule (morning, optional afternoon, ritual), reschedule on settings sync, permission asked after first Quick close/login.
 9. **polish:** empty states, copy, accessibility pass (contrast, labels, targets), dark theme.
@@ -54,8 +54,8 @@ Order (each builds on the previous):
 ## v2 — Reviews, story, native extras (2 – 15 Nov)
 0. **design:** `/dev/design` kitchen-sink pages (web + phone) with every component from docs/10 §5 and docs/11 — done before step 3.
 1. ✅ **db/api:** `/stats/month`, `/stats/cycle`, `/stats/habits`, missions.planned_start, areas.color/icon, goals.target_points; goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
-2. 🟡 **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
-3. 🟡 **web:** (web done in Run 2; phone Week view + Cycle not started) Week planner calendar (TimeRail, AreaBlocks, drag backlog), Weekly Control Room (HatchedStackBar, Sparkline, StripeTrend, PillBar stuck, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review (BlockBarChart marks + area minutes, HabitHeatGrid), Cycle page (SegmentGauge, RingProgress, goals ≤ 4, hell-yeah gate, areas with color + icon). Phone: Week view (HatchedStackBar) and read-only Cycle.
+2. ✅ **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
+3. 🟡 **web + phone:** (web ✅ in Run 2; phone Week view + Cycle not started) Week planner calendar (TimeRail, AreaBlocks, drag backlog), Weekly Control Room (HatchedStackBar, Sparkline, StripeTrend, PillBar stuck, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review (BlockBarChart marks + area minutes, HabitHeatGrid), Cycle page (SegmentGauge, RingProgress, goals ≤ 4, hell-yeah gate, areas with color + icon). Phone: Week view (HatchedStackBar) and read-only Cycle.
 4. 🟡 **story layer:** (web side done; phone StoryToast pending) reference pack import (validate ≤ 160 chars, moment enum), StoryToast on both clients, mute, seasonal theme, watch queue rules. **Web pop-ups removed (owner, 14 Oct, R3-10):** no StoryToast and no Settings → Story on the website; the reward queue moved to Settings → General. Tables, `/api/story/*` and core `pickStory` stay.
 5. **mobile native:** share intent → inbox; quick actions (Start focus, Capture); Android widget (P1 + Start/Done); **usage stats** custom module to prefill screen minutes (Usage access permission flow; manual fallback); ongoing focus notification.
 6. ~~**Notion import #1**~~ dropped: no Notion data (R2-14).
@@ -63,9 +63,9 @@ Order (each builds on the previous):
 
 ## v3 — Notes (16 Nov – 13 Dec)
 1. ✅ notes table + FTS5 virtual table + triggers; files table; `/notes`, `/notes/search`, `/files` (multipart to disk + Object Storage copy).
-2. 🟡 Web Notes: list, BlockNote editor, tags, goal links, can-explain / can-implement / misunderstood, search.
+2. ✅ Web Notes: list, BlockNote editor, tags, goal links, can-explain / can-implement / misunderstood, search.
 3. Phone: capture-to-note and read-only note search (editing stays on laptop).
-4. 🟡 applications, stories, japanese_log tables + simple screens (API ✅, web screens 🟡).
+4. ✅ applications, stories, japanese_log tables + simple screens (API ✅, web screens ✅).
 5. ~~Notion import #2~~ dropped: no Notion data (R2-14).
 - **Gate:** one full week of notes kept in the app.
 
