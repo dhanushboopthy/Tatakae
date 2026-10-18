@@ -18,6 +18,7 @@ import { initNotifications } from "../src/notifications/local";
 import { clearQuickActions, registerQuickActions } from "../src/native/quickActions";
 import { ShareIntentProvider } from "expo-share-intent";
 import { useShareToCapture } from "../src/native/shareIntent";
+import { initWidget } from "../src/native/widget";
 import { useSettings } from "../src/lib/hooks";
 import { ThemeProvider, useReducedMotion, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
@@ -117,7 +118,9 @@ function AuthGate({ ready }: { ready: boolean }) {
     const stopSync = initSync(queryClient);
     const stopReminders = initNotifications();
     void registerQuickActions();
+    const stopWidget = initWidget();
     return () => {
+      stopWidget();
       stopReminders();
       stopSync();
       void clearQuickActions();

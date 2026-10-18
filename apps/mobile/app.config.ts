@@ -49,7 +49,25 @@ const config: ExpoConfig = {
     "expo-quick-actions",
     // Share sheet → Capture: text and links only, Android only (iOS is not built).
     ["expo-share-intent", { androidIntentFilters: ["text/*"], disableIOS: true }],
-    // TODO(v2): "react-native-android-widget"
+    // Home-screen widget: today's P1 with Start and Done (src/native/widget.ts).
+    [
+      "react-native-android-widget",
+      {
+        widgets: [
+          {
+            name: "P1",
+            label: "Tatakae P1",
+            description: "Today's P1 with Start and Done",
+            minWidth: "250dp",
+            minHeight: "110dp",
+            targetCellWidth: 4,
+            targetCellHeight: 2,
+            resizeMode: "horizontal|vertical",
+            updatePeriodMillis: 1_800_000,
+          },
+        ],
+      },
+    ],
   ],
   ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
   runtimeVersion: { policy: "appVersion" },
