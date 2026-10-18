@@ -4,10 +4,11 @@ import { f, minTarget, radius, space } from "../theme";
 import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { tapSelect } from "../haptics";
 
+/** Same three choices and words as the website's Stuck sheet. */
 export const BLOCKERS: readonly { blocker: Blocker; title: string; line: string }[] = [
-  { blocker: "uncertainty", title: "Uncertainty", line: "You're not sure what the next step is." },
-  { blocker: "fear", title: "Fear", line: "You're worried about how it will go." },
-  { blocker: "inertia", title: "Inertia", line: "You know what to do. Starting is the hard part." },
+  { blocker: "uncertainty", title: "Not sure what to do", line: "Uncertainty. Name the next physical action." },
+  { blocker: "fear", title: "Worried it won't go well", line: "Fear. Shrink it with 10 / 10 / 10." },
+  { blocker: "inertia", title: "Can't get started", line: "Inertia. Start a 5-minute timer now." },
 ];
 
 export interface StuckSheetProps {
