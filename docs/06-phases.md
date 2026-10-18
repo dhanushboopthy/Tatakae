@@ -84,7 +84,7 @@ Order (each builds on the previous):
 Plan and decisions: `docs/plans/fitness.md`. One task per PR, in order. All fitness maths lives in `packages/core/src/fitness.ts`; all new tables sync through the outbox. No new dependencies; charts are hand-rolled SVG.
 - [x] **F1** core maths + schemas + tests (`fitness.ts`, row and settings schemas; table-driven, incl. cap and floor cases)
 - [x] **F2** tables, migration, sync wiring (core / API / web / mobile stores)
-- [ ] **F3** web Fitness page: Day tab + food library
+- [x] **F3** web Fitness page: Day tab + food library
 - [ ] **F4** web Week / Month / Phase tabs + weekly maintenance entry + Weekly Review check-in
 - [ ] **F5** web Training tab
 - [ ] **F6** phone quick-log modals + Today card

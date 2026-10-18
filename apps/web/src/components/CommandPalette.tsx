@@ -29,6 +29,7 @@ const SCREENS: readonly [string, string][] = [
   ["Weekly review", "/review/week"],
   ["Monthly review", "/review/month"],
   ["Cycle", "/cycle"],
+  ["Fitness", "/fitness"],
   ["Notes", "/notes"],
   ["Applications", "/applications"],
   ["Interview stories", "/stories"],

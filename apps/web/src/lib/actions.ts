@@ -6,8 +6,14 @@ import {
   reschedule,
   validateForge,
   type Anchor,
+  foodSnapshot,
   rewardTarget,
   type Area,
+  type BodyLog,
+  type Food,
+  type FoodLog,
+  type MealSlot,
+  type Micros,
   type Blocker,
   type Experiment,
   type Goal,
@@ -326,3 +332,82 @@ export async function removeRecharge(id: string): Promise<void> {
 }
 
 export type { RechargeItem };
+
+// ---------- fitness (docs/plans/fitness.md) ----------
+
+export type BodyPatch = Partial<Pick<BodyLog, "weightKg" | "steps" | "waterMl" | "sleepMin" | "note">>;
+
+/** Merge a patch into the day's body log (one row per date; creates it on first write). */
+export async function logBody(date: ISODate, patch: BodyPatch): Promise<BodyLog> {
+  const prev = await store.get("body_logs", date);
+  const base = prev && prev.deletedAt == null ? prev : null;
+  return write("body_logs", {
+    id: prev?.id ?? newId(),
+    date,
+    weightKg: base?.weightKg ?? null,
+    steps: base?.steps ?? null,
+    waterMl: base?.waterMl ?? null,
+    sleepMin: base?.sleepMin ?? null,
+    note: base?.note ?? null,
+    ...patch,
+  });
+}
+
+export interface FoodInput {
+  id?: string;
+  name: string;
+  servingLabel: string;
+  servingG: number | null;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fibreG: number | null;
+  micros: Micros;
+  favourite?: boolean;
+}
+
+/** Create or update a saved food. Editing never touches logs already made (they hold a snapshot). */
+export async function saveFood(f: FoodInput): Promise<Food> {
+  return write("foods", { ...f, id: f.id ?? newId(), name: f.name.trim(), servingLabel: f.servingLabel.trim() || "1 serving", favourite: f.favourite ?? false });
+}
+
+export async function setFoodFavourite(food: Food, favourite: boolean): Promise<void> {
+  await write("foods", { ...food, favourite });
+}
+
+export async function removeFood(id: string): Promise<void> {
+  await remove("foods", id);
+}
+
+/** Log a saved food (nutrients copied as a snapshot) or a one-off entry. */
+export async function logFood(input: { date: ISODate; meal: MealSlot; servings: number; food: Food }): Promise<FoodLog> {
+  const { food } = input;
+  return write("food_logs", {
+    id: newId(),
+    date: input.date,
+    meal: input.meal,
+    foodId: food.id,
+    name: food.name,
+    servings: input.servings,
+    ...foodSnapshot(food),
+  });
+}
+
+export async function setFoodLogServings(log: FoodLog, servings: number): Promise<void> {
+  await write("food_logs", { ...log, servings });
+}
+
+export async function removeFoodLog(id: string): Promise<void> {
+  await remove("food_logs", id);
+}
+
+/** Copy logs (all of them, or one meal) onto another date as new entries. Returns how many were copied. */
+export async function copyFoodLogs(logs: readonly FoodLog[], toDate: ISODate, meal?: MealSlot): Promise<number> {
+  const rows = logs.filter((l) => l.deletedAt == null && (meal === undefined || l.meal === meal));
+  for (const l of rows) {
+    const { updatedAt: _u, deletedAt: _d, ...rest } = l;
+    await write("food_logs", { ...rest, id: newId(), date: toDate, micros: { ...l.micros } });
+  }
+  return rows.length;
+}

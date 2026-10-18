@@ -11,6 +11,7 @@ import {
   CalendarIcon,
   ChartIcon,
   CycleIcon,
+  FitnessIcon,
   FocusIcon,
   InboxIcon,
   LogoMark,
@@ -47,6 +48,7 @@ const NAV: readonly NavItem[] = [
   { to: "/inbox", label: "Inbox", Icon: InboxIcon },
   { to: "/review/week", label: "Review", Icon: ChartIcon, match: ["/review"] },
   { to: "/cycle", label: "Cycle", Icon: CycleIcon },
+  { to: "/fitness", label: "Fitness", Icon: FitnessIcon },
   { to: "/notes", label: "Notes", Icon: NoteIcon, match: ["/notes", "/applications", "/stories", "/japanese"] },
   { to: "/settings", label: "Settings", Icon: SettingsIcon },
 ];

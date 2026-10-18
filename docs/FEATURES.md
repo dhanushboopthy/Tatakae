@@ -152,11 +152,12 @@ Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sun
 
 ---
 
-## 13. Fitness — 🟡 core + sync (F1–F2 of F1–F6, `docs/plans/fitness.md`)
+## 13. Fitness — 🟡 core, sync and the Day tab (F1–F3 of F1–F6, `docs/plans/fitness.md`)
 - ✅ **Core maths** (`packages/core/src/fitness.ts`, pure TS, table-driven tests): trend weight as an EMA (α 0.1); weekly rate %; maintenance entered by hand per ISO week, carried forward, default 2800; daily targets per phase (Cut −1 %/wk, Bulk +0.25 %/wk, Recomp at maintenance; protein 2.2 g/kg and fat 0.8 g/kg of trend weight, carbs fill the rest); cut limit of 1000 kcal deficit and a 1500 kcal floor with a `capped` flag and the expected rate; day, week and month summaries; a one-sentence weekly check-in; e1RM, weekly sets per muscle, best lift per exercise; 13 micronutrients with units defined once.
 - ✅ **Schemas and settings**: Zod row schemas for body logs, foods, food logs, phases, workouts, sets and maintenance weeks; settings `fitness.maintenanceKcal` (2800), `fitness.stepsTarget` (8000), `fitness.waterTargetMl` (3000), `fitness.sleepTargetMin` (450), `fitness.fibreTargetG` (30).
 - ✅ **Tables and sync**: seven synced tables (migration `0005_fitness.sql`) that go through the outbox on both clients and work offline. A day's body log merges by date and a week's maintenance by ISO week, so two devices never create duplicates.
-- ⬜ Web Day tab + food library (F3), Week / Month / Phase + Weekly Review check-in (F4), Training (F5), phone quick-log and Today card (F6).
+- ✅ **Web Day tab + food library** (`/fitness`): calories ring (grey/butter when over, never red), protein, weight and trend, macros, more nutrients, steps / water / sleep, meals by slot with copy yesterday, saved foods (search, recents, favourites, edit, delete), manual new food, body log. Works offline; past days can be edited.
+- ⬜ Week / Month / Phase + Weekly Review check-in (F4), Training (F5), phone quick-log and Today card (F6).
 
 ---
 
