@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, lte } from "drizzle-orm";
 import { sessions } from "../../../../db/schema";
 import type { SessionInfo } from "../env";
@@ -21,13 +21,6 @@ export function newSessionToken(): string {
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
-}
-
-/** Constant-time string comparison (hashes first so lengths always match). */
-export function safeEqual(a: string, b: string): boolean {
-  const ha = createHash("sha256").update(a, "utf8").digest();
-  const hb = createHash("sha256").update(b, "utf8").digest();
-  return timingSafeEqual(ha, hb) && a.length === b.length;
 }
 
 export function toSessionInfo(row: SessionRow): SessionInfo {

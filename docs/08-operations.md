@@ -15,7 +15,7 @@ Phone: tag `mobile-vX.Y.Z` → `mobile.yml` builds a signed APK → GitHub Relea
 ## Secrets
 | Where | What |
 |---|---|
-| `/opt/tatakae/.env` (chmod 600) | OWNER_EMAIL, OWNER_PASSWORD_HASH, SESSION_SECRET, API_TOKEN, S3_*, VAPID_*, DOMAIN |
+| `/opt/tatakae/.env` (chmod 600) | OWNER_EMAIL, OWNER_PASSWORD_HASH, SESSION_SECRET, S3_*, VAPID_*, DOMAIN |
 | GitHub secrets | TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET, VM_USER, VM_TAILNET_HOST, ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD |
 | GitHub variables | DOMAIN |
 | Your password manager | Android keystore file + passwords (losing it = can't update the app in place) |

@@ -174,7 +174,6 @@ OCI allows 2 customer secret keys per user. Store this one in your password mana
 1. On the laptop, generate the values:
    ```bash
    openssl rand -hex 32                 # SESSION_SECRET
-   openssl rand -hex 32                 # API_TOKEN
    deploy/scripts/hash-password.sh      # asks for your login password twice, prints OWNER_PASSWORD_HASH='...'
    ```
    `hash-password.sh` uses the repo's `@node-rs/argon2` after `pnpm install`, or Docker if that's missing.
@@ -186,7 +185,8 @@ OCI allows 2 customer secret keys per user. Store this one in your password mana
    nano /opt/tatakae/.env
    ```
 3. Fill in: `GH_OWNER=<owner>` (lowercase), `DOMAIN=tatakae.<name>.me`, `PUBLIC_ORIGIN=https://tatakae.<name>.me`,
-   `ACME_EMAIL`, `OWNER_EMAIL`, `SESSION_SECRET`, `API_TOKEN`, all `S3_*` (step 9).
+   `ACME_EMAIL`, `OWNER_EMAIL`, `SESSION_SECRET`, all `S3_*` (step 9). Delete the `API_TOKEN=` line if your copy
+   still has it: the API no longer reads it (scripts log in with `client: "mobile"` instead).
 4. **Replace the whole `OWNER_PASSWORD_HASH=` line with the line `hash-password.sh` printed, single quotes
    included.** The hash contains `$` signs, and Docker Compose would try to expand them without the quotes.
 5. Store a copy of the finished `.env` in your password manager (it's needed for a restore on a new VM).

@@ -1,7 +1,7 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { getSignedCookie, setSignedCookie } from "hono/cookie";
 import type { AppBindings, Env } from "../env";
-import { lookupSession, safeEqual, toSessionInfo, touchSession, type SessionRow } from "../lib/auth.service";
+import { lookupSession, toSessionInfo, touchSession, type SessionRow } from "../lib/auth.service";
 
 export const SESSION_COOKIE = "tatakae_session";
 
@@ -38,8 +38,8 @@ async function useSession(c: Context<AppBindings>, row: SessionRow, viaCookie: b
 /**
  * Single-user auth. Accepts, in order:
  *  1. Web: `tatakae_session` cookie (HttpOnly, Secure, SameSite=Lax, signed with SESSION_SECRET)
- *  2. Phone app: `Authorization: Bearer <session token>` (sessions.client = "mobile")
- *  3. Scripts: `Authorization: Bearer <API_TOKEN>` (curl, one-off maintenance) — separate from sessions
+ *  2. Phone app and scripts: `Authorization: Bearer <session token>` (log in with client "mobile")
+ * There is no static API token: every caller has a session that shows in Devices and can be revoked.
  * Session tokens are stored hashed. Sliding expiry: refresh when < 30 days left.
  * DEV_BYPASS_AUTH=1 only when NODE_ENV=development.
  * CORS: not needed — web is same-origin behind Caddy, the native app has no browser origin.
@@ -69,11 +69,6 @@ export const auth: MiddlewareHandler<AppBindings> = async (c, next) => {
     const row = lookupSession(db, bearer);
     if (row) {
       await useSession(c, row, false, bearer);
-      return next();
-    }
-    if (env.API_TOKEN && safeEqual(bearer, env.API_TOKEN)) {
-      c.set("session", null);
-      c.set("email", env.OWNER_EMAIL);
       return next();
     }
   }

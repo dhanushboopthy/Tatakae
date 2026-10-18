@@ -122,7 +122,7 @@ Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sun
 ---
 
 ## 10. Auth and security — ✅ (passkeys blocked)
-- Password login with **hashed session tokens** and sliding expiry: a signed cookie on web, a bearer token in SecureStore on the phone, plus an `API_TOKEN`.
+- Password login with **hashed session tokens** and sliding expiry: a signed cookie on web, a bearer token in SecureStore on the phone. No static API token: scripts log in like the phone.
 - Login rate limit, device list and revoke, 401 handling.
 - ⬜ **Passkeys (WebAuthn)**: blocked because the dependency could not be installed.
 

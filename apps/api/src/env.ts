@@ -18,7 +18,6 @@ export const envSchema = z
     OWNER_PASSWORD_HASH: z.string().min(1), // argon2id, generate with deploy/scripts/hash-password.sh
     SESSION_SECRET: z.string().min(32),
     SESSION_DAYS: z.coerce.number().int().min(1).max(365).default(90),
-    API_TOKEN: z.string().min(32).optional(), // bearer token for scripts (curl, one-off maintenance)
     DEV_BYPASS_AUTH: z.enum(["0", "1"]).default("0"),
     // Passkeys (v4). Default: RP ID = PUBLIC_ORIGIN's host, allowed origin = PUBLIC_ORIGIN.
     // WEBAUTHN_ORIGINS is a comma-separated list, e.g. a second dev port.
@@ -109,7 +108,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   return res.env;
 }
 
-/** The authenticated session; null for API_TOKEN scripts and DEV_BYPASS_AUTH. */
+/** The authenticated session; null only for DEV_BYPASS_AUTH. */
 export interface SessionInfo {
   id: string;
   client: "web" | "mobile";

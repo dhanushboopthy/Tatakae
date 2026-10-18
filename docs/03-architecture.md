@@ -48,7 +48,7 @@ flowchart LR
 ## Auth
 - Web: `POST /api/session/login { client: "web" }` → HttpOnly Secure SameSite=Lax cookie, 90-day sliding.
 - Phone: same endpoint with `client: "mobile"` → token returned in body, stored in `expo-secure-store`, sent as `Authorization: Bearer`.
-- Scripts: separate `API_TOKEN` bearer.
+- Scripts: log in with `client: "mobile"` and use that session's bearer (there is no static API token, so every caller shows in Devices and can be revoked).
 - Sessions table lists devices; any can be revoked from Settings. Login is rate-limited. Passkeys for web in v4: `POST /api/passkeys/login` (discoverable credential, no email) gives the same cookie; the password stays as the fallback.
 
 ## Time model
