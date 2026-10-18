@@ -4,7 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 import {
   DEFAULT_RECHARGE_ITEMS,
   addDays,
+  calendarDay,
+  calendarMonth,
+  cycleFor,
+  cycleStats,
+  dateRange,
   daysShownUp,
+  indexStats,
+  isoWeek,
+  isoWeekRange,
+  scoreboard,
+  weekStats,
+  type CalendarDay,
+  type StatsIndex,
   firstUseDate,
   isLockedChange,
   isMissedDay,
@@ -214,6 +226,90 @@ export function useRecentDays(n = 7) {
     days.push(byDate.get(d) ?? { date: d, kind: "normal", missed: false, score: null });
   }
   return { ...q, data: q.data ? days : undefined };
+}
+
+// ===================== stats (docs/11; same core functions as the website and the API) =====================
+
+const STATS_TABLES = [
+  "days",
+  "missions",
+  "settings",
+  "focus_sessions",
+  "habits",
+  "habit_logs",
+  "stuck_events",
+  "inbox",
+  "goals",
+  "areas",
+  "mura_events",
+] as const;
+
+async function loadStats(today: ISODate): Promise<{ ix: StatsIndex; settings: ResolvedSettings }> {
+  const [days, missions, settingRows, focusSessions, habits, habitLogs, stuckEvents, inbox, goals, areas, muraEvents] = await Promise.all([
+    store.getAll("days"),
+    store.getAll("missions"),
+    store.getAll("settings"),
+    store.getAll("focus_sessions"),
+    store.getAll("habits"),
+    store.getAll("habit_logs"),
+    store.getAll("stuck_events"),
+    store.getAll("inbox"),
+    store.getAll("goals"),
+    store.getAll("areas"),
+    store.getAll("mura_events"),
+  ]);
+  const settings = readSettings(settingRows);
+  const ix = indexStats(
+    { days, missions, focusSessions, habits, habitLogs, stuckEvents, inbox, goals, areas, muraEvents },
+    { today, scoring: settings.scoring },
+  );
+  return { ix, settings };
+}
+
+function useStats<T>(name: string, params: readonly unknown[], fn: (ix: StatsIndex, settings: ResolvedSettings) => T) {
+  const today = useToday();
+  return useQuery({
+    queryKey: [LOCAL, STATS_TABLES, "stats", name, today, ...params],
+    queryFn: async (): Promise<T> => {
+      const { ix, settings } = await loadStats(today);
+      return fn(ix, settings);
+    },
+  });
+}
+
+/** Scoreboard boxes (docs/11 §2) for a date, default today. */
+export function useScoreboard(date?: ISODate) {
+  return useStats("scoreboard", [date], (ix, s) => scoreboard(ix, { date, focusWeekTarget: s.focus_week_target }));
+}
+
+/** Calendar days of a "YYYY-MM" month. */
+export function useCalendarMonth(yyyymm: string) {
+  return useStats("calendar", [yyyymm], (ix) => calendarMonth(ix, yyyymm));
+}
+
+/** Monday–Sunday of the ISO week holding `date`, for the week strip. */
+export function useWeekDays(date: ISODate) {
+  return useStats("week-days", [date], (ix): CalendarDay[] => {
+    const w = isoWeek(date);
+    const { start, end } = isoWeekRange(w.year, w.week);
+    return dateRange(start, end).map((d) => calendarDay(ix, d));
+  });
+}
+
+/** One calendar day (Day sheet header). */
+export function useCalendarDay(date: ISODate) {
+  return useStats("calendar-day", [date], (ix) => calendarDay(ix, date));
+}
+
+export function useWeekStats(week: { year: number; week: number }) {
+  return useStats("week", [week.year, week.week], (ix) => weekStats(ix, week));
+}
+
+export function useCycleStats(date?: ISODate) {
+  return useStats("cycle", [date], (ix) => {
+    const cycle = cycleFor(date ?? ix.today);
+    return { ...cycleStats(ix, cycle), index: cycle.index };
+  });
 }
 
 // ===================== habits / inbox / recharge =====================

@@ -8,6 +8,7 @@ import {
   isoWeek,
   isoWeekRange,
   istTimeHHMM,
+  isNightTime,
   monthOf,
   monthRange,
   parseIsoWeek,
@@ -37,6 +38,26 @@ describe("istTimeHHMM", () => {
     ["2026-10-12T16:00:00Z", "21:30"],
   ])("%s → %s", (instant, expected) => {
     expect(istTimeHHMM(new Date(instant))).toBe(expected);
+  });
+});
+
+describe("isNightTime", () => {
+  it.each([
+    ["21:30", "21:30", "06:30", true],
+    ["23:59", "21:30", "06:30", true],
+    ["00:00", "21:30", "06:30", true],
+    ["06:29", "21:30", "06:30", true],
+    ["06:30", "21:30", "06:30", false],
+    ["12:00", "21:30", "06:30", false],
+    ["21:29", "21:30", "06:30", false],
+    // ritual after midnight: no wrap
+    ["01:00", "00:30", "06:30", true],
+    ["00:10", "00:30", "06:30", false],
+    ["07:00", "00:30", "06:30", false],
+    // same time: never night
+    ["21:30", "21:30", "21:30", false],
+  ])("%s with ritual %s, wake %s → %s", (now, ritual, wake, expected) => {
+    expect(isNightTime(now, ritual, wake)).toBe(expected);
   });
 });
 

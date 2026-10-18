@@ -15,6 +15,12 @@ const shared = {
   lavenderDeep: "#6E66B8",
   area: { sage: "#A3B56B", rose: "#F7A8D3", butter: "#F4D978", sky: "#B9CBF0" },
   danger: "#C2410C",
+  butter: "#F4D978",
+  /** Text and icons on every pastel / lime / lavender fill, in both themes (docs/10 §2 accessibility). */
+  onFill: "#1C1C1E",
+  /** Secondary text on pastel fills (8.8:1 on rose, 8.6:1 on lime-soft). */
+  onFillMuted: "#4A4A50",
+  white: "#FFFFFF",
 } as const;
 
 export const light = {
@@ -26,6 +32,15 @@ export const light = {
   ink: "#1C1C1E",
   ink2: "#66666B",
   missed: "#8A8A90",
+  /** P1 hero card: charcoal by day. */
+  hero: "#262626",
+  onHero: "#FFFFFF",
+  onHeroMuted: "#B8B8BE",
+  heroLine: "#4A4A4F",
+  /** Floating bottom nav. */
+  nav: "#262626",
+  navIcon: "#B8B8BE",
+  scrim: "rgba(28,28,30,0.4)",
 } as const;
 
 export const dark = {
@@ -37,6 +52,14 @@ export const dark = {
   ink: "#ECECF1",
   ink2: "#A1A1AA",
   missed: "#74747C",
+  /** Charcoal becomes a light inverted card at night (docs/10 §2). */
+  hero: "#ECECF1",
+  onHero: "#121214",
+  onHeroMuted: "#4A4A50",
+  heroLine: "#B8B8BE",
+  nav: "#25252A",
+  navIcon: "#A1A1AA",
+  scrim: "rgba(0,0,0,0.6)",
 } as const;
 
 export type Palette = { [K in keyof typeof light]: (typeof light)[K] extends string ? string : (typeof light)[K] };
@@ -47,6 +70,21 @@ export const iconCircle = 48;
 export const space = (n: number) => n * 8;
 export const font = { family: "PlusJakartaSans", hero: 64, title: 32, card: 24, body: 16, label: 14, micro: 12 } as const;
 export const floatShadow = { shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 8 } as const;
+
+/** Plus Jakarta Sans files loaded in app/_layout.tsx. Android needs one family per weight. */
+export const fontFamily = {
+  400: "PlusJakartaSans_400Regular",
+  500: "PlusJakartaSans_500Medium",
+  600: "PlusJakartaSans_600SemiBold",
+  700: "PlusJakartaSans_700Bold",
+} as const;
+
+export type Weight = keyof typeof fontFamily;
+
+/** Font family + size (+ line height) for one weight. Never set fontWeight with a custom font on Android. */
+export function f(weight: Weight, size: number, lineHeight?: number): TextStyle {
+  return { fontFamily: fontFamily[weight], fontSize: size, ...(lineHeight ? { lineHeight } : {}) };
+}
 
 // ───────────────────────────── LEGACY ("Night forge") ─────────────────────────────
 // Dark tokens the overnight v1 screens were built with (spec: docs/design/legacy-night-forge.md).
