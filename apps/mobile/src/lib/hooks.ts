@@ -15,7 +15,11 @@ import {
   isoWeek,
   isoWeekRange,
   appDayOf,
+  habitGrid,
   monthStats,
+  series,
+  type Area,
+  type SeriesMetric,
   scoreboard,
   weekStats,
   type Blocker,
@@ -306,6 +310,24 @@ export function useWeekDays(date: ISODate) {
 /** One calendar day (Day sheet header). */
 export function useCalendarDay(date: ISODate) {
   return useStats("calendar-day", [date], (ix) => calendarDay(ix, date));
+}
+
+/** A daily series (final score, screen minutes, focus minutes) for the last `days` days with its 7-day average. */
+export function useSeries(metric: SeriesMetric, days: number) {
+  return useStats("series", [metric, days], (ix) => series(ix, metric, days));
+}
+
+/** Habits × days for the heat grid (12 weeks by default). */
+export function useHabitGrid(days = 84) {
+  return useStats("habit-grid", [days], (ix) => habitGrid(ix, days));
+}
+
+/** Areas (name, colour) for charts, in name order. */
+export function useAreas() {
+  return useQuery({
+    queryKey: [LOCAL, ["areas"], "areas"],
+    queryFn: async (): Promise<Area[]> => (await store.getAll("areas")).sort((a, b) => a.name.localeCompare(b.name)),
+  });
 }
 
 export function useMonthStats(yyyymm: string) {
