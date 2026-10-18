@@ -94,8 +94,9 @@ export async function registrationOptions(db: Db, env: Env, challenges: Challeng
     userID: userHandle(env.OWNER_EMAIL),
     attestationType: "none",
     excludeCredentials: existing.map((p) => ({ id: p.id, transports: parseTransports(p.transports) })),
-    // Discoverable, so sign-in needs no email; the device decides how to verify (fingerprint, PIN).
-    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+    // Discoverable, so sign-in needs no email. User verification is required: the device must check a
+    // fingerprint, face or PIN, so a passkey alone (a touch-only security key) never signs anyone in.
+    authenticatorSelection: { residentKey: "required", userVerification: "required" },
   });
   challenges.add(options.challenge, "register");
   return options;
@@ -116,7 +117,7 @@ export async function registerPasskey(
       expectedChallenge: (c) => challenges.take(c, "register"),
       expectedOrigin: origins,
       expectedRPID: rpID,
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
   } catch (e) {
     throw new BadRequest(`The passkey could not be checked: ${(e as Error).message}`, "passkey_invalid");
@@ -145,7 +146,7 @@ export async function registerPasskey(
 export async function loginOptions(env: Env, challenges: ChallengeStore): Promise<PublicKeyCredentialRequestOptionsJSON> {
   const { rpID } = webauthnConfig(env);
   // No allowCredentials: the browser offers the owner's discoverable passkeys.
-  const options = await generateAuthenticationOptions({ rpID, userVerification: "preferred" });
+  const options = await generateAuthenticationOptions({ rpID, userVerification: "required" });
   challenges.add(options.challenge, "login");
   return options;
 }
@@ -177,7 +178,7 @@ export async function verifyPasskeyLogin(
       expectedOrigin: origins,
       expectedRPID: rpID,
       credential: { id: row.id, publicKey: fromB64(row.publicKey), counter: row.counter, transports: parseTransports(row.transports) },
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
   } catch {
     throw fail();

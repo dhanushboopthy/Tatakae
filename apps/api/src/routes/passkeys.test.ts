@@ -55,12 +55,14 @@ class SoftAuthenticator {
     };
   }
 
-  assert(challenge: string, origin = this.origin) {
+  /** `verified: false` = user presence only (a touch), no fingerprint/PIN check. */
+  assert(challenge: string, origin = this.origin, verified = true) {
     this.counter += 1;
     const clientDataJSON = JSON.stringify({ type: "webauthn.get", challenge, origin, crossOrigin: false });
     const count = Buffer.alloc(4);
     count.writeUInt32BE(this.counter);
-    const authData = Buffer.concat([sha256(this.rpId), Buffer.from([0x01 | 0x04 | 0x08 | 0x10]), count]);
+    const flags = 0x01 | (verified ? 0x04 : 0) | 0x08 | 0x10;
+    const authData = Buffer.concat([sha256(this.rpId), Buffer.from([flags]), count]);
     const signature = sign("sha256", Buffer.concat([authData, sha256(clientDataJSON)]), this.key);
     return {
       id: b64u(this.credId),
@@ -84,10 +86,11 @@ async function registerOne(app: TestApp, headers: Record<string, string>, device
   return res;
 }
 
-async function signIn(app: TestApp, device: SoftAuthenticator, origin?: string) {
+async function signIn(app: TestApp, device: SoftAuthenticator, origin?: string, verified = true) {
   const opts = await call(app, "POST", "/passkeys/login/options", {}, {});
   expect(opts.status).toBe(200);
-  const response = device.assert(String(opts.body["challenge"]), origin);
+  expect(opts.body["userVerification"]).toBe("required");
+  const response = device.assert(String(opts.body["challenge"]), origin, verified);
   return { res: await call(app, "POST", "/passkeys/login", { response, deviceName: "laptop-2" }, {}), response };
 }
 
@@ -134,6 +137,8 @@ describe("passkey routes", () => {
 
     expect((await signIn(app, device, "https://evil.example")).res.status).toBe(401);
     expect((await signIn(app, new SoftAuthenticator())).res.status).toBe(401);
+    // A touch without fingerprint/PIN (user verification) is not enough.
+    expect((await signIn(app, device, undefined, false)).res.status).toBe(401);
 
     const id = String(reg.body["id"]);
     expect((await call(app, "DELETE", `/passkeys/${id}`, undefined, web)).status).toBe(200);
@@ -172,7 +177,7 @@ describe("passkey routes", () => {
     await registerOne(app, web, device);
     const opts = await call(app, "POST", "/passkeys/register/options", {}, web);
     expect(opts.body["excludeCredentials"]).toEqual([{ id: device.credId.toString("base64url"), type: "public-key", transports: ["internal", "hybrid"] }]);
-    expect(opts.body["authenticatorSelection"]).toMatchObject({ residentKey: "required" });
+    expect(opts.body["authenticatorSelection"]).toMatchObject({ residentKey: "required", userVerification: "required" });
   });
 
   it("rate-limits sign-in attempts", async () => {
