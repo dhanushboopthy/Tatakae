@@ -52,7 +52,7 @@ Order (each builds on the previous):
 - **Gate:** 7 consecutive days: ritual on laptop, daily actions on phone.
 
 ## v2 — Reviews, story, native extras (2 – 15 Nov)
-0. **design:** `/dev/design` kitchen-sink pages (web + phone) with every component from docs/10 §5 and docs/11 — done before step 3.
+0. ✅ **design:** `/dev/design` kitchen-sink pages (web + phone) with every component from docs/10 §5 and docs/11 — done before step 3.
 1. ✅ **db/api:** `/stats/month`, `/stats/cycle`, `/stats/habits`, missions.planned_start, areas.color/icon, goals.target_points; goals, areas, reviews, experiments, stuck_events, recharge_items, story_refs, watch_queue; `/stats/week`, `/stats/month`, CRUD routes.
 2. ✅ **core:** `averageScore`, `isoWeek`, `canEditScoring`, `pickStory` (+ tests).
 3. 🟡 **web + phone:** (web ✅ in Run 2; phone Week view + read-only Cycle built 18 Oct, not run on a device yet) Week planner calendar (TimeRail, AreaBlocks, drag backlog), Weekly Control Room (HatchedStackBar, Sparkline, StripeTrend, PillBar stuck, Muri/Mura/Muda, stuck breakdown, experiment, reward unlock), Monthly review (BlockBarChart marks + area minutes, HabitHeatGrid), Cycle page (SegmentGauge, RingProgress, goals ≤ 4, hell-yeah gate, areas with color + icon). Phone: Week view (HatchedStackBar) and read-only Cycle.

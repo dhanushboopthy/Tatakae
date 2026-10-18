@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
+import { router } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FOCUS_MAX, FOCUS_MIN, type SyncStatus } from "@tatakae/core";
 import { saveSetting, useSettings, useSyncStatus } from "../../src/lib/hooks";
@@ -169,6 +170,7 @@ export default function Settings() {
         <BigButton label="Sign out of this phone" icon="logout" variant="secondary" onPress={() => void logout()} accessibilityHint="Your data stays on this phone until you sign in again" />
       </Section>
 
+      {__DEV__ ? <BigButton label="Design page (development only)" variant="quiet" onPress={() => router.push("/dev/design")} /> : null}
       <Text style={s.version}>Tatakae {version}</Text>
       <View style={s.toast} pointerEvents="none">
         <Toast message={toast.message} token={toast.token} />
