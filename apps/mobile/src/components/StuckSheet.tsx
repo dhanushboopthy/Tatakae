@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Blocker } from "@tatakae/core";
-import { colors, minTarget, legacyRadius, space, text, type } from "../theme";
+import { f, minTarget, radius, space } from "../theme";
+import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { tapSelect } from "../haptics";
 
 export const BLOCKERS: readonly { blocker: Blocker; title: string; line: string }[] = [
@@ -15,9 +16,10 @@ export interface StuckSheetProps {
 
 /** Three big choices, no lecture. The follow-up (field or timer) lives on the Stuck screen. */
 export function StuckSheet({ onPick }: StuckSheetProps) {
+  const s = useStyles(makeStyles);
   return (
-    <View style={styles.list} accessibilityRole="radiogroup" accessibilityLabel="What is in the way?">
-      {BLOCKERS.map((b) => (
+    <View style={s.list} accessibilityRole="radiogroup" accessibilityLabel="What is in the way?">
+      {BLOCKERS.map((b, i) => (
         <Pressable
           key={b.blocker}
           onPress={() => {
@@ -26,29 +28,25 @@ export function StuckSheet({ onPick }: StuckSheetProps) {
           }}
           accessibilityRole="button"
           accessibilityLabel={`${b.title}. ${b.line}`}
-          style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+          style={({ pressed }) => [s.choice, i === 0 ? s.lavender : i === 1 ? s.limeSoft : s.plain, pressed && pressedStyle]}
         >
-          <Text style={styles.title}>{b.title}</Text>
-          <Text style={text.small}>{b.line}</Text>
+          <Text style={[s.title, i < 2 && s.onFill]}>{b.title}</Text>
+          <Text style={[s.line, i < 2 && s.onFillMuted]}>{b.line}</Text>
         </Pressable>
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  list: { gap: space(1.5) },
-  choice: {
-    minHeight: minTarget * 2,
-    justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: space(2),
-    paddingVertical: space(1.5),
-    borderRadius: legacyRadius.card,
-    backgroundColor: colors.ink2,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-  },
-  pressed: { backgroundColor: colors.ink3 },
-  title: { color: colors.paper, fontSize: type.h2, fontWeight: "600" },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    list: { gap: space(1.25) },
+    choice: { minHeight: minTarget * 2, justifyContent: "center", gap: 4, paddingHorizontal: space(2.5), paddingVertical: space(2), borderRadius: radius.card },
+    lavender: { backgroundColor: c.lavender },
+    limeSoft: { backgroundColor: c.limeSoft },
+    plain: { backgroundColor: c.surface2 },
+    title: { ...f(600, 19, 25), color: c.ink },
+    line: { ...f(500, 14, 20), color: c.ink2 },
+    onFill: { color: c.onFill },
+    onFillMuted: { color: c.onFillMuted },
+  });

@@ -6,7 +6,10 @@ import { logBody, useFitnessDay } from "../../src/lib/fitness";
 import { useToday } from "../../src/lib/hooks";
 import { MiniBar, PillButton, SheetHeader, Stepper, fill, hm, parseNum } from "../../src/components/fitnessUi";
 import { tapDone } from "../../src/haptics";
-import { colors, legacyRadius, minTarget, space, text, tnum, ui } from "../../src/theme";
+import { f, minTarget, radius, space } from "../../src/theme";
+import { pressedStyle, useStyles, useTheme, type Theme } from "../../src/lib/theme";
+
+const tnum = { fontVariant: ["tabular-nums" as const] };
 
 // Log body (design canvas "Phone · Log body"): morning weight with − / + 0.1, steps, water +250 / +500, sleep ± 15 min.
 // Prefilled with the last weight, so the usual weigh-in is: open, tap Save. Writes go to the outbox (works offline).
@@ -14,6 +17,8 @@ import { colors, legacyRadius, minTarget, space, text, tnum, ui } from "../../sr
 const WATER_STEP = [250, 500] as const;
 
 export default function LogBody() {
+  const styles = useStyles(makeStyles);
+  const { c } = useTheme();
   const today = useToday();
   const { data } = useFitnessDay(today);
   const seeded = useRef(false);
@@ -60,9 +65,11 @@ export default function LogBody() {
   }
 
   return (
-    <SafeAreaView style={ui.screen} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <SheetHeader title="Log body" onClose={() => router.back()} />
+        <View style={styles.headerPad}>
+          <SheetHeader title="Log body" onClose={() => router.back()} />
+        </View>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Weight */}
           <View style={styles.weightCard}>
@@ -103,8 +110,8 @@ export default function LogBody() {
               keyboardType="number-pad"
               accessibilityLabel="Steps"
               placeholder="0"
-              placeholderTextColor={colors.muted}
-              style={[ui.input, styles.stepsInput, tnum]}
+              placeholderTextColor={c.ink2}
+              style={[styles.stepsInput, tnum]}
             />
           </View>
 
@@ -112,11 +119,11 @@ export default function LogBody() {
           <View style={styles.block}>
             <View style={styles.rowBetween}>
               <Text style={styles.rowLabel}>Water</Text>
-              <Text style={[text.body, tnum]}>
+              <Text style={[styles.body, tnum]}>
                 <Text style={styles.bold}>{(water / 1000).toFixed(2).replace(/\.?0+$/, "") || "0"}</Text> / {waterTarget / 1000} L
               </Text>
             </View>
-            <MiniBar pct={waterTarget > 0 ? (water / waterTarget) * 100 : 0} color={colors.paper} label="Water" />
+            <MiniBar pct={waterTarget > 0 ? (water / waterTarget) * 100 : 0} color={c.lavenderDeep} label="Water" />
             <View style={styles.buttons}>
               {WATER_STEP.map((ml) => (
                 <PillButton key={ml} label={`+ ${ml} ml`} tone="lavender" flex onPress={() => setWater((w) => w + ml)} />
@@ -129,7 +136,7 @@ export default function LogBody() {
           <View style={styles.rowBetween}>
             <View>
               <Text style={styles.rowLabel}>Sleep</Text>
-              <Text style={text.small}>target {hm(sleepTarget)}</Text>
+              <Text style={styles.small}>target {hm(sleepTarget)}</Text>
             </View>
             <Stepper
               minusLabel="Minus 15 minutes"
@@ -141,7 +148,7 @@ export default function LogBody() {
           </View>
 
           {problem ? (
-            <Text accessibilityRole="alert" style={text.body}>
+            <Text accessibilityRole="alert" style={styles.body}>
               {problem}
             </Text>
           ) : null}
@@ -162,25 +169,39 @@ export default function LogBody() {
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { paddingHorizontal: space(2), paddingBottom: space(3), gap: space(2.5) },
-  weightCard: { backgroundColor: fill.limeSoft, borderRadius: 24, padding: space(2.25), alignItems: "center", gap: space(1) },
-  weightLabel: { color: fill.inkMuted, fontSize: 13, fontWeight: "600" },
-  weightValue: { flexDirection: "row", alignItems: "baseline", gap: 4, minWidth: 130, justifyContent: "center" },
-  weightInput: { color: fill.ink, fontSize: 52, lineHeight: 60, fontWeight: "600", minWidth: 100, textAlign: "center", paddingVertical: 0 },
-  weightUnit: { color: fill.inkMuted, fontSize: 18, fontWeight: "500" },
-  weightHint: { color: fill.inkMuted, fontSize: 13 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(1.5) },
-  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(1.5) },
-  rowLabel: { color: colors.paper, fontSize: 15, fontWeight: "600" },
-  stepsInput: { width: 140, textAlign: "right", borderRadius: legacyRadius.pill, fontWeight: "600" },
-  block: { gap: space(1.25), borderTopColor: colors.line, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space(1.75) },
-  bold: { fontWeight: "700" },
-  buttons: { flexDirection: "row", gap: space(1) },
-  sleepValue: { color: colors.paper, fontSize: 17, fontWeight: "600", minWidth: 84, textAlign: "center" },
-  footer: { paddingHorizontal: space(2), paddingBottom: space(2), paddingTop: space(1) },
-  save: { minHeight: 56, borderRadius: legacyRadius.pill, backgroundColor: colors.ember, alignItems: "center", justifyContent: "center", minWidth: minTarget },
-  saveText: { color: fill.ink, fontSize: 16, fontWeight: "600" },
-  pressed: { opacity: 0.85 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    fill: { flex: 1 },
+    headerPad: { paddingHorizontal: space(2.5), paddingTop: space(1) },
+    content: { paddingHorizontal: space(2.5), paddingTop: space(1), paddingBottom: space(3), gap: space(2.5) },
+    body: { ...f(400, 16, 24), color: c.ink },
+    small: { ...f(500, 13, 18), color: c.ink2 },
+    weightCard: { backgroundColor: fill.limeSoft, borderRadius: radius.card, padding: space(2.25), alignItems: "center", gap: space(1) },
+    weightLabel: { ...f(600, 13, 18), color: fill.inkMuted },
+    weightValue: { flexDirection: "row", alignItems: "baseline", gap: 4, minWidth: 130, justifyContent: "center" },
+    weightInput: { ...f(600, 52, 60), color: fill.ink, minWidth: 100, textAlign: "center", paddingVertical: 0 },
+    weightUnit: { ...f(500, 18), color: fill.inkMuted },
+    weightHint: { ...f(500, 13, 18), color: fill.inkMuted },
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(1.5) },
+    rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(1.5) },
+    rowLabel: { ...f(600, 15), color: c.ink },
+    stepsInput: {
+      width: 140,
+      minHeight: minTarget + 8,
+      textAlign: "right",
+      borderRadius: radius.pill,
+      backgroundColor: c.surface2,
+      paddingHorizontal: space(2),
+      color: c.ink,
+      ...f(600, 16),
+    },
+    block: { gap: space(1.25), borderTopColor: c.line, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space(1.75) },
+    bold: { ...f(700, 16) },
+    buttons: { flexDirection: "row", gap: space(1) },
+    sleepValue: { ...f(600, 17), color: c.ink, minWidth: 84, textAlign: "center" },
+    footer: { paddingHorizontal: space(2.5), paddingBottom: space(2), paddingTop: space(1) },
+    save: { minHeight: 56, borderRadius: radius.pill, backgroundColor: c.hero, alignItems: "center", justifyContent: "center", minWidth: minTarget },
+    saveText: { ...f(600, 16), color: c.onHero },
+    pressed: pressedStyle,
+  });
