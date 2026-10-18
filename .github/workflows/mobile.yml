@@ -21,6 +21,9 @@ jobs:
     env:
       EXPO_PUBLIC_API_URL: https://${{ vars.DOMAIN }} # inlined into the JS bundle at build time
       NODE_ENV: production
+      # Optional: once `eas init` has made the project, set this repository variable so release APKs
+      # take JS-only fixes (EAS Update, channel "production"). Empty = no updates block at all.
+      EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

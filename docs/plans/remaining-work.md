@@ -201,9 +201,9 @@ usage-stats Kotlin in the first dev build (this machine has no Android SDK).
       Litestream restore). Record time-to-restore in `docs/08-operations.md`. *(owner + Claude)* — L
 - [ ] **6.2 Release APK** (task v4.3):
     - [ ] Release keystore + GitHub secrets (`docs/MANUAL-STEPS.md` §17). *(manual)*
-    - [ ] Run `npx eas-cli@latest init` in `apps/mobile` (or remove the `updates` block) — `updates.url` still has a placeholder project id.
-    - [ ] In-app "update available": compare the app version with `/api/app/version`; calm banner, link to the release.
-    - [ ] EAS Update channel wired for JS-only fixes (channels already in `apps/mobile/eas.json`).
+    - [ ] Run `npx eas-cli@latest init` in `apps/mobile` and set the `EAS_PROJECT_ID` repository variable (optional; without it the build has no `updates` block). *(manual, §17)*
+    - [x] In-app "update available": compare the app version with `/api/app/version`; calm banner, link to the release. (code, branch `feat/m-app-update`)
+    - [x] EAS Update channel wired for JS-only fixes (channels already in `apps/mobile/eas.json`). (code, same branch)
     - [ ] First tag `mobile-v0.1.0` → APK on GitHub Releases → installed (uninstall the dev build first).
 - [ ] **6.3 Web push** (task v4.5): verify a real push arrives on a laptop in production. — S
 - [ ] **6.4 Conflict UI** (task v4.6): offline edge cases (two devices editing the same mission offline, plan

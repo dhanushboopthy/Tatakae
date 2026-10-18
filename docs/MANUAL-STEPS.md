@@ -302,6 +302,13 @@ Done when the dev client is installed and logs in to production.
 5. Notes:
    - The dev build (debug key) and the release APK share the package id but not the signature. Uninstall the
      dev build before installing a release APK (local app data is lost; it resyncs from the server).
-   - `updates.url` in `app.config.ts` still has a placeholder EAS project id. Run `npx eas-cli@latest init` in
-     `apps/mobile` (or remove the `updates` block) before the first release build.
+   - JS-only fixes (EAS Update, optional): run `npx eas-cli@latest init` in `apps/mobile` once (free Expo
+     account), copy the project id it prints, then `gh variable set EAS_PROJECT_ID --body <id>`. Release APKs
+     built after that check the `production` channel on launch and apply a fix on the next launch. Publish a
+     fix with `EAS_PROJECT_ID=<id> npx eas-cli@latest update --channel production --message "…"` from
+     `apps/mobile`; it reaches only APKs with the same `version`. Without the variable the build has no
+     `updates` block and nothing changes.
+   - "Update available" on the phone: after a release, set `MIN_MOBILE_VERSION` (the new version) and
+     `LATEST_APK_URL` (the APK's download link from the release) in the server's env and redeploy. Older
+     phones then show a calm banner on Today and in Settings; nothing is blocked.
    - Never commit the keystore; `*.keystore` and `*.jks` are git-ignored.
