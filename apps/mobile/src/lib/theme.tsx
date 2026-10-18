@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
-import { AppState, StyleSheet } from "react-native";
+import { AccessibilityInfo, AppState, StyleSheet } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { isNightTime, istTimeHHMM } from "@tatakae/core";
 import { dark, f, light, type Palette } from "../theme";
@@ -127,6 +127,23 @@ export function useTheme(): Theme {
 export function useStyles<T>(factory: (theme: Theme) => T): T {
   const theme = useTheme();
   return useMemo(() => factory(theme), [factory, theme]);
+}
+
+/** The system "remove animations" setting; screen transitions turn off when it is on. */
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      if (alive) setReduced(v);
+    });
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
+  return reduced;
 }
 
 /** Pressed feedback shared by every pressable (scale 0.98, no colour change). */

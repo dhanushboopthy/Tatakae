@@ -45,7 +45,7 @@ export function FitnessCard({ date }: { date: ISODate }) {
               {n0(Math.abs(kcal.left))}
             </Text>
             <Text style={styles.statLabel}>{kcal.over ? `kcal over ${n0(target)}` : `kcal left of ${n0(target)}`}</Text>
-            <MiniBar pct={kcal.pct} track="rgba(255,255,255,0.6)" color={fill.ink} label="Calories eaten" style={styles.bar} />
+            <MiniBar pct={kcal.pct} track={fill.track} color={fill.ink} label="Calories eaten" style={styles.bar} />
           </View>
           <View style={styles.stat}>
             <Text style={[styles.big, tnum]}>
@@ -54,7 +54,7 @@ export function FitnessCard({ date }: { date: ISODate }) {
             </Text>
             <Text style={styles.statLabel}>{proteinLeft != null ? "protein to go" : "protein so far"}</Text>
             {proteinTarget != null ? (
-              <MiniBar pct={proteinTarget > 0 ? (protein / proteinTarget) * 100 : 0} track="rgba(255,255,255,0.6)" color={fill.ink} label="Protein eaten" style={styles.bar} />
+              <MiniBar pct={proteinTarget > 0 ? (protein / proteinTarget) * 100 : 0} track={fill.track} color={fill.ink} label="Protein eaten" style={styles.bar} />
             ) : null}
           </View>
         </View>
