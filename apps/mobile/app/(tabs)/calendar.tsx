@@ -45,6 +45,7 @@ export default function Calendar() {
         right={
           <>
             <IconCircle icon="cycle" variant="soft" onPress={() => router.push("/cycle")} accessibilityLabel="Cycle" accessibilityHint="The 12-week cycle gauge and goals" />
+            <IconCircle icon="notes" variant="soft" onPress={() => router.push("/notes")} accessibilityLabel="Notes" accessibilityHint="Search and read your notes" />
             <IconCircle icon="capture" variant="primary" onPress={() => router.push("/capture")} accessibilityLabel="Capture" />
           </>
         }

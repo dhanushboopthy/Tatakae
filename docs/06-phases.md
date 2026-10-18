@@ -64,7 +64,7 @@ Order (each builds on the previous):
 ## v3 — Notes (16 Nov – 13 Dec)
 1. ✅ notes table + FTS5 virtual table + triggers; files table; `/notes`, `/notes/search`, `/files` (multipart to disk + Object Storage copy).
 2. ✅ Web Notes: list, BlockNote editor, tags, goal links, can-explain / can-implement / misunderstood, search.
-3. Phone: capture-to-note and read-only note search (editing stays on laptop).
+3. 🟡 Phone: capture-to-note and read-only note search (editing stays on laptop). (Code written 18 Oct, typechecked; not run on a device yet.)
 4. ✅ applications, stories, japanese_log tables + simple screens (API ✅, web screens ✅).
 5. ~~Notion import #2~~ dropped: no Notion data (R2-14).
 - **Gate:** one full week of notes kept in the app.
