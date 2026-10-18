@@ -1,5 +1,6 @@
 import {
   EDITABLE_FROM,
+  addDays,
   isLockedChange,
   newId,
   nowIso,
@@ -12,8 +13,11 @@ import {
   type BodyLog,
   type Food,
   type FoodLog,
+  type FitnessPhase,
+  type MaintenanceWeek,
   type MealSlot,
   type Micros,
+  type PhaseKind,
   type Blocker,
   type Experiment,
   type Goal,
@@ -400,6 +404,46 @@ export async function setFoodLogServings(log: FoodLog, servings: number): Promis
 
 export async function removeFoodLog(id: string): Promise<void> {
   await remove("food_logs", id);
+}
+
+/** Set (or change) the maintenance for an ISO week. One row per week; later weeks carry it forward until changed. */
+export async function setMaintenance(isoWeek: string, kcal: number, note: string | null = null): Promise<MaintenanceWeek> {
+  const prev = await store.get("maintenance_weeks", isoWeek);
+  return write("maintenance_weeks", { id: prev?.id ?? newId(), isoWeek, kcal: Math.round(kcal), note });
+}
+
+export interface PhaseInput {
+  kind: PhaseKind;
+  ratePctPerWeek: number;
+  proteinGPerKg: number;
+  fatGPerKg: number;
+  startWeightKg: number;
+  startDate: ISODate;
+  note?: string | null;
+}
+
+/**
+ * Start a phase. A phase that is still running ends the day before (or is removed when the new one starts
+ * on the same day, so two phases never share a start date).
+ */
+export async function startPhase(input: PhaseInput, current: FitnessPhase | null): Promise<FitnessPhase> {
+  if (current && current.endDate == null) {
+    if (current.startDate >= input.startDate) await remove("fitness_phases", current.id);
+    else await write("fitness_phases", { ...current, endDate: addDays(input.startDate, -1) });
+  }
+  return write("fitness_phases", { ...input, id: newId(), endDate: null, note: input.note ?? null });
+}
+
+/** Edit the numbers of a phase (type, rate, protein, fat). Past days keep using whatever phase was active then. */
+export async function savePhase(
+  phase: FitnessPhase,
+  patch: Partial<Pick<FitnessPhase, "kind" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg" | "note">>,
+): Promise<void> {
+  await write("fitness_phases", { ...phase, ...patch });
+}
+
+export async function endPhase(phase: FitnessPhase, endDate: ISODate): Promise<void> {
+  await write("fitness_phases", { ...phase, endDate: endDate < phase.startDate ? phase.startDate : endDate });
 }
 
 /** Copy logs (all of them, or one meal) onto another date as new entries. Returns how many were copied. */
