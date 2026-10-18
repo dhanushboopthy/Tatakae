@@ -4,7 +4,10 @@ import {
   balanceKg,
   bestByExercise,
   bestLifts,
+  kgText,
   lastSets,
+  lastTimeText,
+  mealForTime,
   MUSCLE_GROUPS,
   bodyAverages,
   maintenanceRuns,
@@ -435,6 +438,29 @@ describe("bestByExercise", () => {
       { exercise: "Bench", muscle: "chest", e1rm: 93.5, kg: 85, reps: 3 },
       { exercise: "Squat", muscle: "chest", e1rm: 100, kg: 100, reps: 1 },
     ]);
+  });
+});
+
+describe("kgText / lastTimeText", () => {
+  it.each([[80, "80"], [82.5, "82.5"], [0, "0"], [12.345, "12.35"]])("kgText(%s) = %s", (kg, text) => {
+    expect(kgText(kg)).toBe(text);
+  });
+  it.each([
+    [[{ kg: 80, reps: 6 }, { kg: 80, reps: 6 }, { kg: 80, reps: 6 }, { kg: 80, reps: 5 }], "80 × 6, 6, 6, 5"],
+    [[{ kg: 80, reps: 6 }, { kg: 85, reps: 4 }, { kg: 85, reps: 3 }, { kg: 80, reps: 8 }], "80 × 6 · 85 × 4, 3 · 80 × 8"],
+    [[{ kg: 26, reps: 10 }], "26 × 10"],
+    [[], ""],
+  ])("lastTimeText %j", (sets, expected) => {
+    expect(lastTimeText(sets)).toBe(expected);
+  });
+});
+
+describe("mealForTime", () => {
+  it.each([
+    ["00:00", "breakfast"], ["06:30", "breakfast"], ["10:59", "breakfast"], ["11:00", "lunch"], ["14:59", "lunch"],
+    ["15:00", "snack"], ["17:59", "snack"], ["18:00", "dinner"], ["23:30", "dinner"],
+  ])("%s → %s", (time, slot) => {
+    expect(mealForTime(time)).toBe(slot);
   });
 });
 

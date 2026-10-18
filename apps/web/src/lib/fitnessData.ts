@@ -4,7 +4,7 @@ import {
   addDays,
   appDayOf,
   bodyAverages,
-  dayTotals,
+  buildFitnessDay,
   formatIsoWeek,
   isoWeek,
   isoWeekRange,
@@ -12,18 +12,15 @@ import {
   monthRange,
   monthSummary,
   parseIsoWeek,
-  phaseLabel,
   phaseProgress,
   readSettings,
-  recentFoodIds,
   targetsOn,
   trendWeight,
   weeklyCheckIn,
-  weeklyRatePct,
   weekSummary,
   type BodyLog,
   type DailyTargets,
-  type DayTotals,
+  type FitnessDay,
   type FitnessPhase,
   type Food,
   type FoodLog,
@@ -95,59 +92,12 @@ const summaryInput = (rows: Rows, today: ISODate) => ({
 
 // ---------- Day ----------
 
-export interface FitnessDay {
-  date: ISODate;
-  settings: ResolvedSettings;
-  /** The phase running on `date`; null when none has been started (targets then use recomp at maintenance). */
-  phase: FitnessPhase | null;
-  phaseText: string | null;
-  /** Trend weight on the date (falls back to the phase's start weight); null until the first weigh-in. */
-  trendKg: number | null;
-  weeklyRatePct: number | null;
-  maintenance: MaintenanceResult;
-  /** Null until there is a weight to base protein and fat on. */
-  targets: DailyTargets | null;
-  totals: DayTotals;
-  body: BodyLog | null;
-  /** Latest weigh-in before this date. */
-  previousWeightKg: number | null;
-  /** Weigh-in and trend points of the last 14 days, for the small chart. */
-  recentTrend: TrendPoint[];
-  foods: Food[];
-  logs: FoodLog[];
-  /** Logs of the day before, for "copy yesterday". */
-  yesterdayLogs: FoodLog[];
-  recentFoods: Food[];
-}
+export type { FitnessDay };
 
 export function useFitnessDay(date: ISODate) {
   return useQuery({
     queryKey: localKey(FITNESS_TABLES, "fitness-day", date),
-    queryFn: async (): Promise<FitnessDay> => {
-      const rows = await loadRows();
-      const { phase, trendKg, maintenance, targets } = targetsFor(rows, date);
-      const trend = trendWeight(rows.bodyLogs.filter((b) => b.date <= date), date);
-      const previous = rows.bodyLogs.filter((b) => b.date < date && b.weightKg != null).sort((a, b) => b.date.localeCompare(a.date))[0];
-      const byId = new Map(rows.foods.map((f) => [f.id, f] as const));
-      return {
-        date,
-        settings: rows.settings,
-        phase: phase ? (rows.phases.find((p) => p.id === phase.id) ?? null) : null,
-        phaseText: phase ? phaseLabel(phase, date) : null,
-        trendKg,
-        weeklyRatePct: weeklyRatePct(trend, date),
-        maintenance,
-        targets,
-        totals: dayTotals(rows.foodLogs, date),
-        body: rows.bodyLogs.find((b) => b.date === date) ?? null,
-        previousWeightKg: previous?.weightKg ?? null,
-        recentTrend: trend.filter((p) => p.date > addDays(date, -14)),
-        foods: rows.foods,
-        logs: rows.foodLogs.filter((l) => l.date === date).sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)),
-        yesterdayLogs: rows.foodLogs.filter((l) => l.date === addDays(date, -1)),
-        recentFoods: recentFoodIds(rows.foodLogs, 8).flatMap((id) => byId.get(id) ?? []),
-      };
-    },
+    queryFn: async (): Promise<FitnessDay> => buildFitnessDay(date, await loadRows()),
   });
 }
 
