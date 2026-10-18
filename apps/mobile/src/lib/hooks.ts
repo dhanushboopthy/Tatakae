@@ -15,6 +15,7 @@ import {
   isoWeekRange,
   scoreboard,
   weekStats,
+  type Blocker,
   type CalendarDay,
   type StatsIndex,
   firstUseDate,
@@ -502,6 +503,11 @@ export async function planP1(date: ISODate, f: P1Fields, opts?: { lockReason?: s
 
 export async function logHabit(habitId: string, date: ISODate, done: boolean): Promise<void> {
   await write("habit_logs", { habitId, date, done });
+}
+
+/** One stuck_events row: which blocker, and the next action / first step typed for it. */
+export async function logStuck(missionId: string, blocker: Blocker, unblocker: string | null): Promise<void> {
+  await write("stuck_events", { id: newId(), missionId, blocker, unblocker: unblocker?.trim().slice(0, 300) || null, at: nowIso() });
 }
 
 export async function capture(textIn: string): Promise<InboxItem | null> {
