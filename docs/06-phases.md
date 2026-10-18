@@ -80,5 +80,15 @@ Order (each builds on the previous):
 8. ✅ Settings: default focus length takes any 5–240 minutes (core schema + Settings → General, R3-9).
 - **Gate:** restore rehearsed and documented.
 
+## Fitness (F1–F6)
+Plan and decisions: `docs/plans/fitness.md`. One task per PR, in order. All fitness maths lives in `packages/core/src/fitness.ts`; all new tables sync through the outbox. No new dependencies; charts are hand-rolled SVG.
+- [x] **F1** core maths + schemas + tests (`fitness.ts`, row and settings schemas; table-driven, incl. cap and floor cases)
+- [ ] **F2** tables, migration, sync wiring (core / API / web / mobile stores)
+- [ ] **F3** web Fitness page: Day tab + food library
+- [ ] **F4** web Week / Month / Phase tabs + weekly maintenance entry + Weekly Review check-in
+- [ ] **F5** web Training tab
+- [ ] **F6** phone quick-log modals + Today card
+- **Gate:** a cut started in the app shows targets, a week of food and weight logged on the phone and reviewed on the laptop.
+
 ## Later (not scheduled)
 iOS build (needs paid Apple account), Wear OS tile, calendar read-only import, open-sourcing with an empty reference pack.
