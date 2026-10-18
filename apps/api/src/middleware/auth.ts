@@ -1,9 +1,19 @@
 import type { Context, MiddlewareHandler } from "hono";
-import { getSignedCookie, setSignedCookie } from "hono/cookie";
+import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import type { AppBindings, Env } from "../env";
 import { lookupSession, toSessionInfo, touchSession, type SessionRow } from "../lib/auth.service";
+import { isCrossSite } from "../lib/origins";
 
 export const SESSION_COOKIE = "tatakae_session";
+
+/**
+ * `__Host-` in production: the browser then only accepts the cookie when it is Secure, has Path=/
+ * and no Domain, so a sibling subdomain can never plant or overwrite it. Plain name elsewhere
+ * because local http can't set Secure cookies everywhere.
+ */
+export function sessionCookieName(env: Env): string {
+  return env.NODE_ENV === "production" ? `__Host-${SESSION_COOKIE}` : SESSION_COOKIE;
+}
 
 /** Cookie options from the shared design: HttpOnly, Secure in production, Lax, path /, SESSION_DAYS max-age. */
 export function sessionCookieOptions(env: Env) {
@@ -18,8 +28,15 @@ export function sessionCookieOptions(env: Env) {
 
 export async function setSessionCookie(c: Context<AppBindings>, token: string): Promise<void> {
   const env = c.get("env");
-  await setSignedCookie(c, SESSION_COOKIE, token, env.SESSION_SECRET, sessionCookieOptions(env));
+  await setSignedCookie(c, sessionCookieName(env), token, env.SESSION_SECRET, sessionCookieOptions(env));
 }
+
+export function clearSessionCookie(c: Context<AppBindings>): void {
+  const env = c.get("env");
+  deleteCookie(c, sessionCookieName(env), { path: "/", secure: env.NODE_ENV === "production" });
+}
+
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 function bearerToken(c: Context<AppBindings>): string | null {
   const header = c.req.header("authorization");
@@ -43,7 +60,9 @@ async function useSession(c: Context<AppBindings>, row: SessionRow, viaCookie: b
  * Session tokens are stored hashed. Sliding expiry: refresh when < 30 days left.
  * DEV_BYPASS_AUTH=1 only when NODE_ENV=development.
  * CORS: not needed — web is same-origin behind Caddy, the native app has no browser origin.
- * TODO(v4): passkeys (WebAuthn) as primary on web.
+ * CSRF: SameSite=Lax already keeps the cookie off cross-site writes; on top, a cookie-authenticated
+ * write whose Origin (or Sec-Fetch-Site) says "another site" is refused with 403. Bearer requests
+ * are exempt: browsers never attach them by themselves.
  */
 export const auth: MiddlewareHandler<AppBindings> = async (c, next) => {
   const env = c.get("env");
@@ -55,10 +74,14 @@ export const auth: MiddlewareHandler<AppBindings> = async (c, next) => {
     return next();
   }
 
-  const cookie = await getSignedCookie(c, env.SESSION_SECRET, SESSION_COOKIE);
+  const cookie = await getSignedCookie(c, env.SESSION_SECRET, sessionCookieName(env));
   if (typeof cookie === "string" && cookie) {
     const row = lookupSession(db, cookie);
     if (row) {
+      const unsafe = !SAFE_METHODS.has(c.req.method.toUpperCase());
+      if (unsafe && isCrossSite(env, { origin: c.req.header("origin"), secFetchSite: c.req.header("sec-fetch-site") })) {
+        return c.json({ error: "cross_origin", message: "This request came from another website." }, 403);
+      }
       await useSession(c, row, true, cookie);
       return next();
     }

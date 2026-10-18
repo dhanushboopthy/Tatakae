@@ -1,12 +1,11 @@
 import { Hono } from "hono";
-import { deleteCookie } from "hono/cookie";
 import { verify } from "@node-rs/argon2";
 import { loginInput, type LoginMobileResponse } from "@tatakae/core";
 import type { AppBindings } from "../env";
 import { createSession, listSessions, revokeSession } from "../lib/auth.service";
 import { NotFound, Unauthorized } from "../lib/errors";
 import { idParam, parseBody } from "../lib/validate";
-import { auth, SESSION_COOKIE, sessionCookieOptions, setSessionCookie } from "../middleware/auth";
+import { auth, clearSessionCookie, setSessionCookie } from "../middleware/auth";
 
 // Phase 0.
 // POST /login  body loginInput { email, password, client, deviceName }
@@ -54,7 +53,7 @@ session.post("/login", async (c) => {
 session.post("/logout", async (c) => {
   const s = c.get("session");
   if (s) revokeSession(c.get("db"), s.id);
-  deleteCookie(c, SESSION_COOKIE, { path: sessionCookieOptions(c.get("env")).path, secure: c.get("env").NODE_ENV === "production" });
+  clearSessionCookie(c);
   return c.json({ ok: true });
 });
 
@@ -86,7 +85,7 @@ session.delete("/devices/:id", (c) => {
   const id = idParam(c);
   if (!revokeSession(c.get("db"), id)) throw new NotFound("No such device.");
   if (c.get("session")?.id === id) {
-    deleteCookie(c, SESSION_COOKIE, { path: "/", secure: c.get("env").NODE_ENV === "production" });
+    clearSessionCookie(c);
   }
   return c.json({ ok: true });
 });
