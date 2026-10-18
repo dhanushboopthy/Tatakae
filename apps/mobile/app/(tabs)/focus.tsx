@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import type { Mission } from "@tatakae/core";
-import { pauseFocus, resumeFocus, startFocus, stopFocus, useDay, useFocusSession, useMission, useToday } from "../../src/lib/hooks";
+import { pauseFocus, resumeFocus, startFocus, stopFocus, useDay, useFocusSession, useMission, useSettings, useToday } from "../../src/lib/hooks";
 import { formatClock, isPaused, progress, remainingMs, spokenRemaining } from "../../src/focus/timer";
 import { FocusRing } from "../../src/components/FocusRing";
 import { BigButton } from "../../src/components/BigButton";
@@ -40,6 +40,17 @@ export default function Focus() {
   const s = useStyles(makeStyles);
   const { data: session } = useFocusSession();
   const { data: mission } = useMission(session?.missionId);
+  const { data: settings } = useSettings();
+  const params = useLocalSearchParams<{ start?: string }>();
+
+  // "Start" on the home-screen widget opens tatakae://focus?start=<P1 id>: start a block at the
+  // default length, unless one is already running.
+  useEffect(() => {
+    const id = typeof params.start === "string" ? params.start : "";
+    if (id === "" || session === undefined || !settings) return;
+    router.setParams({ start: undefined });
+    if (!session) void startFocus(id, settings.focus_default);
+  }, [params.start, session, settings]);
   const [visible, setVisible] = useState(false);
   const [ending, setEnding] = useState(false);
   const [note, setNote] = useState("");

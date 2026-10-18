@@ -38,7 +38,7 @@ const config: ExpoConfig = {
     ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#262626" } } : {}),
     permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
     softwareKeyboardLayoutMode: "resize",
-    // TODO(v2): PACKAGE_USAGE_STATS (usage access, granted by user in system settings)
+    // PACKAGE_USAGE_STATS comes from the local module's manifest (modules/usage-stats).
   },
   plugins: [
     "expo-router",
@@ -46,7 +46,28 @@ const config: ExpoConfig = {
     "expo-secure-store",
     ["expo-notifications", { color: "#7E9A1E" }],
     "expo-background-task",
-    // TODO(v2): "expo-share-intent", "expo-quick-actions", "react-native-android-widget"
+    "expo-quick-actions",
+    // Share sheet → Capture: text and links only, Android only (iOS is not built).
+    ["expo-share-intent", { androidIntentFilters: ["text/*"], disableIOS: true }],
+    // Home-screen widget: today's P1 with Start and Done (src/native/widget.ts).
+    [
+      "react-native-android-widget",
+      {
+        widgets: [
+          {
+            name: "P1",
+            label: "Tatakae P1",
+            description: "Today's P1 with Start and Done",
+            minWidth: "250dp",
+            minHeight: "110dp",
+            targetCellWidth: 4,
+            targetCellHeight: 2,
+            resizeMode: "horizontal|vertical",
+            updatePeriodMillis: 1_800_000,
+          },
+        ],
+      },
+    ],
   ],
   ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
   runtimeVersion: { policy: "appVersion" },

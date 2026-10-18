@@ -102,4 +102,20 @@ export function parseSession(json: string | null): FocusSession | null {
   return { missionId, length, startedAt, pausedMs: paused, pausedAt: pausedAtOk };
 }
 
-// TODO(v2): Android ongoing notification with remaining time.
+/** "HH:MM" in IST for an epoch-ms instant (the app's clock, whatever the phone's time zone). */
+function istHHMM(ms: number): string {
+  const d = new Date(ms + 330 * MIN);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+/**
+ * Text for the ongoing focus notification (v2.5). Android can't tick a countdown in a plain
+ * notification, so it shows when the block ends; paused blocks say how much is left.
+ */
+export function ongoingText(s: FocusSession, missionTitle: string | null, now = Date.now()): { title: string; body: string } {
+  const left = remainingMs(s, now);
+  const title = missionTitle ? `Focus · ${missionTitle}` : "Focus block";
+  if (isPaused(s)) return { title, body: `Paused · ${spokenRemaining(left).toLowerCase()}` };
+  if (left === 0) return { title, body: "Block done. Note where you'll pick it up." };
+  return { title, body: `Until ${istHHMM(now + left)} · ${s.length} min block` };
+}

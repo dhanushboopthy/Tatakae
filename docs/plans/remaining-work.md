@@ -161,21 +161,26 @@ Specs: `docs/10-design-system.md` §5 and `docs/11-dashboards-charts-calendar.md
 
 ## Stage 4 — v2 leftovers (phone side; web is done)
 
-- [ ] **v2.0 `/dev/design` kitchen-sink page** on web and phone showing every component from docs/10 §5 and docs/11.
-      No such route exists yet on either client. Do this before 4.2. — M
-- [ ] **4.1 Remaining chart components** on the phone: `HatchedStackBar`, `BlockBarChart`, `HabitHeatGrid`,
-      `SegmentGauge`, `Sparkline`, `PillBar`. — M
-- [ ] **4.2 Phone Week view** (HatchedStackBar) — M
-- [ ] **4.3 Phone read-only Cycle** (SegmentGauge, RingProgress, goals ≤ 4, areas with colour + icon) — M
-- [ ] **4.4 Story on the phone** — `src/components/StoryToast.tsx` exists but is not used anywhere. The website
-      removed its pop-ups (R3-10). **Ask the owner** whether the phone gets Thirukkural toasts or drops StoryToast too.
-- [ ] **4.5 Native extras (task v2.5)**, in this order; each needs a dependency — ask first if not in `docs/04-tech-stack.md`:
-    - [ ] Quick actions: launcher long-press "Start focus", "Capture" (`src/native/quickActions.ts`, expo-quick-actions) — S
-    - [ ] Share intent: Android share sheet → inbox (`src/native/shareIntent.ts`, expo-share-intent) — M
-    - [ ] Ongoing focus notification with remaining time (`src/focus/timer.ts:105`) — S
-    - [ ] Android home-screen widget: P1 title + Start / Done (`src/native/widget.ts`, react-native-android-widget) — L
-    - [ ] Usage stats: custom Expo module reading today's minutes for chosen apps → prefills `days.screen_min` in
-          Quick close; Usage-access permission flow; manual entry stays the fallback (`src/native/usageStats.ts`) — L
+All of Stage 4 is written (18 Oct, code only). Still open: run each item on the phone (see 3.1), and compile the
+usage-stats Kotlin in the first dev build (this machine has no Android SDK).
+
+- [x] **v2.0 `/dev/design` kitchen-sink page** on web and phone showing every component from docs/10 §5 and docs/11. (code)
+- [x] **4.1 Remaining chart components** on the phone: `HatchedStackBar`, `BlockBarChart`, `HabitHeatGrid`,
+      `SegmentGauge`, `Sparkline`, `PillBar`. (code)
+- [x] **4.2 Phone Week view** (HatchedStackBar) (code)
+- [x] **4.3 Phone read-only Cycle** (SegmentGauge, RingProgress, goals ≤ 4, areas with colour + icon) (code)
+- [x] **4.4 Story on the phone** — owner dropped StoryToast on the phone too (18 Oct). Removed.
+- [x] **4.5 Native extras (task v2.5)** — dependencies approved by the owner 18 Oct:
+    - [x] Quick actions: launcher long-press "Start focus", "Capture" (expo-quick-actions@6.0.2) (code)
+    - [x] Share intent: Android share sheet → Capture (expo-share-intent@8.0.1) (code)
+    - [x] Ongoing focus notification with remaining time (code)
+    - [x] Android home-screen widget: P1 title + Start / Done (react-native-android-widget@0.22.1) (code)
+    - [x] Usage stats: local Expo module `modules/usage-stats` → prefills screen minutes in Quick close; Settings →
+          Screen minutes for access + choosing apps; manual entry stays the fallback (code; Kotlin not compiled yet)
+- Branch stack (each on the one before, none pushed yet): feat/f1…f6 → docs/sync-phase-markers →
+  feat/m-soft-bento-theme → feat/m-restyle-existing → feat/m-capture → feat/m-quick-close → feat/m-stuck-recharge →
+  feat/m-welcome-back → feat/m-calendar → feat/m-settings → feat/m-notifications → feat/m-polish →
+  feat/m-week-cycle → feat/design-pages (also carries the v2.5 native extras, one commit each).
 - **v2 gate:** the Sunday review completed in the app. — met on: ____
 
 ---
@@ -225,9 +230,8 @@ These need days of actual use, not code. Start each as soon as its stage allows.
 1. Fitness merge: six PRs in order, or one merge into `main`? (1.1)
 2. What to do with `tatakae-ui-update.zip`? (1.4)
 3. Deploy first (recommended) or phone v1 first while doing the manual Phase 0 steps on the side?
-4. Phone StoryToast: Thirukkural toasts on the phone, or remove it like the website? (4.4)
-5. New dependencies for v2 native extras: expo-quick-actions, expo-share-intent, react-native-android-widget,
-   plus a custom Expo module for usage stats. (4.5)
+4. ~~Phone StoryToast~~ — answered 18 Oct: removed on the phone too. (4.4)
+5. ~~New dependencies for v2 native extras~~ — answered 18 Oct: all three approved; usage stats is a local module. (4.5)
 6. What "monthly review polish" means. (6.5)
 
 ---
