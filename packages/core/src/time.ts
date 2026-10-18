@@ -101,6 +101,15 @@ export function istTimeHHMM(now: Date = new Date()): string {
   return `${pad2(p.hour)}:${pad2(p.minute)}`;
 }
 
+/**
+ * True when `now` ("HH:MM", IST) is between ritual time and wake time, wrapping past midnight.
+ * Both clients use it to switch to the dark theme at night (docs/10 §2).
+ */
+export function isNightTime(now: string, ritualTime: string, wakeTime: string): boolean {
+  if (ritualTime === wakeTime) return false;
+  return ritualTime > wakeTime ? now >= ritualTime || now < wakeTime : now >= ritualTime && now < wakeTime;
+}
+
 /** Current instant as an ISO timestamp (used for `updatedAt`). */
 export function nowIso(): ISOTime {
   return new Date().toISOString();
