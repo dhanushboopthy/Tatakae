@@ -13,9 +13,12 @@ import {
   indexStats,
   isoWeek,
   isoWeekRange,
+  appDayOf,
+  monthStats,
   scoreboard,
   weekStats,
   type Blocker,
+  type FocusSession as FocusSessionRow,
   type CalendarDay,
   type StatsIndex,
   firstUseDate,
@@ -300,6 +303,19 @@ export function useWeekDays(date: ISODate) {
 /** One calendar day (Day sheet header). */
 export function useCalendarDay(date: ISODate) {
   return useStats("calendar-day", [date], (ix) => calendarDay(ix, date));
+}
+
+export function useMonthStats(yyyymm: string) {
+  return useStats("month", [yyyymm], (ix) => monthStats(ix, yyyymm));
+}
+
+/** Focus blocks that started on an app day (04:00 IST boundary), oldest first. */
+export function useFocusSessionsOn(date: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, ["focus_sessions"], "focus-on", date],
+    queryFn: async (): Promise<FocusSessionRow[]> =>
+      (await store.getAll("focus_sessions")).filter((f) => appDayOf(f.startedAt) === date).sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
+  });
 }
 
 export function useWeekStats(week: { year: number; week: number }) {

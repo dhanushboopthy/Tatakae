@@ -18,6 +18,8 @@ export function DayCircle(props: {
   final?: number | null;
   size?: number;
   selected?: boolean;
+  /** Inside a surface-2 card: grey cells (missed, unplanned) switch to white so they still show. */
+  onCard?: boolean;
   onPress?: () => void;
 }) {
   const s = useStyles(makeStyles);
@@ -29,7 +31,15 @@ export function DayCircle(props: {
   const look = s[props.state];
   const ink = s[`${props.state}Text` as const];
   const circle = (
-    <View style={[s.circle, { width: size, height: size, borderRadius: size / 2 }, look, props.selected && s.selected]}>
+    <View
+      style={[
+        s.circle,
+        { width: size, height: size, borderRadius: size / 2 },
+        look,
+        props.onCard && (props.state === "Missed" || props.state === "Unplanned") && s.onCard,
+        props.selected && s.selected,
+      ]}
+    >
       <Text style={[s.num, ink]}>{day}</Text>
       {props.state === "Missed" ? <View style={s.dash} /> : null}
     </View>
@@ -69,6 +79,7 @@ const makeStyles = ({ c }: Theme) =>
     target: { minWidth: minTarget, minHeight: minTarget, justifyContent: "center" },
     circle: { alignItems: "center", justifyContent: "center" },
     selected: { borderWidth: 2, borderColor: c.ink },
+    onCard: { backgroundColor: c.surface },
     num: { ...f(600, 14), fontVariant: ["tabular-nums"] },
     dash: { position: "absolute", bottom: 7, width: 12, height: 2, borderRadius: 1, backgroundColor: c.missed },
     dot: { marginTop: space(0.5), width: 6, height: 6, borderRadius: 3, backgroundColor: "transparent" },
