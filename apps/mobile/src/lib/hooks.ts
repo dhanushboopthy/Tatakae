@@ -13,9 +13,12 @@ import {
   indexStats,
   isoWeek,
   isoWeekRange,
+  appDayOf,
+  monthStats,
   scoreboard,
   weekStats,
   type Blocker,
+  type FocusSession as FocusSessionRow,
   type CalendarDay,
   type StatsIndex,
   firstUseDate,
@@ -300,6 +303,19 @@ export function useWeekDays(date: ISODate) {
 /** One calendar day (Day sheet header). */
 export function useCalendarDay(date: ISODate) {
   return useStats("calendar-day", [date], (ix) => calendarDay(ix, date));
+}
+
+export function useMonthStats(yyyymm: string) {
+  return useStats("month", [yyyymm], (ix) => monthStats(ix, yyyymm));
+}
+
+/** Focus blocks that started on an app day (04:00 IST boundary), oldest first. */
+export function useFocusSessionsOn(date: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, ["focus_sessions"], "focus-on", date],
+    queryFn: async (): Promise<FocusSessionRow[]> =>
+      (await store.getAll("focus_sessions")).filter((f) => appDayOf(f.startedAt) === date).sort((a, b) => a.startedAt.localeCompare(b.startedAt)),
+  });
 }
 
 export function useWeekStats(week: { year: number; week: number }) {
@@ -591,6 +607,20 @@ export async function stopFocus(opts: { resumeNote?: string | null; status?: "do
   if (!s) return 0;
   const minutes = focusedMinutes(s);
   const m = await store.get("missions", s.missionId);
+  if (minutes > 0) {
+    // Same focus_sessions row the website writes, so focus minutes and area time count phone blocks too.
+    // endedAt = start + focused minutes (pauses left out), so stats measure focused time.
+    const areaId = m?.goalId ? ((await store.get("goals", m.goalId))?.areaId ?? null) : null;
+    await write("focus_sessions", {
+      id: newId(),
+      missionId: s.missionId,
+      areaId,
+      startedAt: new Date(s.startedAt).toISOString(),
+      endedAt: new Date(s.startedAt + minutes * 60_000).toISOString(),
+      plannedMin: Math.max(1, Math.min(600, s.length)),
+      completed: minutes >= s.length,
+    });
+  }
   if (m && m.deletedAt == null) {
     const note = opts.resumeNote?.trim();
     await write("missions", {

@@ -36,6 +36,7 @@ export function MonthCalendar(props: {
                   hasNote={d.hasNote}
                   final={d.final}
                   size={38}
+                  onCard
                   selected={props.selected === d.date}
                   onPress={props.onSelect ? () => props.onSelect?.(d.date) : undefined}
                 />
