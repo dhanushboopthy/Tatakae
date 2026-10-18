@@ -5,7 +5,9 @@ import {
   calendarState,
   cycleFor,
   cycleStats,
+  experimentsInRange,
   focusMinutes,
+  goalsInRange,
   habitDueOn,
   habitGrid,
   habitsPct,
@@ -403,5 +405,62 @@ describe("scoreboard", () => {
     expect(by["inbox"]?.value).toBe(1);
     expect(by["inbox"]?.context).toBe("Oldest 3 days old");
     expect(by["focus_week"]?.target).toBe(300);
+  });
+});
+
+describe("goalsInRange / experimentsInRange (Monthly review)", () => {
+  const goal = (id: string, name: string, over: Partial<Goal> = {}): Goal => ({
+    id,
+    name,
+    areaId: null,
+    status: "active",
+    intent: null,
+    outcome: null,
+    niceGoal: null,
+    nextAction: null,
+    why: null,
+    hellYeah: true,
+    targetPoints: null,
+    start: null,
+    end: null,
+    updatedAt: T,
+    deletedAt: null,
+    ...over,
+  });
+
+  it("counts done vs minimum per goal for the month, most worked-on first", () => {
+    const parts = [
+      {
+        d: day("2026-10-05"),
+        ms: [
+          mission("2026-10-05", "P1", "done", { goalId: "g2" }),
+          mission("2026-10-05", "P2", "minimum", { goalId: "g2" }),
+          mission("2026-10-05", "P3", "missed", { goalId: "g2" }),
+          mission("2026-10-05", "side", "done", { goalId: "g1" }),
+        ],
+      },
+      { d: day("2026-10-06"), ms: [mission("2026-10-06", "P1", "rescheduled", { goalId: "g2" }), mission("2026-10-06", "P2", "open", { goalId: "g2" })] },
+      { d: day("2026-09-30"), ms: [mission("2026-09-30", "P1", "done", { goalId: "g1" })] }, // last month
+    ];
+    const goals = [goal("g1", "Japanese"), goal("g2", "Terraform"), goal("g3", "Quiet goal"), goal("g4", "Dropped", { status: "dropped" })];
+    const ix = indexStats(data(parts, { goals }), { today: "2026-10-20" });
+    const rows = monthStats(ix, "2026-10").goals;
+    expect(rows.map((g) => g.id)).toEqual(["g2", "g1", "g3"]);
+    expect(rows[0]).toMatchObject({ done: 1, minimum: 1, missed: 1, open: 1 });
+    expect(rows[1]).toMatchObject({ done: 1, minimum: 0, missed: 0, open: 0 });
+    expect(rows[2]).toMatchObject({ done: 0, minimum: 0, progressPct: 0 });
+  });
+
+  it("keeps a paused or done goal only when it had missions that month, and skips active goals outside their dates", () => {
+    const parts = [{ d: day("2026-10-05"), ms: [mission("2026-10-05", "P1", "done", { goalId: "paused" })] }];
+    const goals = [goal("paused", "Paused", { status: "paused" }), goal("later", "Later", { start: "2026-11-01" }), goal("done", "Done", { status: "done" })];
+    const ix = indexStats(data(parts, { goals }), { today: "2026-10-20" });
+    expect(goalsInRange(ix, "2026-10-01", "2026-10-31").map((g) => g.id)).toEqual(["paused"]);
+  });
+
+  it("experiments overlapping the month, oldest first, without deleted ones", () => {
+    const e = (id: string, start: string, end: string, deletedAt: string | null = null) => ({ id, start, end, deletedAt });
+    const rows = [e("b", "2026-10-20", "2026-11-03"), e("a", "2026-09-25", "2026-10-02"), e("x", "2026-09-01", "2026-09-30"), e("gone", "2026-10-10", "2026-10-12", T), e("y", "2026-11-01", "2026-11-14")];
+    expect(experimentsInRange(rows, "2026-10-01", "2026-10-31").map((r) => r.id)).toEqual(["a", "b"]);
   });
 });

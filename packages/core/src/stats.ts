@@ -102,6 +102,8 @@ export interface MonthStats {
   areaMinutes: AreaMinutes[];
   focusMinutes: number;
   habitsPct: number | null;
+  /** Goals worked on this month (and every active goal), done vs minimum. */
+  goals: GoalMonth[];
   summary: string;
 }
 
@@ -117,6 +119,14 @@ export interface GoalProgress {
   progressPct: number;
   earned: number;
   target: number | null;
+}
+
+/** A goal over one month (Monthly review): mission counts by outcome plus the points ring. */
+export interface GoalMonth extends GoalProgress {
+  done: number;
+  minimum: number;
+  missed: number;
+  open: number;
 }
 
 export interface CycleStats {
@@ -607,8 +617,35 @@ export function monthStats(ix: StatsIndex, yyyymm: string): MonthStats {
     areaMinutes: areaMinutes(ix, start, end),
     focusMinutes: focusTotal(ix, start, end),
     habitsPct: habitsPct(ix, start, end),
+    goals: goalsInRange(ix, start, end),
     summary,
   };
+}
+
+/**
+ * Goal progress for a period (docs/05 Monthly: "done vs minimum"): every goal active during the
+ * period, plus any other goal that had missions in it. Moved and backlog missions don't count; side quests do,
+ * since a goal is about the work, not the score. Most worked-on first, then by name.
+ */
+export function goalsInRange(ix: StatsIndex, from: ISODate, to: ISODate): GoalMonth[] {
+  const out: GoalMonth[] = [];
+  for (const goal of ix.goals) {
+    const counts = { done: 0, minimum: 0, missed: 0, open: 0 };
+    for (const m of ix.missions) {
+      if (m.goalId !== goal.id || !m.dayDate || m.dayDate < from || m.dayDate > to) continue;
+      if (m.status === "done" || m.status === "minimum" || m.status === "missed" || m.status === "open") counts[m.status]++;
+    }
+    const any = counts.done + counts.minimum + counts.missed + counts.open > 0;
+    const activeNow = goal.status === "active" && (goal.start ?? from) <= to && (goal.end ?? to) >= from;
+    if (!activeNow && !any) continue;
+    out.push({ ...goalProgress(ix, goal, from, to), ...counts });
+  }
+  return out.sort((a, b) => b.done + b.minimum - (a.done + a.minimum) || a.name.localeCompare(b.name));
+}
+
+/** Experiments that ran at any point between `from` and `to`, oldest first. */
+export function experimentsInRange<T extends { start: ISODate; end: ISODate; deletedAt: string | null }>(rows: readonly T[], from: ISODate, to: ISODate): T[] {
+  return rows.filter((e) => e.deletedAt == null && e.start <= to && e.end >= from).sort((a, b) => a.start.localeCompare(b.start));
 }
 
 // ===================== cycle =====================

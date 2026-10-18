@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { monthRange, themeFor, type Area, type MonthStats, type Review } from "@tatakae/core";
+import { experimentsInRange, monthRange, themeFor, type Area, type GoalMonth, type MonthStats, type Review } from "@tatakae/core";
 import { BlockBarChart, CountBlocks, type BlockSeries } from "../components/BlockBarChart";
 import { DayLegend } from "../components/DayCircle";
 import { HabitHeatGrid } from "../components/HabitHeatGrid";
@@ -10,14 +10,28 @@ import { DeltaPill } from "../components/MetricCard";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { PageHeader } from "../components/PageHeader";
 import { ReviewField, ReviewSwitch } from "../components/ReviewParts";
+import { RingProgress } from "../components/RingProgress";
 import { Sparkline } from "../components/Sparkline";
 import { useToast } from "../components/Toast";
-import { UNASSIGNED, areaColor } from "../lib/colors";
-import { saveArea, saveReview, useAreas, useHabitGrid, useMonthStats, useMonthWeeks, useReviews, useScoreSeries, useToday } from "../lib/hooks";
+import { AREA_COLORS, UNASSIGNED, areaColor, isAreaColor } from "../lib/colors";
+import { formatDay } from "../lib/format";
+import {
+  saveArea,
+  saveReview,
+  useAreas,
+  useExperiments,
+  useHabitGrid,
+  useMonthStats,
+  useMonthWeeks,
+  useReviews,
+  useScoreSeries,
+  useToday,
+} from "../lib/hooks";
 
-// Monthly review (docs/02, docs/11 §1): month calendar heat, mark distribution, focus minutes by area
-// per week, 30-day sparkline, habit grid, averages (rest / write-off excluded), area alignment, wins /
-// not this time / why, next month's theme.
+// Monthly review (docs/02, docs/05, docs/11 §1): month calendar heat, mark distribution, focus minutes
+// by area per week, 30-day sparkline, habit grid, goal progress (done vs minimum), the month's
+// experiments, averages (rest / write-off excluded), area alignment, wins / not this time / why, next
+// month's theme.
 
 const monthTitle = (yyyymm: string) =>
   new Date(`${yyyymm}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -112,6 +126,10 @@ export function MonthlyReview() {
           </div>
 
           <HabitsCard />
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <GoalsCard goals={stats.goals} />
+            <ExperimentsCard start={stats.start} end={stats.end} />
+          </div>
           <ReflectionForm key={existing?.id ?? start} month={month} stats={stats} existing={existing} />
           <Kural n={666} className="max-w-read" />
         </>
@@ -181,7 +199,77 @@ function HabitsCard() {
   );
 }
 
-function ReflectionForm(props: { month: string; stats: MonthStats; existing: Review | null }) {
+/** docs/05 Monthly: goal progress, done vs minimum. The ring is points (like the Cycle page). */
+function GoalsCard({ goals }: { goals: readonly GoalMonth[] }) {
+  const { data: areas = [] } = useAreas();
+  return (
+    <section aria-labelledby="goals-title" className="card space-y-3">
+      <h2 id="goals-title" className="text-base font-semibold">
+        Goals this month
+      </h2>
+      {goals.length === 0 ? (
+        <p className="text-sm text-ink-2">No goals this month. Set up to four on the Cycle page.</p>
+      ) : (
+        <ul className="space-y-2">
+          {goals.map((g) => {
+            const area = areas.find((a) => a.id === g.areaId);
+            const deep = isAreaColor(area?.color) ? AREA_COLORS[area.color].deep : "#7E9A1E";
+            const worked = g.done + g.minimum;
+            const parts = [
+              `${g.done} done`,
+              `${g.minimum} minimum`,
+              g.missed > 0 ? `${g.missed} not this time` : null,
+              g.open > 0 ? `${g.open} open` : null,
+            ].filter(Boolean);
+            return (
+              <li key={g.id} className="flex items-center gap-3.5 rounded-card-inner bg-surface-2 p-3">
+                <RingProgress pct={g.progressPct} color={deep} label={`${g.name}: ${g.progressPct} percent`} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{g.name}</p>
+                  <p className="tnum text-[13px] text-ink-2">
+                    {worked === 0 && g.missed === 0 && g.open === 0 ? "No missions linked this month" : parts.join(" · ")}
+                    {g.target ? ` · ${g.earned} of ${g.target} pts` : g.earned > 0 ? ` · ${g.earned} pts` : ""}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** docs/05 Monthly: the experiment log, only the experiments that ran during this month. */
+function ExperimentsCard({ start, end }: { start: string; end: string }) {
+  const { data: all = [] } = useExperiments();
+  const experiments = experimentsInRange(all, start, end);
+  return (
+    <section aria-labelledby="exp-title" className="card space-y-3">
+      <h2 id="exp-title" className="text-base font-semibold">
+        Experiments this month
+      </h2>
+      {experiments.length === 0 ? (
+        <p className="text-sm text-ink-2">No experiment ran this month. Start one in the weekly review.</p>
+      ) : (
+        <ul className="space-y-2">
+          {experiments.map((e) => (
+            <li key={e.id} className="card-inner text-sm">
+              <p className="font-semibold">{e.change}</p>
+              <p className="text-ink-2">
+                {formatDay(e.start)} – {formatDay(e.end)} · expected: {e.hypothesis}
+              </p>
+              {e.result ? <p className="mt-1">Result: {e.result}</p> : null}
+              <p className="mt-1 font-medium">{e.decision ? `Decision: ${e.decision}` : "Running"}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ReflectionForm(props:{ month: string; stats: MonthStats; existing: Review | null }) {
   const toast = useToast();
   const ex = props.existing;
   const { data: areas = [] } = useAreas();
