@@ -33,6 +33,7 @@ import { IconCircle } from "../../src/components/IconCircle";
 import { Icon, type AppIcon } from "../../src/components/Icon";
 import { Card, Screen, ScreenHeader } from "../../src/components/Screen";
 import { LockReasonModal } from "../../src/components/LockReasonModal";
+import { EditedElsewhere } from "../../src/components/ConflictNotice";
 import { BigButton } from "../../src/components/BigButton";
 import { tapDone } from "../../src/haptics";
 import { f, minTarget, radius, space } from "../../src/theme";
@@ -180,6 +181,7 @@ export default function Today() {
           onStart={() => void onFocus(p1)}
           status={p1.status === "done" ? "Done ✓" : p1.status === "minimum" ? "Minimum ◐" : isLocked(p1, view) ? "Plan locked" : undefined}
         >
+          <EditedElsewhere table="missions" pk={p1.id} color={c.onHeroMuted} />
           <StatusChips status={p1.status} onChange={(st) => void onStatus(p1, st)} missionTitle={p1.title} />
           <View style={s.heroLinks}>
             {p1.status === "open" ? (

@@ -19,6 +19,7 @@ import { clearQuickActions, registerQuickActions } from "../src/native/quickActi
 import { ShareIntentProvider } from "expo-share-intent";
 import { useShareToCapture } from "../src/native/shareIntent";
 import { initWidget } from "../src/native/widget";
+import { ConflictNoticeHost } from "../src/components/ConflictNotice";
 import { useSettings } from "../src/lib/hooks";
 import { ThemeProvider, useReducedMotion, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
@@ -154,6 +155,7 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="notes/[id]" />
         <Stack.Screen name="dev/design" options={{ presentation: "modal" }} />
       </Stack>
+      {auth === "in" ? <ConflictNoticeHost /> : null}
       {auth === "loading" || !ready ? <View style={[StyleSheet.absoluteFill, { backgroundColor: c.surface }]} /> : null}
     </View>
   );
