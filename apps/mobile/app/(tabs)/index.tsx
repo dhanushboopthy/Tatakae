@@ -19,6 +19,8 @@ import {
   type MissionEdit,
 } from "../../src/lib/hooks";
 import { flush } from "../../src/sync/engine";
+import { markAskedAboutTimes } from "../../src/notifications/local";
+import { useAskAboutTimes } from "../../src/lib/reminders";
 import { greeting, titleDate } from "../../src/lib/format";
 import { MissionCard } from "../../src/components/MissionCard";
 import { P1HeroCard } from "../../src/components/P1HeroCard";
@@ -54,6 +56,7 @@ export default function Today() {
   const week = useWeekDays(today);
   const board = useScoreboard();
   const sync = useSyncStatus();
+  const askTimes = useAskAboutTimes();
   const [editing, setEditing] = useState<Mission | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -133,6 +136,24 @@ export default function Today() {
           <Icon name={sync.state === "offline" ? "offline" : "sync"} size={16} color={c.ink2} />
           <Text style={s.small}>{syncLine}</Text>
         </View>
+      ) : null}
+      {askTimes.data ? (
+        <Card>
+          <Text style={s.askTitle}>Reminders at the wrong time?</Text>
+          <Text style={s.small}>The last two went by unopened. Change the times, or keep them as they are.</Text>
+          <View style={s.askRow}>
+            <BigButton
+              label="Change times"
+              size="compact"
+              onPress={() => {
+                void markAskedAboutTimes();
+                router.navigate("/settings");
+              }}
+              style={s.flex}
+            />
+            <BigButton label="Keep them" size="compact" variant="secondary" onPress={() => void markAskedAboutTimes()} style={s.flex} />
+          </View>
+        </Card>
       ) : null}
       {view?.day?.kind === "rest" ? <Text style={s.small}>Rest day. Nothing to log.</Text> : null}
       {view?.day?.kind === "write_off" ? <Text style={s.small}>Written off. It won't count either way.</Text> : null}
@@ -241,6 +262,9 @@ function HeroLink({ label, icon, onPress }: { label: string; icon: AppIcon; onPr
 const makeStyles = ({ c, t }: Theme) =>
   StyleSheet.create({
     small: { ...t.secondary },
+    askTitle: { ...f(600, 16, 22), color: c.ink },
+    askRow: { flexDirection: "row", gap: space(1) },
+    flex: { flex: 1 },
     syncRow: { flexDirection: "row", alignItems: "center", gap: space(1) },
     counts: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
     count: { flexDirection: "row", alignItems: "center", gap: space(0.75), backgroundColor: c.surface2, borderRadius: radius.pill, paddingLeft: space(1.75), paddingRight: 6, paddingVertical: 6 },

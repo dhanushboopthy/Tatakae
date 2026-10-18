@@ -14,6 +14,7 @@ import { PlusJakartaSans_700Bold } from "@expo-google-fonts/plus-jakarta-sans/70
 import { getToken, onAuthChange, setExpiresAt, type AuthState } from "../src/auth/session";
 import { apiGet, ApiError } from "../src/api/client";
 import { initSync } from "../src/sync/engine"; // also defines the background sync task at module scope
+import { initNotifications } from "../src/notifications/local";
 import { useSettings } from "../src/lib/hooks";
 import { ThemeProvider, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
@@ -107,7 +108,12 @@ function AuthGate({ ready }: { ready: boolean }) {
   useEffect(() => {
     if (auth !== "in") return;
     void verifySession();
-    return initSync(queryClient);
+    const stopSync = initSync(queryClient);
+    const stopReminders = initNotifications();
+    return () => {
+      stopReminders();
+      stopSync();
+    };
   }, [auth]);
 
   const settings = useSettings();

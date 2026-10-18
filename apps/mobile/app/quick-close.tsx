@@ -10,6 +10,7 @@ import { Stepper } from "../src/components/fitnessUi";
 import { BigButton } from "../src/components/BigButton";
 import { Card, Screen, SheetHeader } from "../src/components/Screen";
 import { tapDone } from "../src/haptics";
+import { requestPermission } from "../src/notifications/local";
 import { f, space } from "../src/theme";
 import { useForceDark, useStyles, useTheme, type Theme } from "../src/lib/theme";
 
@@ -56,6 +57,8 @@ export default function QuickClose() {
       await setDayFlag(today, "closed");
       tapDone();
       router.back();
+      // Reminders: asked once, after the first Quick close if not already asked at sign-in.
+      void requestPermission();
     } finally {
       setBusy(false);
     }
