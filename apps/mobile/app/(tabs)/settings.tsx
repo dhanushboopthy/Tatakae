@@ -9,6 +9,8 @@ import { ago, shiftHHMM } from "../../src/lib/format";
 import { apiDelete, apiGet, ApiError } from "../../src/api/client";
 import { logout } from "../../src/auth/session";
 import { flush } from "../../src/sync/engine";
+import { requestPermission } from "../../src/notifications/local";
+import { useRemindersAllowed } from "../../src/lib/reminders";
 import { SegmentedPills } from "../../src/components/SegmentedPills";
 import { Stepper } from "../../src/components/fitnessUi";
 import { BigButton } from "../../src/components/BigButton";
@@ -58,6 +60,7 @@ export default function Settings() {
   const { data: settings } = useSettings();
   const theme = useThemePref().data ?? "auto";
   const sync = useSyncStatus();
+  const allowed = useRemindersAllowed();
   const [toast, setToast] = useState({ message: "", token: 0 });
   const say = (message: string) => setToast((t) => ({ message, token: t.token + 1 }));
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -92,7 +95,14 @@ export default function Settings() {
         <TimeRow label="Ritual time" value={settings.ritual_time} onChange={(v) => void saveSetting("ritual_time", v)} />
       </Section>
 
-      <Section title="Afternoon nudge" note="Only if P1 hasn't started. Never more than 3 reminders a day.">
+      <Section title="Reminders" note="Morning at wake time, the ritual at ritual time, and the optional nudge below. Never more than 3 a day.">
+        <Text style={s.body}>{allowed.data ? "On for this phone." : "Off for this phone."}</Text>
+        {!allowed.data ? (
+          <BigButton label="Turn reminders on" icon="reminders" variant="secondary" onPress={() => void requestPermission({ force: true })} />
+        ) : null}
+      </Section>
+
+      <Section title="Afternoon nudge" note="Only if P1 hasn't started.">
         <SegmentedPills
           options={ON_OFF}
           value={nudge.enabled ? "on" : "off"}
