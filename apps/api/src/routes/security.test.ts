@@ -33,3 +33,23 @@ describe("request body limits", () => {
     expect(res.status).toBe(413);
   });
 });
+
+describe("login throttling", () => {
+  const wrong = (app: Awaited<ReturnType<typeof setup>>["app"], ip: string, password = "wrong password!") =>
+    call(app, "POST", "/session/login", { email: OWNER.email, password, client: "mobile", deviceName: "x" }, { "x-forwarded-for": ip });
+
+  it("stops all password guessing after 30 failures an hour, whatever the IP", async () => {
+    const { app } = await setup();
+    // 3 failures from each of 10 addresses stays under the per-IP limit of 10.
+    for (let i = 0; i < 30; i++) expect((await wrong(app, `203.0.113.${Math.floor(i / 3)}`)).status).toBe(401);
+    const blocked = await wrong(app, "198.51.100.77");
+    expect(blocked.status).toBe(429);
+    // Even the right password waits: the window is about guesses, not about who is guessing.
+    expect((await wrong(app, "198.51.100.78", OWNER.password)).status).toBe(429);
+  });
+
+  it("successful logins don't count", async () => {
+    const { app } = await setup();
+    for (let i = 0; i < 40; i++) expect((await wrong(app, `198.51.100.${i}`, OWNER.password)).status).toBe(200);
+  });
+});
