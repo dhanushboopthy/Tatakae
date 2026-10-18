@@ -591,6 +591,20 @@ export async function stopFocus(opts: { resumeNote?: string | null; status?: "do
   if (!s) return 0;
   const minutes = focusedMinutes(s);
   const m = await store.get("missions", s.missionId);
+  if (minutes > 0) {
+    // Same focus_sessions row the website writes, so focus minutes and area time count phone blocks too.
+    // endedAt = start + focused minutes (pauses left out), so stats measure focused time.
+    const areaId = m?.goalId ? ((await store.get("goals", m.goalId))?.areaId ?? null) : null;
+    await write("focus_sessions", {
+      id: newId(),
+      missionId: s.missionId,
+      areaId,
+      startedAt: new Date(s.startedAt).toISOString(),
+      endedAt: new Date(s.startedAt + minutes * 60_000).toISOString(),
+      plannedMin: Math.max(1, Math.min(600, s.length)),
+      completed: minutes >= s.length,
+    });
+  }
   if (m && m.deletedAt == null) {
     const note = opts.resumeNote?.trim();
     await write("missions", {
