@@ -7,7 +7,12 @@ import { finishWorkout, logSet, startWorkout, useTraining } from "../../src/lib/
 import { useToday } from "../../src/lib/hooks";
 import { PillButton, SheetHeader, Stepper, fill, parseNum } from "../../src/components/fitnessUi";
 import { tapDone, tapTimerEnd } from "../../src/haptics";
-import { colors, legacyRadius, space, text, tnum, type, ui } from "../../src/theme";
+import { TextField } from "../../src/components/TextField";
+import { Card } from "../../src/components/Screen";
+import { f, minTarget, radius, space } from "../../src/theme";
+import { useStyles, type Theme } from "../../src/lib/theme";
+
+const tnum = { fontVariant: ["tabular-nums" as const] };
 
 // Log set (design canvas "Phone · Log set"): during a workout. Exercise (the last one used), kg and reps with
 // − / + steppers, "Same again" in one tap, a rest timer that is only on this screen (no notification) and what is
@@ -17,6 +22,7 @@ const SESSION_NAMES = ["Push", "Pull", "Legs", "Upper", "Lower", "Full body"] as
 const REST_SECONDS = 90;
 
 export default function LogSet() {
+  const styles = useStyles(makeStyles);
   const today = useToday();
   const { data } = useTraining(today);
   const workout = data?.workouts.find((w) => w.date === today) ?? null;
@@ -81,15 +87,17 @@ export default function LogSet() {
     return () => clearTimeout(id);
   }, [rest]);
 
-  if (!data) return <SafeAreaView style={ui.screen} edges={["top"]} />;
+  if (!data) return <SafeAreaView style={styles.screen} edges={["top"]} />;
 
   if (!workout) {
     return (
-      <SafeAreaView style={ui.screen} edges={["top", "bottom"]}>
-        <SheetHeader title="Log set" onClose={() => router.back()} />
+      <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+        <View style={styles.headerPad}>
+          <SheetHeader title="Log set" onClose={() => router.back()} />
+        </View>
         <View style={styles.content}>
-          <Text style={text.h2}>Start a session</Text>
-          <Text style={text.small}>Name it, then log each set in a tap or two.</Text>
+          <Text style={styles.heading}>Start a session</Text>
+          <Text style={styles.small}>Name it, then log each set in a tap or two.</Text>
           <View style={styles.wrap}>
             {SESSION_NAMES.map((n) => (
               <PillButton key={n} label={n} tone="neutral" onPress={() => void startWorkout(today, n)} />
@@ -139,14 +147,16 @@ export default function LogSet() {
   }
 
   return (
-    <SafeAreaView style={ui.screen} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <SheetHeader
-          title={workout.name}
-          subtitle={`${sets.length} ${sets.length === 1 ? "set" : "sets"}`}
-          onClose={() => router.back()}
-          right={<PillButton label="Finish" tone="neutral" onPress={() => void finish()} />}
-        />
+        <View style={styles.headerPad}>
+          <SheetHeader
+            title={workout.name}
+            subtitle={`${sets.length} ${sets.length === 1 ? "set" : "sets"}`}
+            onClose={() => router.back()}
+            right={<PillButton label="Finish" tone="neutral" onPress={() => void finish()} />}
+          />
+        </View>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* exercise chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} accessibilityLabel="Exercises">
@@ -157,17 +167,8 @@ export default function LogSet() {
           </ScrollView>
 
           {adding ? (
-            <View style={ui.card}>
-              <Text style={text.label}>New exercise</Text>
-              <TextInput
-                value={newName}
-                onChangeText={setNewName}
-                placeholder="Exercise name"
-                placeholderTextColor={colors.muted}
-                accessibilityLabel="Exercise name"
-                style={ui.input}
-                autoFocus
-              />
+            <Card>
+              <TextField label="New exercise" tone="surface" value={newName} onChangeText={setNewName} placeholder="Exercise name" accessibilityLabel="Exercise name" autoFocus />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} accessibilityLabel="Muscle">
                 {MUSCLE_GROUPS.map((m) => (
                   <PillButton key={m} label={m} tone={m === muscle ? "lime" : "neutral"} onPress={() => setMuscle(m)} />
@@ -183,7 +184,7 @@ export default function LogSet() {
                   setNewName("");
                 }}
               />
-            </View>
+            </Card>
           ) : null}
 
           {/* current exercise */}
@@ -238,7 +239,7 @@ export default function LogSet() {
               ) : null}
             </View>
           ) : (
-            <Text style={text.small}>Pick an exercise above, or add a new one.</Text>
+            <Text style={styles.small}>Pick an exercise above, or add a new one.</Text>
           )}
 
           {/* done sets */}
@@ -277,13 +278,13 @@ export default function LogSet() {
           {/* up next */}
           {upNext.length > 0 ? (
             <View style={styles.next}>
-              <Text style={text.label}>Up next</Text>
+              <Text style={styles.label}>Up next</Text>
               {upNext.map((u) => (
                 <View key={u.name} style={styles.nextRow}>
                   <Text style={styles.nextName} onPress={() => choose(u.name, u.muscle)} accessibilityRole="button" accessibilityLabel={`Switch to ${u.name}`}>
                     {u.name}
                   </Text>
-                  <Text style={[text.small, tnum]}>
+                  <Text style={[styles.small, tnum]}>
                     {u.count} × {u.reps} · {kgText(u.kg)} kg
                   </Text>
                 </View>
@@ -297,6 +298,7 @@ export default function LogSet() {
 }
 
 function NumberBox({ value, onChange, label, decimal }: { value: string; onChange: (v: string) => void; label: string; decimal?: boolean }) {
+  const styles = useStyles(makeStyles);
   return (
     <TextInput
       value={value}
@@ -311,34 +313,40 @@ function NumberBox({ value, onChange, label, decimal }: { value: string; onChang
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { paddingHorizontal: space(2), paddingBottom: space(3), gap: space(1.75) },
-  wrap: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
-  chips: { gap: space(1), paddingVertical: 2 },
-  current: { backgroundColor: fill.limeSoft, borderRadius: 24, padding: space(2.25), gap: space(1.75) },
-  currentTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space(1) },
-  currentText: { flex: 1 },
-  exName: { color: fill.ink, fontSize: 20, fontWeight: "600" },
-  exSub: { color: fill.inkMuted, fontSize: 13, marginTop: 2 },
-  setBadge: { backgroundColor: fill.lime, borderRadius: legacyRadius.pill, paddingHorizontal: space(1.5), paddingVertical: 6 },
-  setBadgeText: { color: fill.ink, fontSize: 13, fontWeight: "600" },
-  inputs: { gap: space(1.5) },
-  inputCol: { gap: 6, alignItems: "center" },
-  inputLabel: { color: fill.inkMuted, fontSize: 13, fontWeight: "600" },
-  number: { color: fill.ink, fontSize: 40, fontWeight: "600", minWidth: 96, textAlign: "center", paddingVertical: 0 },
-  actions: { flexDirection: "row", gap: space(1) },
-  problem: { color: fill.ink, fontSize: type.small, fontWeight: "600" },
-  doneList: { gap: space(0.5) },
-  doneRow: { flexDirection: "row", alignItems: "center", gap: space(1.5), minHeight: 44 },
-  doneSet: { color: colors.muted, fontSize: type.small, width: 56 },
-  doneValue: { color: colors.paper, fontSize: type.body, fontWeight: "600", flex: 1 },
-  doneTick: { color: colors.paper, fontSize: 18, fontWeight: "700" },
-  rest: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: fill.lavenderSoft, borderRadius: legacyRadius.card, padding: space(2), gap: space(1) },
-  restLabel: { color: fill.inkMuted, fontSize: 13, fontWeight: "600" },
-  restTime: { color: fill.ink, fontSize: 30, fontWeight: "600" },
-  restButtons: { flexDirection: "row", gap: space(1) },
-  next: { gap: space(0.5) },
-  nextRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 44, borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth, gap: space(1) },
-  nextName: { color: colors.paper, fontSize: type.body, fontWeight: "600", paddingVertical: 10, flexShrink: 1 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    fill: { flex: 1 },
+    headerPad: { paddingHorizontal: space(2.5), paddingTop: space(1) },
+    content: { paddingHorizontal: space(2.5), paddingTop: space(1), paddingBottom: space(3), gap: space(1.75) },
+    heading: { ...f(600, 18, 24), color: c.ink },
+    small: { ...f(500, 13, 18), color: c.ink2 },
+    label: { ...f(600, 13, 18), color: c.ink },
+    wrap: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
+    chips: { gap: space(1), paddingVertical: 2 },
+    current: { backgroundColor: fill.limeSoft, borderRadius: radius.card, padding: space(2.25), gap: space(1.75) },
+    currentTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space(1) },
+    currentText: { flex: 1 },
+    exName: { ...f(600, 20, 26), color: fill.ink },
+    exSub: { ...f(500, 13, 18), color: fill.inkMuted, marginTop: 2 },
+    setBadge: { backgroundColor: fill.lime, borderRadius: radius.pill, paddingHorizontal: space(1.5), paddingVertical: 6 },
+    setBadgeText: { ...f(600, 13), color: fill.ink },
+    inputs: { gap: space(1.5) },
+    inputCol: { gap: 6, alignItems: "center" },
+    inputLabel: { ...f(600, 13), color: fill.inkMuted },
+    number: { ...f(600, 40), color: fill.ink, minWidth: 96, textAlign: "center", paddingVertical: 0 },
+    actions: { flexDirection: "row", gap: space(1) },
+    problem: { ...f(600, 14), color: fill.ink },
+    doneList: { gap: space(0.5) },
+    doneRow: { flexDirection: "row", alignItems: "center", gap: space(1.5), minHeight: minTarget },
+    doneSet: { ...f(500, 14), color: c.ink2, width: 56 },
+    doneValue: { ...f(600, 16), color: c.ink, flex: 1 },
+    doneTick: { ...f(700, 18), color: c.ink },
+    rest: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: fill.lavenderSoft, borderRadius: radius.inner, padding: space(2), gap: space(1) },
+    restLabel: { ...f(600, 13), color: fill.inkMuted },
+    restTime: { ...f(600, 30), color: fill.ink },
+    restButtons: { flexDirection: "row", gap: space(1) },
+    next: { gap: space(0.5) },
+    nextRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: minTarget, borderBottomColor: c.line, borderBottomWidth: StyleSheet.hairlineWidth, gap: space(1) },
+    nextName: { ...f(600, 16), color: c.ink, paddingVertical: 10, flexShrink: 1 },
+  });

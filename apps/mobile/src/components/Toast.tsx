@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, legacyRadius, space, type } from "../theme";
+import { f, floatShadow, radius, space } from "../theme";
+import { useStyles, useTheme, type Theme } from "../lib/theme";
+import { Icon } from "./Icon";
 
 /** Small calm confirmation ("Saved"). Shows for ~1.5 s each time `token` changes. */
 export function Toast({ message, token }: { message: string; token: number }) {
+  const s = useStyles(makeStyles);
+  const { c } = useTheme();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     if (token === 0) return;
@@ -13,27 +17,29 @@ export function Toast({ message, token }: { message: string; token: number }) {
   }, [token]);
   if (!visible) return null;
   return (
-    <View style={styles.toast} accessibilityLiveRegion="polite" accessibilityRole="alert" pointerEvents="none">
-      <Text style={styles.glyph}>✓</Text>
-      <Text style={styles.text}>{message}</Text>
+    <View style={s.toast} accessibilityLiveRegion="polite" accessibilityRole="alert" pointerEvents="none">
+      <View style={s.tick}>
+        <Icon name="done" size={14} color={c.onFill} strokeWidth={2.5} />
+      </View>
+      <Text style={s.text}>{message}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  toast: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(1),
-    paddingHorizontal: space(2),
-    paddingVertical: space(1),
-    backgroundColor: colors.ink2,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: legacyRadius.pill,
-    elevation: 6,
-  },
-  glyph: { color: colors.jade, fontSize: type.body, fontWeight: "700" },
-  text: { color: colors.paper, fontSize: type.body },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    toast: {
+      alignSelf: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space(1),
+      paddingLeft: space(1),
+      paddingRight: space(2),
+      paddingVertical: space(1),
+      backgroundColor: c.hero,
+      borderRadius: radius.pill,
+      ...floatShadow,
+    },
+    tick: { width: 24, height: 24, borderRadius: 12, backgroundColor: c.lime, alignItems: "center", justifyContent: "center" },
+    text: { ...f(600, 15), color: c.onHero },
+  });

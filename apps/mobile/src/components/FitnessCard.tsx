@@ -3,8 +3,12 @@ import { router } from "expo-router";
 import { remaining, type ISODate } from "@tatakae/core";
 import { addWater, useFitnessDay } from "../lib/fitness";
 import { tapDone } from "../haptics";
-import { colors, legacyRadius, minTarget, space, tnum, type } from "../theme";
+import { f, minTarget, radius, space } from "../theme";
+import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { MiniBar, PillButton, fill, hm, n0 } from "./fitnessUi";
+import { Icon } from "./Icon";
+
+const tnum = { fontVariant: ["tabular-nums" as const] };
 
 /**
  * Fitness card on the Today tab (design canvas "Phone · Today"): kcal left, protein to go, one-tap
@@ -12,6 +16,7 @@ import { MiniBar, PillButton, fill, hm, n0 } from "./fitnessUi";
  * notification, and over target reads as "over", never as a failure.
  */
 export function FitnessCard({ date }: { date: ISODate }) {
+  const styles = useStyles(makeStyles);
   const { data } = useFitnessDay(date);
   if (!data) return null;
 
@@ -90,7 +95,7 @@ export function FitnessCard({ date }: { date: ISODate }) {
             {body?.sleepMin != null ? hm(body.sleepMin) : "—"}
           </Text>
         </View>
-        <Text style={styles.chevron}>›</Text>
+        <Icon name="forward" color={styles.chevron.color} />
       </Pressable>
     </View>
   );
@@ -101,36 +106,35 @@ function weekOf(text: string | null): string {
   return /week (\d+)/.exec(text ?? "")?.[1] ?? "1";
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: space(1) },
-  card: { backgroundColor: fill.rose, borderRadius: 28, padding: space(2.5), gap: space(1.75) },
-  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  chip: { backgroundColor: "#E57FB8", borderRadius: legacyRadius.pill, paddingHorizontal: space(1.5), paddingVertical: 6 },
-  chipText: { color: fill.ink, fontSize: 13, fontWeight: "600" },
-  stats: { flexDirection: "row", gap: space(2) },
-  stat: { flex: 1 },
-  big: { color: fill.ink, fontSize: 40, lineHeight: 44, fontWeight: "600", letterSpacing: -0.5 },
-  unit: { fontSize: 20 },
-  statLabel: { color: fill.ink, fontSize: type.small, fontWeight: "500", marginTop: 4 },
-  bar: { marginTop: space(1.25) },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
-  weighed: { color: fill.ink, fontSize: 13, fontWeight: "500" },
-  weighIn: { alignSelf: "flex-start" },
-  bodyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(1.5),
-    minHeight: minTarget + 12,
-    paddingHorizontal: space(2),
-    paddingVertical: space(1.5),
-    backgroundColor: colors.ink2,
-    borderColor: colors.line,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: legacyRadius.card,
-  },
-  bodyText: { flex: 1 },
-  bodyTitle: { color: colors.paper, fontSize: type.body, fontWeight: "600" },
-  bodySub: { color: colors.muted, fontSize: 13 },
-  chevron: { color: colors.paper, fontSize: 24 },
-  pressed: { opacity: 0.85 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    wrap: { gap: space(1) },
+    card: { backgroundColor: fill.rose, borderRadius: radius.card, padding: space(2.5), gap: space(1.75) },
+    top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    chip: { backgroundColor: fill.roseDeep, borderRadius: radius.pill, paddingHorizontal: space(1.5), paddingVertical: 6 },
+    chipText: { ...f(600, 13), color: fill.ink },
+    stats: { flexDirection: "row", gap: space(2) },
+    stat: { flex: 1 },
+    big: { ...f(600, 40, 44), color: fill.ink, letterSpacing: -0.5 },
+    unit: { ...f(500, 20) },
+    statLabel: { ...f(500, 14, 20), color: fill.ink, marginTop: 4 },
+    bar: { marginTop: space(1.25) },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
+    weighed: { ...f(500, 13, 18), color: fill.ink },
+    weighIn: { alignSelf: "flex-start" },
+    bodyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space(1.5),
+      minHeight: minTarget + 12,
+      paddingHorizontal: space(2.5),
+      paddingVertical: space(1.75),
+      backgroundColor: c.surface2,
+      borderRadius: radius.card,
+    },
+    bodyText: { flex: 1 },
+    bodyTitle: { ...f(600, 16, 22), color: c.ink },
+    bodySub: { ...f(500, 13, 18), color: c.ink2 },
+    chevron: { color: c.ink },
+    pressed: pressedStyle,
+  });

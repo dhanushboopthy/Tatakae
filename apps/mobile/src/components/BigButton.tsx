@@ -1,15 +1,19 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, minTarget, legacyRadius, space, type } from "../theme";
+import { f, minTarget, radius, space } from "../theme";
+import { pressedStyle, useStyles, useTheme, type Theme } from "../lib/theme";
+import { Icon, type AppIcon } from "./Icon";
 
-export type BigButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+export type BigButtonVariant = "primary" | "accent" | "secondary" | "quiet" | "danger";
 
 export interface BigButtonProps {
   label: string;
   onPress: () => void;
-  /** primary = ember fill (one per screen); secondary = outlined; quiet = text only; danger = destructive confirm only. */
+  /**
+   * primary = charcoal pill (one per screen); accent = lime pill (Start, Save on a light sheet);
+   * secondary = surface-2 pill; quiet = text only; danger = destructive confirm only.
+   */
   variant?: BigButtonVariant;
-  /** Small glyph shown before the label (text, not an icon font). */
-  glyph?: string;
+  icon?: AppIcon;
   disabled?: boolean;
   busy?: boolean;
   /** "large" = 64dp (Start, Save), "normal" = 52dp, "compact" = 44dp. */
@@ -21,12 +25,12 @@ export interface BigButtonProps {
 
 const HEIGHT = { large: 64, normal: 52, compact: minTarget } as const;
 
-/** The one obvious action on a screen. 44dp minimum; label never relies on colour. */
+/** The one obvious action on a screen. Pill shape, 44dp minimum; the label never relies on colour. */
 export function BigButton({
   label,
   onPress,
   variant = "primary",
-  glyph,
+  icon,
   disabled = false,
   busy = false,
   size = "normal",
@@ -34,8 +38,10 @@ export function BigButton({
   accessibilityLabel,
   style,
 }: BigButtonProps) {
+  const s = useStyles(makeStyles);
+  const { c } = useTheme();
   const inactive = disabled || busy;
-  const fg = variant === "primary" || variant === "danger" ? colors.ink : colors.paper;
+  const fg = { primary: c.onHero, accent: c.onFill, secondary: c.ink, quiet: c.ink, danger: c.white }[variant];
   return (
     <Pressable
       onPress={onPress}
@@ -44,22 +50,12 @@ export function BigButton({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy }}
-      style={({ pressed }) => [
-        styles.base,
-        { minHeight: HEIGHT[size] },
-        variant === "primary" && styles.primary,
-        variant === "secondary" && styles.secondary,
-        variant === "quiet" && styles.quiet,
-        variant === "danger" && styles.danger,
-        pressed && !inactive && styles.pressed,
-        inactive && styles.inactive,
-        style,
-      ]}
+      style={({ pressed }) => [s.base, { minHeight: HEIGHT[size] }, s[variant], pressed && !inactive && pressedStyle, inactive && s.inactive, style]}
     >
-      <View style={styles.row}>
+      <View style={s.row}>
         {busy ? <ActivityIndicator color={fg} /> : null}
-        {glyph && !busy ? <Text style={[styles.glyph, { color: fg }]}>{glyph}</Text> : null}
-        <Text style={[styles.label, size === "large" && styles.labelLarge, { color: fg }]} numberOfLines={2}>
+        {icon && !busy ? <Icon name={icon} color={fg} size={size === "large" ? 22 : 20} strokeWidth={2} /> : null}
+        <Text style={[s.label, size === "large" && s.labelLarge, variant === "quiet" && s.quietLabel, { color: fg }]} numberOfLines={2}>
           {label}
         </Text>
       </View>
@@ -67,22 +63,17 @@ export function BigButton({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: legacyRadius.control,
-    paddingHorizontal: space(2),
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: minTarget,
-  },
-  row: { flexDirection: "row", alignItems: "center", gap: space(1) },
-  primary: { backgroundColor: colors.ember },
-  secondary: { backgroundColor: colors.ink2, borderWidth: 1, borderColor: colors.lineStrong },
-  quiet: { backgroundColor: "transparent" },
-  danger: { backgroundColor: colors.danger },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-  inactive: { opacity: 0.5 },
-  glyph: { fontSize: type.h2, fontWeight: "600" },
-  label: { fontSize: type.body, fontWeight: "600", textAlign: "center" },
-  labelLarge: { fontSize: type.h2 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    base: { borderRadius: radius.pill, paddingHorizontal: space(2.5), alignItems: "center", justifyContent: "center", minWidth: minTarget },
+    row: { flexDirection: "row", alignItems: "center", gap: space(1) },
+    primary: { backgroundColor: c.hero },
+    accent: { backgroundColor: c.lime },
+    secondary: { backgroundColor: c.surface2 },
+    quiet: { backgroundColor: "transparent", paddingHorizontal: space(1.5) },
+    danger: { backgroundColor: c.danger },
+    inactive: { opacity: 0.45 },
+    label: { ...f(600, 16), textAlign: "center" },
+    labelLarge: { ...f(600, 18) },
+    quietLabel: { textDecorationLine: "underline" },
+  });
