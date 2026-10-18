@@ -38,7 +38,7 @@ const config: ExpoConfig = {
     ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#262626" } } : {}),
     permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
     softwareKeyboardLayoutMode: "resize",
-    // TODO(v2): PACKAGE_USAGE_STATS (usage access, granted by user in system settings)
+    // PACKAGE_USAGE_STATS comes from the local module's manifest (modules/usage-stats).
   },
   plugins: [
     "expo-router",

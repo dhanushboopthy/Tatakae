@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["dev.dhanush.tatakae.usagestats.UsageStatsModule"]
+  }
+}
