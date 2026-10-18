@@ -104,7 +104,7 @@ The night ritual always uses the dark variant.
 | `RingProgress` | 56 ring, 6 stroke, number in centre, coloured by area pastel (deep edge) — per cycle goal |
 | `AreaBlock` | Pastel block (sage/rose/butter/sky) with a darker tag pill ("Japanese"), title, time range — web week view and goal lists |
 | `TimeRail` | Hour labels at left, current-time line in `charcoal` with a dot (ref 07) |
-| `StoryToast` | Small `surface` card sliding up above the nav, 1 line, lavender left bar, dismiss on tap |
+| ~~`StoryToast`~~ | Removed on both clients (web R3-10, phone 18 Oct). Thirukkural lines stay as calm text on screens. |
 
 ## 6. Screen compositions
 
