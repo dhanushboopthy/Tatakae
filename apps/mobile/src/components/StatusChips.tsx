@@ -95,7 +95,8 @@ const makeStyles = ({ c }: Theme) =>
       alignItems: "center",
       gap: 6,
       borderWidth: 2,
-      borderColor: "transparent",
+      // Faint ink edge so a white chip still shows on a white card; selected chips get a solid one.
+      borderColor: "rgba(28,28,30,0.16)",
     },
     selected: { borderWidth: 2, borderColor: c.onFill },
     done: { backgroundColor: c.lime },
