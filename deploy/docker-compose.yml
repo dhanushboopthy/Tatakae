@@ -25,6 +25,8 @@ services:
     user: "1000:1000" # `node` in the image; /srv/tatakae/data is chowned to 1000 by bootstrap.sh
     env_file: .env
     environment:
+      # Pinned here so a stray NODE_ENV in .env can never switch off Secure cookies or allow DEV_BYPASS_AUTH.
+      NODE_ENV: production
       DATABASE_PATH: /data/tatakae.db
       FILES_DIR: /data/files
     volumes:

@@ -58,6 +58,10 @@ export const envSchema = z
     if (e.SESSION_SECRET === DEV_DEFAULTS.SESSION_SECRET) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["SESSION_SECRET"], message: "dev default is not allowed in production" });
     }
+    // Ignored outside development anyway; refusing to start makes the mistake visible instead of silent.
+    if (e.DEV_BYPASS_AUTH === "1") {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["DEV_BYPASS_AUTH"], message: "must be 0 in production (it turns login off)" });
+    }
   });
 
 export type Env = z.infer<typeof envSchema>;

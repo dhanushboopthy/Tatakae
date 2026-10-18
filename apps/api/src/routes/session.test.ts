@@ -199,6 +199,19 @@ describe("env", () => {
     if (!res.ok) expect(res.message).toMatch(/OWNER_PASSWORD_HASH/);
   });
 
+  it("production refuses DEV_BYPASS_AUTH=1", async () => {
+    const { parseEnv } = await import("../env");
+    const res = parseEnv({
+      NODE_ENV: "production",
+      OWNER_EMAIL: OWNER.email,
+      OWNER_PASSWORD_HASH: "$argon2id$v=19$m=19456,t=2,p=1$abc$def",
+      SESSION_SECRET: "x".repeat(40),
+      DEV_BYPASS_AUTH: "1",
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.message).toMatch(/DEV_BYPASS_AUTH/);
+  });
+
   it("lists missing variables", async () => {
     const { parseEnv } = await import("../env");
     const res = parseEnv({ NODE_ENV: "production" });
