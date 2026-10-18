@@ -46,7 +46,8 @@ const config: ExpoConfig = {
     "expo-secure-store",
     ["expo-notifications", { color: "#7E9A1E" }],
     "expo-background-task",
-    // TODO(v2): "expo-share-intent", "expo-quick-actions", "react-native-android-widget"
+    "expo-quick-actions",
+    // TODO(v2): "expo-share-intent", "react-native-android-widget"
   ],
   ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
   runtimeVersion: { policy: "appVersion" },

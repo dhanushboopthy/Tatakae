@@ -15,6 +15,7 @@ import { getToken, onAuthChange, setExpiresAt, type AuthState } from "../src/aut
 import { apiGet, ApiError } from "../src/api/client";
 import { initSync } from "../src/sync/engine"; // also defines the background sync task at module scope
 import { initNotifications } from "../src/notifications/local";
+import { clearQuickActions, registerQuickActions } from "../src/native/quickActions";
 import { useSettings } from "../src/lib/hooks";
 import { ThemeProvider, useReducedMotion, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
@@ -111,9 +112,11 @@ function AuthGate({ ready }: { ready: boolean }) {
     void verifySession();
     const stopSync = initSync(queryClient);
     const stopReminders = initNotifications();
+    void registerQuickActions();
     return () => {
       stopReminders();
       stopSync();
+      void clearQuickActions();
     };
   }, [auth]);
 
