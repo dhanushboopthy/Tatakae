@@ -42,6 +42,9 @@ const config: ExpoConfig = {
     ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#262626" } } : {}),
     permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
     softwareKeyboardLayoutMode: "resize",
+    // The local SQLite holds a full copy of the data. Keep it (and everything else) out of Google
+    // backup and device transfer; a new phone signs in and pulls from the server instead.
+    allowBackup: false,
     // PACKAGE_USAGE_STATS comes from the local module's manifest (modules/usage-stats).
   },
   plugins: [

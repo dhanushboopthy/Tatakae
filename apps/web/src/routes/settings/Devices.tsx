@@ -6,7 +6,7 @@ import { LogOutIcon, RefreshIcon } from "../../components/icons";
 import { useToast } from "../../components/Toast";
 import { api, isNetworkError, statusOf } from "../../lib/api";
 import { syncLabel, useSyncStatus } from "../../lib/hooks";
-import { logout } from "../../lib/session";
+import { logout, logoutAndErase } from "../../lib/session";
 import { flushNow } from "../../sync/engine";
 import { Section } from "./Section";
 
@@ -103,6 +103,17 @@ export function DevicesSettings() {
   });
 
   const [confirmOthers, setConfirmOthers] = useState(false);
+  const [confirmErase, setConfirmErase] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  async function erase() {
+    setErasing(true);
+    try {
+      await logoutAndErase();
+    } finally {
+      // A full reload drops every in-memory copy (query cache, sync client) along with the storage.
+      window.location.replace("/login");
+    }
+  }
   async function signOutOthers() {
     try {
       const body = (await api("/session/devices/sign-out-others", { method: "POST", body: {} })) as { signedOut?: number };
@@ -209,6 +220,31 @@ export function DevicesSettings() {
         <LogOutIcon size={18} /> Sign out of this laptop
       </button>
       <p className="text-xs text-ink-2">Signing out keeps your local data and anything waiting to sync.</p>
+
+      {confirmErase ? (
+        <div className="card-inner space-y-3" role="group" aria-labelledby="erase-title">
+          <p id="erase-title" className="text-sm font-semibold">
+            Sign out and erase this laptop's copy?
+          </p>
+          <p className="text-sm text-ink-2">
+            {status.pending > 0
+              ? `${status.pending} ${status.pending === 1 ? "change hasn't" : "changes haven't"} synced yet and will be lost. Sync first if you can.`
+              : "Everything is synced, so nothing is lost: it stays on the server and your other devices."}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" className="btn-danger min-h-tap px-4 text-sm" disabled={erasing} onClick={() => void erase()}>
+              {erasing ? "Erasing…" : "Sign out and erase"}
+            </button>
+            <button type="button" className="btn min-h-tap bg-surface px-4 text-sm" onClick={() => setConfirmErase(false)}>
+              Keep it
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="btn min-h-tap self-start bg-surface-2 px-4 text-sm" onClick={() => setConfirmErase(true)}>
+          Sign out and erase this laptop's data…
+        </button>
+      )}
     </Section>
   );
 }

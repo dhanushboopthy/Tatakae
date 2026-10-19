@@ -1,5 +1,5 @@
 import { api, isNetworkError, statusOf } from "./api";
-import { storage } from "./storage";
+import { sessionStore, storage } from "./storage";
 
 // Session state for the auth gate (Shell) and Login. The server keeps an HttpOnly cookie; the client
 // only caches "who was logged in last" so the app can open offline.
@@ -154,6 +154,22 @@ export async function logout(): Promise<void> {
   }
   writeCachedMe(null);
   for (const l of listeners) l("logout");
+}
+
+/**
+ * Sign out and leave nothing behind on this laptop (S11): the server session, the local copy of all
+ * data and the outbox (unsynced changes are lost, so the caller warns first), and everything in
+ * local/session storage. The caller reloads the page afterwards.
+ */
+export async function logoutAndErase(): Promise<void> {
+  await logout();
+  const { eraseLocalDb } = await import("../sync/outbox");
+  try {
+    await eraseLocalDb();
+  } finally {
+    storage.clear();
+    sessionStore.clear();
+  }
 }
 
 /** Called on any 401: the session is gone, so offline access must stop too. */

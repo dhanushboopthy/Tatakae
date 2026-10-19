@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from "idb";
 import { primaryKeyOf, type LocalStore, type OutboxItem, type SyncRowMap, type SyncTable } from "@tatakae/core";
 
 // IndexedDB implementation of core's LocalStore (shared design: generic row store + outbox + meta).
@@ -52,6 +52,18 @@ export function openLocalDb(): Promise<IDBPDatabase<TatakaeDB>> {
     },
   });
   return dbp;
+}
+
+/**
+ * Delete this browser's copy of everything (rows, outbox, cursor). Other tabs get a versionchange
+ * and close their connection (see `blocking` above), so the delete isn't held up. "Sign out and
+ * erase" in Settings → Devices; the page reloads afterwards so nothing stays in memory.
+ */
+export async function eraseLocalDb(): Promise<void> {
+  const open = dbp;
+  dbp = null;
+  if (open) (await open).close();
+  await deleteDB(DB_NAME);
 }
 
 export function createIdbStore(): LocalStore {

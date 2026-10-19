@@ -20,6 +20,7 @@ import { ago, shiftHHMM } from "../../src/lib/format";
 import { apiDelete, apiGet, apiPost, ApiError, needsReauth } from "../../src/api/client";
 import { ReauthPrompt } from "../../src/components/ReauthPrompt";
 import { logout } from "../../src/auth/session";
+import { logoutAndErase } from "../../src/auth/erase";
 import { flush } from "../../src/sync/engine";
 import { requestPermission } from "../../src/notifications/local";
 import { useRemindersAllowed } from "../../src/lib/reminders";
@@ -85,6 +86,17 @@ export default function Settings() {
     queryFn: async () => parseDevices(await apiGet("/session/devices")),
     retry: false,
   });
+
+  const [erasing, setErasing] = useState(false);
+  async function erase() {
+    setErasing(true);
+    try {
+      await logoutAndErase();
+      qc.clear();
+    } finally {
+      setErasing(false);
+    }
+  }
 
   async function signOutOthers() {
     try {
@@ -228,6 +240,20 @@ export default function Settings() {
           />
         ) : null}
         <BigButton label="Sign out of this phone" icon="logout" variant="secondary" onPress={() => void logout()} accessibilityHint="Your data stays on this phone until you sign in again" />
+        {confirm === "erase" ? (
+          <View style={s.eraseBox}>
+            <Text style={s.body}>Sign out and erase this phone's copy?</Text>
+            <Text style={s.small}>
+              {sync.pending > 0
+                ? `${sync.pending} ${sync.pending === 1 ? "change hasn't" : "changes haven't"} synced yet and will be lost. Sync first if you can.`
+                : "Everything is synced, so nothing is lost: it stays on the server and your laptop."}
+            </Text>
+            <BigButton label="Sign out and erase" variant="danger" busy={erasing} onPress={() => void erase()} />
+            <BigButton label="Keep it" variant="quiet" onPress={() => setConfirm(null)} />
+          </View>
+        ) : (
+          <BigButton label="Sign out and erase this phone's data" variant="quiet" onPress={() => setConfirm("erase")} accessibilityHint="Asks first" />
+        )}
       </Section>
 
       <UpdateBanner persistent />
@@ -355,6 +381,7 @@ const makeStyles = ({ c }: Theme) =>
     // Label over the stepper: two 52 circles + the time don't fit beside a label on a 360 dp phone.
     timeRow: { gap: space(0.75) },
     device: { flexDirection: "row", alignItems: "center", gap: space(1.5), paddingVertical: space(0.5) },
+    eraseBox: { gap: space(1), padding: space(1.5), borderRadius: 20, backgroundColor: c.surface2 },
     flex: { flex: 1 },
     appRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: space(1.5), paddingVertical: space(0.5) },
     box: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: c.ink2, alignItems: "center", justifyContent: "center" },
