@@ -72,6 +72,10 @@ All "today" calculations use **Asia/Kolkata** and a **04:00 day boundary** (`tod
 ## Security
 Ports 80/443 only; SSH via Tailscale. Secrets only in `/opt/tatakae/.env` (chmod 600) and GitHub secrets. Argon2id password hash. Session tokens stored hashed. CSP and security headers in Caddy. unattended-upgrades on the VM. No third-party analytics.
 
+In the API itself (so it carries over to any host): step-up re-auth for sensitive actions (above); per-IP login limits plus at most 30 wrong passwords an hour overall; request body caps per path; cookie writes refused when `Origin` / `Sec-Fetch-Site` say another site; `__Host-` session cookie in production; production refuses `DEV_BYPASS_AUTH=1`; a changed login in `.env` signs every device out on boot; `security_events` logs sign-ins and security changes (Settings → Devices). Clients: "Sign out and erase" wipes the local copy; the phone is excluded from Android backup and only takes signed EAS updates. CI: OSV, gitleaks and CodeQL (`security.yml`), Dependabot, actions pinned to SHAs.
+
+Hosting is moving to Zoho Catalyst; the VM-level notes in the first paragraph describe the old Oracle setup.
+
 ## Repository layout
 ```
 apps/web            laptop website
