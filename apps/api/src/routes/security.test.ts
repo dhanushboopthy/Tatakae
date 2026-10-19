@@ -199,6 +199,18 @@ describe("signing out other devices", () => {
   });
 });
 
+describe("client IP behind proxies", () => {
+  it("with two proxies, the address the outer one saw is the client", async () => {
+    const { app } = await setup({ TRUSTED_PROXY_HOPS: "2" });
+    await call(app, "POST", "/session/login", { email: OWNER.email, password: "wrong password!", client: "web", deviceName: "x" }, {
+      "x-forwarded-for": "6.6.6.6, 203.0.113.80, 10.0.0.5", // claimed, seen by the outer proxy, the inner proxy
+    });
+    const phone = await login(app, "mobile");
+    const events = (await call(app, "GET", "/system/security", undefined, phone)).body["events"] as { kind: string; ip: string | null }[];
+    expect(events.find((e) => e.kind === "login_failed")?.ip).toBe("203.0.113.80");
+  });
+});
+
 describe("stored links", () => {
   it("only accept http(s) links", async () => {
     const { app } = await setup();

@@ -19,6 +19,8 @@ export const envSchema = z
     WEB_DIST: z.string().min(1).optional(),
     PUBLIC_ORIGIN: z.string().url().default("http://localhost:5173"),
     TZ: z.string().default("Asia/Kolkata"),
+    /** Proxies in front that append to X-Forwarded-For (Caddy: 1). Check the IPs in Settings → Devices after a move. */
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(5).default(1),
 
     // Auth (single user)
     OWNER_EMAIL: z.string().email(),
