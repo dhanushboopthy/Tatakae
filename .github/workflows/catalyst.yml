@@ -1,0 +1,89 @@
+name: catalyst
+
+# Zoho Catalyst AppSail deploy: checks → linux/amd64 image (api + website) → `catalyst deploy appsail`
+# → smoke test. Manual only until the Catalyst project exists and the first deploy works
+# (docs/CATALYST.md); then add `push: branches: [main]` here and remove that trigger from deploy.yml.
+#
+# Needs: secret ZC_DEPLOY_TOKEN (`catalyst token:generate`), variables CATALYST_APP_URL (e.g.
+# https://tatakae.example.me, no trailing slash) and optionally CATALYST_SERVICE (default "tatakae"),
+# plus catalyst.json and .catalystrc committed at the repo root (`catalyst init`, ids only, no secrets).
+on:
+  workflow_dispatch:
+    inputs:
+      skip_checks:
+        description: "Skip typecheck/tests (emergency redeploy only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: catalyst-production
+  cancel-in-progress: false # never interrupt a deploy halfway
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: ${{ !inputs.skip_checks }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      # The same suite on the transaction path the Turso replica uses (explicit SAVEPOINTs).
+      - run: pnpm --filter api test
+        env:
+          TEST_MANUAL_SAVEPOINTS: "1"
+
+  deploy:
+    needs: check
+    if: ${{ !cancelled() && (needs.check.result == 'success' || needs.check.result == 'skipped') }}
+    runs-on: ubuntu-24.04 # amd64, which is all AppSail accepts
+    timeout-minutes: 30
+    environment:
+      name: catalyst
+      url: ${{ vars.CATALYST_APP_URL }}
+    env:
+      SERVICE: ${{ vars.CATALYST_SERVICE || 'tatakae' }}
+      IMAGE: tatakae:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check config
+        env:
+          TOKEN: ${{ secrets.ZC_DEPLOY_TOKEN }}
+          APP_URL: ${{ vars.CATALYST_APP_URL }}
+        run: |
+          test -n "$TOKEN" || { echo "::error::Secret ZC_DEPLOY_TOKEN is not set (catalyst token:generate)"; exit 1; }
+          test -n "$APP_URL" || { echo "::error::Variable CATALYST_APP_URL is not set"; exit 1; }
+          test -f catalyst.json || { echo "::error::catalyst.json is missing at the repo root (catalyst init)"; exit 1; }
+
+      - name: Build image (linux/amd64)
+        run: docker build --platform linux/amd64 -f deploy/catalyst/Dockerfile -t "$IMAGE" .
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      # Non-interactive deploys need CLI 1.27+. Pin the exact version once known (catalyst --version).
+      - name: Install the Catalyst CLI
+        run: npm install -g zcatalyst-cli@^1.27.0
+
+      - name: Deploy to AppSail
+        env:
+          TOKEN: ${{ secrets.ZC_DEPLOY_TOKEN }}
+        run: catalyst deploy appsail --name "$SERVICE" --source "docker://$IMAGE" --port 9000 --token "$TOKEN"
+
+      - name: Smoke test
+        env:
+          APP_URL: ${{ vars.CATALYST_APP_URL }}
+        run: |
+          curl -fsS --retry 20 --retry-delay 6 --retry-all-errors --max-time 10 "$APP_URL/api/health"
+          echo
+          curl -fsS -o /dev/null -w 'website %{http_code}\n' --max-time 10 "$APP_URL/"
