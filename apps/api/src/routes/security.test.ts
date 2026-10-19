@@ -1,6 +1,17 @@
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+import { sessions } from "../../../../db/schema";
+import { hashToken, REAUTH_WINDOW_MS } from "../lib/auth.service";
+import type { Db } from "../lib/db";
 import { BODY_LIMITS, bodyLimitFor } from "../middleware/bodyLimit";
 import { call, login, OWNER, setup } from "../test/helpers";
+
+/** Pretend the bearer session's last password check was `minutes` ago (null = never). */
+function ageAuth(db: Db, headers: Record<string, string>, minutes: number | null): void {
+  const token = (headers["authorization"] ?? "").replace("Bearer ", "");
+  const authAt = minutes === null ? null : new Date(Date.now() - minutes * 60_000).toISOString();
+  db.update(sessions).set({ authAt }).where(eq(sessions.id, hashToken(token))).run();
+}
 
 // Security hardening (S-series in docs/CHANGELOG.md): body limits, login throttling, CSRF origin
 // checks, step-up re-auth, the security event log and signing out other devices.
@@ -51,6 +62,77 @@ describe("login throttling", () => {
   it("successful logins don't count", async () => {
     const { app } = await setup();
     for (let i = 0; i < 40; i++) expect((await wrong(app, `198.51.100.${i}`, OWNER.password)).status).toBe(200);
+  });
+});
+
+describe("step-up re-auth", () => {
+  const stale = REAUTH_WINDOW_MS / 60_000 + 1;
+
+  it("a fresh login can do sensitive things straight away", async () => {
+    const { app } = await setup();
+    const phone = await login(app, "mobile");
+    expect((await call(app, "GET", "/export", undefined, phone)).status).toBe(200);
+  });
+
+  it("a stale session needs the password again for export, passkeys and other devices", async () => {
+    const { app, db } = await setup();
+    const phone = await login(app, "mobile", "phone");
+    const laptop = await login(app, "mobile", "laptop-as-script");
+    ageAuth(db, phone, stale);
+
+    const exp = await call(app, "GET", "/export", undefined, phone);
+    expect(exp.status).toBe(403);
+    expect(exp.body["error"]).toBe("reauth_required");
+    expect((await call(app, "POST", "/passkeys/register/options", {}, phone)).status).toBe(403);
+    const devices = (await call(app, "GET", "/session/devices", undefined, phone)).body["devices"] as { id: string; deviceName: string }[];
+    const other = devices.find((d) => d.deviceName === "laptop-as-script");
+    expect((await call(app, "DELETE", `/session/devices/${other?.id ?? ""}`, undefined, phone)).status).toBe(403);
+    expect((await call(app, "GET", "/session/me", undefined, laptop)).status).toBe(200); // untouched
+
+    // Ordinary work and reads don't ask.
+    expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(200);
+    expect((await call(app, "POST", "/inbox", { text: "still works" }, phone)).status).toBeLessThan(300);
+  });
+
+  it("sessions from before step-up existed (no auth_at) count as stale", async () => {
+    const { app, db } = await setup();
+    const phone = await login(app, "mobile");
+    ageAuth(db, phone, null);
+    expect((await call(app, "GET", "/export", undefined, phone)).status).toBe(403);
+  });
+
+  it("signing out this device itself never asks", async () => {
+    const { app, db } = await setup();
+    const phone = await login(app, "mobile", "phone");
+    ageAuth(db, phone, stale);
+    const devices = (await call(app, "GET", "/session/devices", undefined, phone)).body["devices"] as { id: string; current: boolean }[];
+    const me = devices.find((d) => d.current);
+    expect((await call(app, "DELETE", `/session/devices/${me?.id ?? ""}`, undefined, phone)).status).toBe(200);
+  });
+
+  it("a wrong password is 403 (the device stays signed in); the right one opens the window", async () => {
+    const { app, db } = await setup();
+    const phone = await login(app, "mobile");
+    ageAuth(db, phone, stale);
+
+    const wrongPw = await call(app, "POST", "/session/reauth", { password: "not it at all" }, phone);
+    expect(wrongPw.status).toBe(403);
+    expect(wrongPw.body["error"]).toBe("wrong_password");
+    expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(200);
+
+    const ok = await call(app, "POST", "/session/reauth", { password: OWNER.password }, phone);
+    expect(ok.status).toBe(200);
+    expect(typeof ok.body["authAt"]).toBe("string");
+    expect((await call(app, "GET", "/export", undefined, phone)).status).toBe(200);
+  });
+
+  it("reauth needs a session and is throttled like login", async () => {
+    const { app } = await setup();
+    expect((await call(app, "POST", "/session/reauth", { password: OWNER.password }, {})).status).toBe(401);
+    const phone = await login(app, "mobile");
+    let last = 0;
+    for (let i = 0; i < 11; i++) last = (await call(app, "POST", "/session/reauth", { password: "wrong" }, { ...phone, "x-forwarded-for": "203.0.113.9" })).status;
+    expect(last).toBe(429);
   });
 });
 

@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { isReauthRequired } from "@tatakae/core";
 import { API_URL } from "../config";
 import { clearSession, getToken } from "../auth/session";
 
@@ -69,6 +70,27 @@ export async function apiFetch<T>(path: string, method: Method = "GET", body?: u
   }
   if (!res.ok) throw new ApiError(res.status, data);
   return data as T;
+}
+
+/** 403 reauth_required: the action needs the password again (step-up); the session itself is fine. */
+export function needsReauth(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 403 && isReauthRequired(e.body);
+}
+
+export type ReauthOutcome = "ok" | "wrong" | "rate_limited" | "offline" | "server";
+
+/** POST /session/reauth { password }: confirm it's you; sensitive actions then work for 10 minutes. */
+export async function confirmPassword(password: string): Promise<ReauthOutcome> {
+  try {
+    await apiFetch("/session/reauth", "POST", { password });
+    return "ok";
+  } catch (e) {
+    if (!(e instanceof ApiError)) return "server";
+    if (e.status === 403 || e.status === 400) return "wrong";
+    if (e.status === 429) return "rate_limited";
+    if (e.status === 0) return "offline";
+    return "server";
+  }
 }
 
 export const apiGet = <T>(path: string): Promise<T> => apiFetch<T>(path, "GET");

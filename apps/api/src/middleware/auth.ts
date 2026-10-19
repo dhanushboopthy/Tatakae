@@ -1,7 +1,8 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import type { AppBindings, Env } from "../env";
-import { lookupSession, toSessionInfo, touchSession, type SessionRow } from "../lib/auth.service";
+import { isRecentAuth, lookupSession, toSessionInfo, touchSession, type SessionRow } from "../lib/auth.service";
+import { ReauthRequired } from "../lib/errors";
 import { isCrossSite } from "../lib/origins";
 
 export const SESSION_COOKIE = "tatakae_session";
@@ -29,6 +30,18 @@ export function sessionCookieOptions(env: Env) {
 export async function setSessionCookie(c: Context<AppBindings>, token: string): Promise<void> {
   const env = c.get("env");
   await setSignedCookie(c, sessionCookieName(env), token, env.SESSION_SECRET, sessionCookieOptions(env));
+}
+
+/**
+ * Step-up check for sensitive actions (register a passkey, sign out other devices, full export):
+ * throws 403 `reauth_required` unless this session checked a password or passkey in the last
+ * REAUTH_WINDOW_MS. Clients then ask for it and retry. DEV_BYPASS_AUTH (no session) passes.
+ */
+export function requireRecentAuth(c: Context<AppBindings>): void {
+  const env = c.get("env");
+  const s = c.get("session");
+  if (!s && env.NODE_ENV === "development" && env.DEV_BYPASS_AUTH === "1") return;
+  if (!s || !isRecentAuth(s.authAt)) throw new ReauthRequired();
 }
 
 export function clearSessionCookie(c: Context<AppBindings>): void {

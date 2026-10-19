@@ -112,6 +112,7 @@ export const sessions = sqliteTable("sessions", {
   createdAt: text("created_at").notNull(),
   expiresAt: text("expires_at").notNull(),
   lastSeenAt: text("last_seen_at"),     // Settings → Devices ("last seen")
+  authAt: text("auth_at"),              // last password/passkey check; sensitive actions need it recent
   ...meta,
 });
 

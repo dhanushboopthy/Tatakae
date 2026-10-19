@@ -42,6 +42,16 @@ export class Conflict extends HttpError {
   }
 }
 
+/**
+ * Step-up re-auth: the action needs a password or passkey check from the last few minutes. 403 (not
+ * 401) so clients keep the session and ask for the password instead of signing out.
+ */
+export class ReauthRequired extends HttpError {
+  constructor() {
+    super(403, "reauth_required", "Confirm it's you first: enter your password or use a passkey.");
+  }
+}
+
 /** Plan lock / even-Sunday guard. */
 export class Locked extends HttpError {
   constructor(message = "This is locked.", code = "locked", detail?: unknown) {

@@ -12,6 +12,11 @@ const DAY_MS = 86_400_000;
 export const SLIDE_WHEN_DAYS_LEFT = 30;
 /** lastSeenAt is written at most this often per session. */
 export const LAST_SEEN_THROTTLE_MS = 5 * 60_000;
+/**
+ * Step-up window: adding a passkey, signing out other devices and the full export need a password or
+ * passkey check this recent, so a stolen session token alone can't lock the owner out or persist.
+ */
+export const REAUTH_WINDOW_MS = 10 * 60_000;
 
 export type SessionRow = typeof sessions.$inferSelect;
 
@@ -24,7 +29,21 @@ export function hashToken(token: string): string {
 }
 
 export function toSessionInfo(row: SessionRow): SessionInfo {
-  return { id: row.id, client: row.client, deviceName: row.deviceName, expiresAt: row.expiresAt };
+  return { id: row.id, client: row.client, deviceName: row.deviceName, expiresAt: row.expiresAt, authAt: row.authAt };
+}
+
+/** Whether the session's last password/passkey check is inside the step-up window. */
+export function isRecentAuth(authAt: string | null, now: Date = new Date()): boolean {
+  if (!authAt) return false;
+  const t = Date.parse(authAt);
+  return !Number.isNaN(t) && now.getTime() - t < REAUTH_WINDOW_MS && t <= now.getTime() + 60_000;
+}
+
+/** Record a fresh password/passkey check on a session (POST /session/reauth, /passkeys/reauth). */
+export function markAuthenticated(db: Db, id: string, now: Date = new Date()): string {
+  const at = now.toISOString();
+  db.update(sessions).set({ authAt: at, updatedAt: at }).where(eq(sessions.id, id)).run();
+  return at;
 }
 
 /** Create a session and return the raw token (never stored). Also drops expired sessions. */
@@ -43,6 +62,7 @@ export function createSession(
     createdAt: at,
     expiresAt: new Date(now.getTime() + opts.days * DAY_MS).toISOString(),
     lastSeenAt: at,
+    authAt: at, // a session is born from a password or passkey check
     updatedAt: at,
     deletedAt: null,
   };

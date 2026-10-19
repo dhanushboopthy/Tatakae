@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { LogOutIcon, RefreshIcon } from "../../components/icons";
 import { useToast } from "../../components/Toast";
-import { api, isNetworkError } from "../../lib/api";
+import { api, isNetworkError, statusOf } from "../../lib/api";
 import { syncLabel, useSyncStatus } from "../../lib/hooks";
 import { logout } from "../../lib/session";
 import { flushNow } from "../../sync/engine";
@@ -44,7 +44,13 @@ export function DevicesSettings() {
       toast(`${d.deviceName} is signed out.`);
       await qc.invalidateQueries({ queryKey: ["rest", "devices"] });
     } catch (e) {
-      toast(isNetworkError(e) ? "Offline. Try again when connected." : "Couldn't sign that device out.");
+      toast(
+        isNetworkError(e)
+          ? "Offline. Try again when connected."
+          : statusOf(e) === 403
+            ? "Not signed out. Signing out another device needs your password first."
+            : "Couldn't sign that device out.",
+      );
     }
   }
 

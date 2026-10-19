@@ -1,3 +1,5 @@
+import { isReauthRequired } from "@tatakae/core";
+
 /**
  * Thin fetch wrapper for /api (REST only: session, devices, notes). Data reads come from the local
  * IndexedDB store and writes go through the sync outbox (src/sync), so the app works offline.
@@ -38,6 +40,19 @@ export function notifyUnauthorized(): void {
   onUnauthorized?.();
 }
 
+/**
+ * Step-up re-auth: sensitive calls (full export, adding a passkey, signing out other devices) answer
+ * 403 `reauth_required` when the last password/passkey check is older than 10 minutes. The handler
+ * (components/ReauthDialog, mounted in Shell) asks for it and resolves true when confirmed; the call
+ * is then retried once. No handler, or cancelled → the original 403 surfaces as an ApiError.
+ */
+type ReauthHandler = () => Promise<boolean>;
+let onReauth: ReauthHandler | null = null;
+
+export function setReauthHandler(handler: ReauthHandler | null): void {
+  onReauth = handler;
+}
+
 export interface ApiOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -46,6 +61,8 @@ export interface ApiOptions {
   signal?: AbortSignal;
   /** Let the request outlive the page (pagehide saves); the body must stay under 64 KB. */
   keepalive?: boolean;
+  /** Don't open the "Confirm it's you" dialog on 403 reauth_required (the retry itself, the dialog's own calls). */
+  skipReauth?: boolean;
 }
 
 async function readBody(res: Response): Promise<unknown> {
@@ -76,6 +93,9 @@ export async function api(path: string, opts: ApiOptions = {}): Promise<unknown>
   }
   const body = await readBody(res);
   if (res.status === 401 && !opts.skipAuthRedirect) notifyUnauthorized();
+  if (res.status === 403 && isReauthRequired(body) && !opts.skipReauth && onReauth) {
+    if (await onReauth()) return api(path, { ...opts, skipReauth: true });
+  }
   if (!res.ok) throw new ApiError(res.status, body);
   return body;
 }

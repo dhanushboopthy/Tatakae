@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { DownloadIcon } from "../../components/icons";
 import { useToast } from "../../components/Toast";
-import { api, isNetworkError } from "../../lib/api";
+import { api, isNetworkError, statusOf } from "../../lib/api";
 import { Section } from "./Section";
 
 // Data (v4): full JSON export (GET /api/export) and the backup job log (GET /api/system/jobs).
@@ -35,7 +35,13 @@ export function DataSettings() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast(isNetworkError(e) ? "Export needs a connection." : "Export failed. Try again.");
+      toast(
+        isNetworkError(e)
+          ? "Export needs a connection."
+          : statusOf(e) === 403
+            ? "Nothing downloaded. The full export needs your password first."
+            : "Export failed. Try again.",
+      );
     }
   }
 

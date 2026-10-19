@@ -48,7 +48,7 @@ function tooMany(c: Context, msLeft: number): Response {
 }
 
 /**
- * Global cap on *failed* attempts (responses with status 401), across every IP. The per-IP limiter
+ * Global cap on *failed* attempts (401 from login, 403 from the step-up re-auth), across every IP. The per-IP limiter
  * alone lets someone with many addresses keep guessing; this stops all password guessing for the
  * rest of the window once `max` failures pile up. Successful logins don't count, and the passkey
  * sign-in and existing sessions keep working while it is closed. Share one instance between routes
@@ -65,7 +65,7 @@ export function failureLimit(opts: { windowSec: number; max: number; now?: () =>
     if (t - window.start >= windowMs) window = { start: t, failures: 0 };
     if (window.failures >= opts.max) return tooMany(c, window.start + windowMs - t);
     await next();
-    if (c.res.status === 401) {
+    if (c.res.status === 401 || c.res.status === 403) {
       if (window.failures === 0) window.start = t; // the window starts at the first failure
       window.failures += 1;
     }

@@ -118,6 +118,8 @@ export interface SessionInfo {
   client: "web" | "mobile";
   deviceName: string;
   expiresAt: string;
+  /** Last password/passkey check (step-up re-auth); null for sessions from before it existed. */
+  authAt: string | null;
 }
 
 export type AppBindings = {

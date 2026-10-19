@@ -17,7 +17,8 @@ import {
 } from "../../src/native/usageStats";
 import { Icon } from "../../src/components/Icon";
 import { ago, shiftHHMM } from "../../src/lib/format";
-import { apiDelete, apiGet, ApiError } from "../../src/api/client";
+import { apiDelete, apiGet, ApiError, needsReauth } from "../../src/api/client";
+import { ReauthPrompt } from "../../src/components/ReauthPrompt";
 import { logout } from "../../src/auth/session";
 import { flush } from "../../src/sync/engine";
 import { requestPermission } from "../../src/notifications/local";
@@ -76,6 +77,8 @@ export default function Settings() {
   const [toast, setToast] = useState({ message: "", token: 0 });
   const say = (message: string) => setToast((t) => ({ message, token: t.token + 1 }));
   const [confirm, setConfirm] = useState<string | null>(null);
+  // An action waiting for "Confirm it's you" (403 reauth_required): retried once the password is in.
+  const [reauth, setReauth] = useState<{ action: string; retry: () => Promise<void> } | null>(null);
 
   const devices = useQuery({
     queryKey: ["rest", "devices"],
@@ -88,8 +91,13 @@ export default function Settings() {
       await apiDelete(`/session/devices/${encodeURIComponent(d.id)}`);
       say(`${d.deviceName} is signed out.`);
       setConfirm(null);
+      setReauth(null);
       await qc.invalidateQueries({ queryKey: ["rest", "devices"] });
     } catch (e) {
+      if (needsReauth(e)) {
+        setReauth({ action: `Signing out ${d.deviceName}`, retry: () => revoke(d) });
+        return;
+      }
       say(e instanceof ApiError && e.status === 0 ? "Offline. Try again when connected." : "Couldn't sign that device out.");
     }
   }
@@ -180,6 +188,16 @@ export default function Settings() {
             ) : null}
           </View>
         ))}
+        {reauth ? (
+          <ReauthPrompt
+            action={reauth.action}
+            onConfirmed={() => void reauth.retry()}
+            onCancel={() => {
+              setReauth(null);
+              setConfirm(null);
+            }}
+          />
+        ) : null}
         <BigButton label="Sign out of this phone" icon="logout" variant="secondary" onPress={() => void logout()} accessibilityHint="Your data stays on this phone until you sign in again" />
       </Section>
 

@@ -46,11 +46,16 @@ export function createApp(env: Env, db: Db) {
   const passwordFailures = failureLimit({ windowSec: 3600, max: 30 });
   app.use("/session/login", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
   app.use("/session/login", passwordFailures);
+  // Step-up password check: same limits, sharing the failure count with login.
+  app.use("/session/reauth", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
+  app.use("/session/reauth", passwordFailures);
   app.route("/session", session);                          // login public; me/logout/devices apply auth inside
   // Passkey sign-in (options + verify): its own 20 per 15 min per IP; management applies auth inside.
   const passkeyLimit = rateLimit({ windowSec: 900, max: 20, methods: ["POST"] });
   app.use("/passkeys/login", passkeyLimit);
   app.use("/passkeys/login/*", passkeyLimit);
+  app.use("/passkeys/reauth", passkeyLimit);
+  app.use("/passkeys/reauth/*", passkeyLimit);
   app.route("/passkeys", passkeyRoutes());
   app.route("/app", appVersion);                           // public: mobile update check
   app.use("*", auth);                                      // everything below needs a session

@@ -24,6 +24,7 @@ import {
   type IconProps,
 } from "./icons";
 import { InstallBanner } from "./InstallBanner";
+import { ReauthDialog } from "./ReauthDialog";
 import { ToastProvider } from "./Toast";
 
 /**
@@ -226,6 +227,7 @@ export function Shell() {
         <CommandPalette />
         <CaptureDialog />
         <ConflictNoticeHost />
+        <ReauthDialog />
       </ToastProvider>
     </AuthGate>
   );

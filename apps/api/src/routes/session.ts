@@ -1,22 +1,25 @@
 import { Hono } from "hono";
 import { verify } from "@node-rs/argon2";
-import { loginInput, type LoginMobileResponse } from "@tatakae/core";
+import { loginInput, reauthInput, type LoginMobileResponse } from "@tatakae/core";
 import type { AppBindings } from "../env";
-import { createSession, listSessions, revokeSession } from "../lib/auth.service";
-import { NotFound, Unauthorized } from "../lib/errors";
+import { createSession, listSessions, markAuthenticated, revokeSession } from "../lib/auth.service";
+import { HttpError, NotFound, Unauthorized } from "../lib/errors";
 import { idParam, parseBody } from "../lib/validate";
-import { auth, clearSessionCookie, setSessionCookie } from "../middleware/auth";
+import { auth, clearSessionCookie, requireRecentAuth, setSessionCookie } from "../middleware/auth";
 
 // Phase 0.
 // POST /login  body loginInput { email, password, client, deviceName }
 //   client "web"    → Set-Cookie tatakae_session, body { email, client, deviceName, expiresAt }
 //   client "mobile" → 200 { token, expiresAt } (loginMobileResponse), no cookie
 // POST /logout, GET /me, GET /devices, DELETE /devices/:id (revoke) — all need auth.
+// POST /reauth { password } → { authAt }: step-up check on this session (403 wrong_password, never 401,
+//   so a typo doesn't sign the device out). Revoking *another* device needs a recent check.
 // The router is mounted before the global auth middleware, so it applies `auth` itself.
 export const session = new Hono<AppBindings>();
 
 session.use("/logout", auth);
 session.use("/me", auth);
+session.use("/reauth", auth);
 session.use("/devices", auth);
 session.use("/devices/*", auth);
 
@@ -48,6 +51,16 @@ session.post("/login", async (c) => {
   }
   await setSessionCookie(c, token);
   return c.json({ email: env.OWNER_EMAIL, client: s.client, deviceName: s.deviceName, expiresAt: s.expiresAt });
+});
+
+session.post("/reauth", async (c) => {
+  const env = c.get("env");
+  const { password } = await parseBody(c, reauthInput);
+  const ok = await passwordMatches(env.OWNER_PASSWORD_HASH, password);
+  if (!ok) throw new HttpError(403, "wrong_password", "That password isn't right.");
+  const s = c.get("session");
+  const authAt = s ? markAuthenticated(c.get("db"), s.id) : new Date().toISOString();
+  return c.json({ authAt });
 });
 
 session.post("/logout", async (c) => {
@@ -83,6 +96,8 @@ session.get("/devices", (c) => {
 
 session.delete("/devices/:id", (c) => {
   const id = idParam(c);
+  // Signing yourself out is always fine; signing out another device could lock the owner out.
+  if (c.get("session")?.id !== id) requireRecentAuth(c);
   if (!revokeSession(c.get("db"), id)) throw new NotFound("No such device.");
   if (c.get("session")?.id === id) {
     clearSessionCookie(c);

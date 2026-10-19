@@ -32,6 +32,7 @@ export function PasskeysSettings() {
       if (err instanceof PasskeyCancelled) toast("No passkey added. If this device already has one, it's in the list.");
       else if (isNetworkError(err)) toast("Offline. Adding a passkey needs a connection.");
       else if (statusOf(err) === 400) toast("That passkey couldn't be checked. Try again.");
+      else if (statusOf(err) === 403) toast("No passkey added. Adding one needs your password first.");
       else toast("Couldn't add the passkey. Try again in a moment.");
     } finally {
       setAdding(false);

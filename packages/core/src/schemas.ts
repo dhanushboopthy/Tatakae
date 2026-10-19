@@ -738,6 +738,14 @@ export const loginInput = z.object({
   deviceName: z.string().min(1).max(40), // "laptop-1", "laptop-2", "phone"
 });
 export const loginMobileResponse = z.object({ token: z.string(), expiresAt: z.string() });
+/** POST /session/reauth: confirm the password on an existing session (step-up for sensitive actions). */
+export const reauthInput = z.object({ password: z.string().min(1).max(PASSWORD_MAX) });
+export const reauthResponse = z.object({ authAt: z.string() });
+/** The API's answer when an action needs a fresh password/passkey check (HTTP 403). */
+export const REAUTH_REQUIRED = "reauth_required";
+export function isReauthRequired(body: unknown): boolean {
+  return typeof body === "object" && body !== null && (body as { error?: unknown }).error === REAUTH_REQUIRED;
+}
 
 // ---- passkeys (v4, web only; password login stays as the fallback) ----
 // The browser's credential JSON (WebAuthn Level 3 `toJSON()` shape, base64url strings). The server
@@ -780,6 +788,7 @@ export const passkeyLoginInput = z.object({
   response: passkeyAuthenticationResponse,
   deviceName: z.string().trim().min(1).max(40),
 });
+export const passkeyReauthInput = z.object({ response: passkeyAuthenticationResponse });
 export const passkeyPatch = z.object({ name: passkeyName });
 /** One registered passkey as Settings lists it (the public key never leaves the server). */
 export const passkeySummary = z.object({

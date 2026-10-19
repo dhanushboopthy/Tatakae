@@ -49,6 +49,7 @@ flowchart LR
 - Web: `POST /api/session/login { client: "web" }` → HttpOnly Secure SameSite=Lax cookie, 90-day sliding.
 - Phone: same endpoint with `client: "mobile"` → token returned in body, stored in `expo-secure-store`, sent as `Authorization: Bearer`.
 - Scripts: log in with `client: "mobile"` and use that session's bearer (there is no static API token, so every caller shows in Devices and can be revoked).
+- Step-up: adding a passkey, signing out another device and the full export need a password or passkey check from the last 10 minutes (`sessions.auth_at`). Otherwise the API answers 403 `reauth_required`; the website opens "Confirm it's you" (password or passkey), the phone shows an inline password field, then the call is retried. `POST /api/session/reauth { password }` / `POST /api/passkeys/reauth`; a wrong answer is 403, never 401, so the device stays signed in.
 - Sessions table lists devices; any can be revoked from Settings. Login is rate-limited. Passkeys for web in v4: `POST /api/passkeys/login` (discoverable credential, no email) gives the same cookie; the password stays as the fallback.
 
 ## Time model
