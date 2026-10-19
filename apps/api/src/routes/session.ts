@@ -51,7 +51,7 @@ session.post("/login", async (c) => {
     deviceName,
     days: env.SESSION_DAYS,
   });
-  recordSecurityEvent(c.get("db"), { kind: "login", client: input.client, device: deviceName, detail: "password" }, c);
+  recordSecurityEvent(c.get("db"), { kind: "login", client: input.client, device: deviceName }, c);
 
   if (input.client === "mobile") {
     const body: LoginMobileResponse = { token, expiresAt: s.expiresAt };
@@ -71,7 +71,7 @@ session.post("/reauth", async (c) => {
   }
   const s = c.get("session");
   const authAt = s ? markAuthenticated(c.get("db"), s.id) : new Date().toISOString();
-  recordSecurityEvent(c.get("db"), { kind: "reauth", detail: "password" }, c);
+  recordSecurityEvent(c.get("db"), { kind: "reauth", detail: "with the password" }, c);
   return c.json({ authAt });
 });
 

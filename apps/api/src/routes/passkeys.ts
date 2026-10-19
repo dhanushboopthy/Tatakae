@@ -73,7 +73,7 @@ export function passkeyRoutes() {
     }
     const s = c.get("session");
     const authAt = s ? markAuthenticated(db, s.id) : new Date().toISOString();
-    recordSecurityEvent(db, { kind: "reauth", detail: `passkey "${key.name}"` }, c);
+    recordSecurityEvent(db, { kind: "reauth", detail: `with passkey "${key.name}"` }, c);
     return c.json({ authAt });
   });
 
