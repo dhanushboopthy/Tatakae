@@ -789,6 +789,34 @@ export const passkeyLoginInput = z.object({
   deviceName: z.string().trim().min(1).max(40),
 });
 export const passkeyReauthInput = z.object({ response: passkeyAuthenticationResponse });
+
+// ---- security event log (Settings → Devices; server-only, newest 500 kept) ----
+export const SECURITY_EVENT_KINDS = [
+  "login",
+  "login_failed",
+  "passkey_login",
+  "passkey_login_failed",
+  "reauth",
+  "reauth_failed",
+  "passkey_added",
+  "passkey_removed",
+  "device_signed_out",
+  "others_signed_out",
+  "password_changed",
+  "export",
+] as const;
+export const securityEventKind = z.enum(SECURITY_EVENT_KINDS);
+export const securityEvent = z.object({
+  id: z.string(),
+  at: z.string(),
+  kind: securityEventKind,
+  client: z.enum(["web", "mobile"]).nullable(),
+  device: z.string().nullable(),
+  ip: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  detail: z.string().nullable(),
+});
+export const securityEventList = z.object({ events: z.array(securityEvent) });
 export const passkeyPatch = z.object({ name: passkeyName });
 /** One registered passkey as Settings lists it (the public key never leaves the server). */
 export const passkeySummary = z.object({
@@ -846,3 +874,5 @@ export type PasskeyRegisterInput = z.infer<typeof passkeyRegisterInput>;
 export type PasskeyLoginInput = z.infer<typeof passkeyLoginInput>;
 export type PasskeyPatch = z.infer<typeof passkeyPatch>;
 export type PasskeySummary = z.infer<typeof passkeySummary>;
+export type SecurityEventKind = z.infer<typeof securityEventKind>;
+export type SecurityEvent = z.infer<typeof securityEvent>;

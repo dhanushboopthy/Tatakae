@@ -13,6 +13,7 @@ import {
   toSummary,
   verifyPasskeyLogin,
 } from "../lib/passkeys.service";
+import { recordSecurityEvent } from "../lib/security.service";
 import { idParam, parseBody } from "../lib/validate";
 import { auth, requireRecentAuth, setSessionCookie } from "../middleware/auth";
 
@@ -37,8 +38,15 @@ export function passkeyRoutes() {
     const env = c.get("env");
     const db = c.get("db");
     const input = await parseBody(c, passkeyLoginInput);
-    await verifyPasskeyLogin(db, env, challenges, input.response);
+    let key;
+    try {
+      key = await verifyPasskeyLogin(db, env, challenges, input.response);
+    } catch (e) {
+      recordSecurityEvent(db, { kind: "passkey_login_failed", client: "web", device: input.deviceName }, c);
+      throw e;
+    }
     const { token, session: s } = createSession(db, { client: "web", deviceName: input.deviceName, days: env.SESSION_DAYS });
+    recordSecurityEvent(db, { kind: "passkey_login", client: "web", device: input.deviceName, detail: `passkey "${key.name}"` }, c);
     await setSessionCookie(c, token);
     return c.json({ email: env.OWNER_EMAIL, client: s.client, deviceName: s.deviceName, expiresAt: s.expiresAt });
   });
@@ -55,9 +63,18 @@ export function passkeyRoutes() {
 
   r.post("/reauth", async (c) => {
     const input = await parseBody(c, passkeyReauthInput);
-    await verifyPasskeyLogin(c.get("db"), c.get("env"), challenges, input.response, "reauth");
+    const db = c.get("db");
+    let key;
+    try {
+      key = await verifyPasskeyLogin(db, c.get("env"), challenges, input.response, "reauth");
+    } catch (e) {
+      recordSecurityEvent(db, { kind: "reauth_failed", detail: "passkey" }, c);
+      throw e;
+    }
     const s = c.get("session");
-    return c.json({ authAt: s ? markAuthenticated(c.get("db"), s.id) : new Date().toISOString() });
+    const authAt = s ? markAuthenticated(db, s.id) : new Date().toISOString();
+    recordSecurityEvent(db, { kind: "reauth", detail: `passkey "${key.name}"` }, c);
+    return c.json({ authAt });
   });
 
   // A new passkey outlives any device sign-out, so a stolen session alone must not be able to add one.
@@ -70,6 +87,7 @@ export function passkeyRoutes() {
     requireRecentAuth(c);
     const input = await parseBody(c, passkeyRegisterInput);
     const row = await registerPasskey(c.get("db"), c.get("env"), challenges, input);
+    recordSecurityEvent(c.get("db"), { kind: "passkey_added", detail: row.name }, c);
     const body: PasskeySummary = toSummary(row);
     return c.json(body, 201);
   });
@@ -80,7 +98,10 @@ export function passkeyRoutes() {
   });
 
   r.delete("/:id", (c) => {
-    removePasskey(c.get("db"), idParam(c));
+    const id = idParam(c);
+    const name = listPasskeys(c.get("db")).find((p) => p.id === id)?.name ?? null;
+    removePasskey(c.get("db"), id);
+    recordSecurityEvent(c.get("db"), { kind: "passkey_removed", detail: name }, c);
     return c.json({ ok: true });
   });
 

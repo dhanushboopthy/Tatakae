@@ -136,6 +136,42 @@ describe("step-up re-auth", () => {
   });
 });
 
+describe("security event log", () => {
+  type Ev = { kind: string; device: string | null; ip: string | null; detail: string | null };
+  const events = async (app: Awaited<ReturnType<typeof setup>>["app"]) =>
+    (await call(app, "GET", "/system/security")).body["events"] as Ev[];
+
+  it("records sign-ins, failures, step-up checks, sign-outs and exports, newest first", async () => {
+    const { app } = await setup();
+    await call(app, "POST", "/session/login", { email: OWNER.email, password: "wrong password!", client: "mobile", deviceName: "thief" }, { "x-forwarded-for": "203.0.113.50" });
+    const phone = await login(app, "mobile", "phone");
+    await call(app, "POST", "/session/reauth", { password: "nope nope" }, phone);
+    await call(app, "POST", "/session/reauth", { password: OWNER.password }, phone);
+    await call(app, "GET", "/export", undefined, phone);
+    const devices = (await call(app, "GET", "/session/devices", undefined, phone)).body["devices"] as { id: string; deviceName: string }[];
+    await call(app, "DELETE", `/session/devices/${devices.find((d) => d.deviceName === "test-runner")?.id ?? ""}`, undefined, phone);
+
+    // The default test-runner session was just signed out, so read the log as the phone.
+    const listed = (await call(app, "GET", "/system/security", undefined, phone)).body["events"] as Ev[];
+    expect(listed.map((e) => e.kind)).toEqual(["device_signed_out", "export", "reauth", "reauth_failed", "login", "login_failed"]);
+    const failed = listed.find((e) => e.kind === "login_failed");
+    expect(failed).toMatchObject({ device: "thief", ip: "203.0.113.50", detail: "wrong password" });
+    expect(listed[0]?.detail).toBe("test-runner (mobile)");
+    // Never the password itself.
+    expect(JSON.stringify(listed)).not.toContain("wrong password!");
+  });
+
+  it("keeps only the newest 500", async () => {
+    const { db, app } = await setup();
+    const { recordSecurityEvent, KEEP_SECURITY_EVENTS } = await import("../lib/security.service");
+    const t0 = Date.parse("2026-10-01T00:00:00Z");
+    for (let i = 0; i < KEEP_SECURITY_EVENTS + 20; i++) recordSecurityEvent(db, { kind: "login", device: `d${i}` }, undefined, new Date(t0 + i * 1000));
+    const { securityEvents } = await import("../../../../db/schema");
+    expect(db.select().from(securityEvents).all()).toHaveLength(KEEP_SECURITY_EVENTS);
+    expect((await events(app))[0]?.device).toBe(`d${KEEP_SECURITY_EVENTS + 19}`);
+  });
+});
+
 describe("stored links", () => {
   it("only accept http(s) links", async () => {
     const { app } = await setup();

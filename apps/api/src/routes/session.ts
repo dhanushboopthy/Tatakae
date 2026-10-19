@@ -4,6 +4,7 @@ import { loginInput, reauthInput, type LoginMobileResponse } from "@tatakae/core
 import type { AppBindings } from "../env";
 import { createSession, listSessions, markAuthenticated, revokeSession } from "../lib/auth.service";
 import { HttpError, NotFound, Unauthorized } from "../lib/errors";
+import { recordSecurityEvent } from "../lib/security.service";
 import { idParam, parseBody } from "../lib/validate";
 import { auth, clearSessionCookie, requireRecentAuth, setSessionCookie } from "../middleware/auth";
 
@@ -37,13 +38,19 @@ session.post("/login", async (c) => {
   const emailOk = input.email.trim().toLowerCase() === env.OWNER_EMAIL.trim().toLowerCase();
   // Always run the hash check so a wrong email takes as long as a wrong password.
   const passwordOk = await passwordMatches(env.OWNER_PASSWORD_HASH, input.password);
-  if (!emailOk || !passwordOk) throw new Unauthorized("Email or password is not right.", "invalid_credentials");
+  const deviceName = input.deviceName.trim();
+  if (!emailOk || !passwordOk) {
+    const detail = emailOk ? "wrong password" : "unknown email";
+    recordSecurityEvent(c.get("db"), { kind: "login_failed", client: input.client, device: deviceName, detail }, c);
+    throw new Unauthorized("Email or password is not right.", "invalid_credentials");
+  }
 
   const { token, session: s } = createSession(c.get("db"), {
     client: input.client,
-    deviceName: input.deviceName.trim(),
+    deviceName,
     days: env.SESSION_DAYS,
   });
+  recordSecurityEvent(c.get("db"), { kind: "login", client: input.client, device: deviceName, detail: "password" }, c);
 
   if (input.client === "mobile") {
     const body: LoginMobileResponse = { token, expiresAt: s.expiresAt };
@@ -57,9 +64,13 @@ session.post("/reauth", async (c) => {
   const env = c.get("env");
   const { password } = await parseBody(c, reauthInput);
   const ok = await passwordMatches(env.OWNER_PASSWORD_HASH, password);
-  if (!ok) throw new HttpError(403, "wrong_password", "That password isn't right.");
+  if (!ok) {
+    recordSecurityEvent(c.get("db"), { kind: "reauth_failed", detail: "wrong password" }, c);
+    throw new HttpError(403, "wrong_password", "That password isn't right.");
+  }
   const s = c.get("session");
   const authAt = s ? markAuthenticated(c.get("db"), s.id) : new Date().toISOString();
+  recordSecurityEvent(c.get("db"), { kind: "reauth", detail: "password" }, c);
   return c.json({ authAt });
 });
 
@@ -97,8 +108,11 @@ session.get("/devices", (c) => {
 session.delete("/devices/:id", (c) => {
   const id = idParam(c);
   // Signing yourself out is always fine; signing out another device could lock the owner out.
-  if (c.get("session")?.id !== id) requireRecentAuth(c);
+  const own = c.get("session")?.id === id;
+  if (!own) requireRecentAuth(c);
+  const target = listSessions(c.get("db")).find((r) => r.id === id);
   if (!revokeSession(c.get("db"), id)) throw new NotFound("No such device.");
+  if (!own) recordSecurityEvent(c.get("db"), { kind: "device_signed_out", detail: target ? `${target.deviceName} (${target.client})` : null }, c);
   if (c.get("session")?.id === id) {
     clearSessionCookie(c);
   }

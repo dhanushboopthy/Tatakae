@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { securityEventList, type SecurityEventKind } from "@tatakae/core";
 import { useNavigate } from "react-router-dom";
 import { LogOutIcon, RefreshIcon } from "../../components/icons";
 import { useToast } from "../../components/Toast";
@@ -22,6 +24,68 @@ function parseDevices(body: unknown): Device[] {
   if (typeof body !== "object" || body === null) return [];
   const list = (body as { devices?: unknown }).devices;
   return Array.isArray(list) ? (list as Device[]) : [];
+}
+
+const EVENT_LABEL: Record<SecurityEventKind, string> = {
+  login: "Signed in with the password",
+  login_failed: "Sign-in didn't go through",
+  passkey_login: "Signed in with a passkey",
+  passkey_login_failed: "Passkey sign-in didn't go through",
+  reauth: "Confirmed it's you",
+  reauth_failed: "Confirmation didn't go through",
+  passkey_added: "Passkey added",
+  passkey_removed: "Passkey removed",
+  device_signed_out: "Signed out another device",
+  others_signed_out: "Signed out every other device",
+  password_changed: "Password changed, every device signed out",
+  export: "Downloaded the full export",
+};
+const SHOWN = 8;
+
+/**
+ * Recent sign-ins and security changes (S9), newest first, so a sign-in that wasn't you stands out.
+ * Words carry the meaning (no red): what happened, which device, when and from where.
+ */
+function SecurityActivity() {
+  const [all, setAll] = useState(false);
+  const events = useQuery({
+    queryKey: ["rest", "security-events"],
+    queryFn: async () => securityEventList.parse(await api("/system/security")).events,
+    retry: false,
+    staleTime: 0,
+  });
+  const list = events.data ?? [];
+  return (
+    <div>
+      <p className="mb-1 font-semibold">Recent sign-ins and changes</p>
+      <p className="mb-2 text-xs text-ink-2">If something here wasn't you, sign that device out and change the password.</p>
+      {events.isError ? (
+        <p className="text-sm text-ink-2">The activity list needs a connection.</p>
+      ) : list.length === 0 ? (
+        <p className="text-sm text-ink-2">Nothing yet.</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {(all ? list : list.slice(0, SHOWN)).map((e) => (
+            <li key={e.id} className="flex flex-wrap justify-between gap-x-3 rounded-card-inner bg-surface-2 px-4 py-2">
+              <span className="min-w-0">
+                <span className="font-medium">{EVENT_LABEL[e.kind]}</span>
+                {(e.device || e.detail) && <span className="text-ink-2"> · {[e.device, e.detail].filter(Boolean).join(" · ")}</span>}
+              </span>
+              <span className="tnum text-ink-2">
+                {when(e.at)}
+                {e.ip ? ` · ${e.ip}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {list.length > SHOWN && (
+        <button type="button" className="btn mt-2 min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setAll((v) => !v)}>
+          {all ? "Show fewer" : `Show all ${list.length}`}
+        </button>
+      )}
+    </div>
+  );
 }
 
 const when = (iso: string | null) =>
@@ -90,6 +154,8 @@ export function DevicesSettings() {
           ))}
         </ul>
       )}
+
+      <SecurityActivity />
 
       <button
         type="button"

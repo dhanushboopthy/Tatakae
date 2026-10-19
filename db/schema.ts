@@ -129,6 +129,20 @@ export const passkeys = sqliteTable("passkeys", { // v4, web login (WebAuthn); n
   ...meta,
 });
 
+// Sign-ins and security changes (Settings → Devices). Server-only: never synced or exported; the
+// newest 500 are kept.
+export const securityEvents = sqliteTable("security_events", {
+  id: text("id").primaryKey(),
+  at: text("at").notNull(),
+  kind: text("kind").notNull(),          // SecurityEventKind in @tatakae/core
+  client: text("client"),                // "web" | "mobile" when known
+  device: text("device"),                // device name (or the one being signed out)
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  detail: text("detail"),
+  ...meta,
+}, (t) => ({ atIdx: index("security_events_at_idx").on(t.at) }));
+
 export const jobRuns = sqliteTable("job_runs", {
   id: text("id").primaryKey(),
   job: text("job").notNull(),           // backup | morning_push
