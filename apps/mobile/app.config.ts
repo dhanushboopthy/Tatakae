@@ -19,6 +19,16 @@ const { join } = require<{ join(...parts: string[]): string }>("path");
 const easProjectId = process.env.EAS_PROJECT_ID?.trim() || null;
 const updateChannel = process.env.EAS_UPDATE_CHANNEL?.trim() || "production";
 
+// Signed updates (security S14). A JS update runs with the phone's session token, so the app only
+// accepts updates signed with our key: the public certificate is committed at certs/certificate.pem,
+// the private key stays off the repo (keys/, git-ignored) and is passed to `eas update`. Without the
+// certificate the build gets no updates block at all, so it can never run an unsigned update.
+const CODE_SIGNING_CERT = "./certs/certificate.pem";
+const codeSigned = existsSync(join(__dirname, CODE_SIGNING_CERT));
+if (easProjectId && !codeSigned) {
+  console.warn("EAS_PROJECT_ID is set but certs/certificate.pem is missing: EAS Update stays off (see docs/MANUAL-STEPS.md §17).");
+}
+
 /** Only reference artwork that exists, so `expo prebuild` works before the icon is drawn. */
 const asset = (file: string): string | undefined =>
   existsSync(join(__dirname, "assets", file)) ? `./assets/${file}` : undefined;
@@ -79,13 +89,15 @@ const config: ExpoConfig = {
   // JS-only fixes (v4.3): checked on launch, downloaded in the background, applied on the next launch.
   // The launch never waits for the network (fallbackToCacheTimeout 0). Same app version only
   // (runtimeVersion below), so a fix never reaches an APK it wasn't built for.
-  ...(easProjectId
+  ...(easProjectId && codeSigned
     ? {
         updates: {
           url: `https://u.expo.dev/${easProjectId}`,
           checkAutomatically: "ON_LOAD" as const,
           fallbackToCacheTimeout: 0,
           requestHeaders: { "expo-channel-name": updateChannel },
+          codeSigningCertificate: CODE_SIGNING_CERT,
+          codeSigningMetadata: { keyid: "main", alg: "rsa-v1_5-sha256" as const },
         },
       }
     : {}),

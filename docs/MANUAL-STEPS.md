@@ -308,6 +308,18 @@ Done when the dev client is installed and logs in to production.
      fix with `EAS_PROJECT_ID=<id> npx eas-cli@latest update --channel production --message "…"` from
      `apps/mobile`; it reaches only APKs with the same `version`. Without the variable the build has no
      `updates` block and nothing changes.
+   - **Updates must be signed** (the app refuses unsigned ones; without the certificate it gets no `updates`
+     block at all). Once, in `apps/mobile`:
+     ```bash
+     npx expo-updates codesigning:generate --key-output-directory keys \
+       --certificate-output-directory certs --certificate-validity-duration-years 10 \
+       --certificate-common-name "Tatakae"
+     git add certs/certificate.pem    # public, committed; keys/ is git-ignored
+     ```
+     Keep `keys/private-key.pem` in your password manager. Publish with
+     `npx eas-cli@latest update --channel production --private-key-path keys/private-key.pem --message "…"`.
+     Turn on two-factor authentication for the Expo account too: whoever controls it could otherwise publish
+     to the channel.
    - "Update available" on the phone: after a release, set `MIN_MOBILE_VERSION` (the new version) and
      `LATEST_APK_URL` (the APK's download link from the release) in the server's env and redeploy. Older
      phones then show a calm banner on Today and in Settings; nothing is blocked.
