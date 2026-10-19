@@ -1,5 +1,8 @@
 # 08 · Operations
 
+> **Moving to Zoho Catalyst** (owner, 19 Oct): AppSail container + Turso + Stratus. Setup, env vars,
+> deploys, costs and restore are in [CATALYST.md](CATALYST.md). The Oracle notes below apply until the move is done.
+
 ## Oracle Cloud facts (checked Oct 2026)
 - Always Free Ampere A1: **2 OCPU / 12 GB** total since 15 Jun 2026 (was 4/24). Use it as one VM.
 - Block storage 200 GB total (boot + block), Object Storage 20 GB (free-only accounts), 10 TB egress/month.

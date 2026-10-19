@@ -1,5 +1,8 @@
 # Manual steps — Phase 0
 
+> Hosting is moving to **Zoho Catalyst**: follow [CATALYST.md](CATALYST.md) for the server side. Steps 1–15
+> below are the Oracle VM path; 16–17 (phone builds, keystore, update signing) apply either way.
+
 Everything the code can't do for you, in order. Do the steps top to bottom; each says what "done" looks like.
 Replace `<name>` with your `.me` name and `<owner>` with your GitHub username **in lowercase**.
 

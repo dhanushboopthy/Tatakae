@@ -76,6 +76,9 @@ In the API itself (so it carries over to any host): step-up re-auth for sensitiv
 
 Hosting is moving to Zoho Catalyst; the VM-level notes in the first paragraph describe the old Oracle setup.
 
+## Zoho Catalyst (in progress)
+One AppSail container (linux/amd64, min = max = 1 instance) runs the api and serves the website (`WEB_DIST`) on one origin with the Caddy-equivalent headers (`apps/api/src/site.ts`). The disk is scratch: the database is a Turso embedded replica (`libsql`, same synchronous API as better-sqlite3; nested transactions use explicit SAVEPOINTs), files and the nightly JSON go to Stratus over REST (`lib/stratus.ts`). The port is bound before the database opens (AppSail's 10-second rule). Client IPs come from the right of `X-Forwarded-For` (`TRUSTED_PROXY_HOPS`). Setup: [CATALYST.md](CATALYST.md).
+
 ## Repository layout
 ```
 apps/web            laptop website
