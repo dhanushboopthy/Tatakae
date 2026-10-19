@@ -7,6 +7,11 @@ export const envSchema = z
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().int().positive().default(8787),
     DATABASE_PATH: z.string().min(1).default("./data/tatakae.db"),
+    // Turso (hosted libSQL), for hosts without a durable disk (Zoho Catalyst AppSail). When set,
+    // DATABASE_PATH is only the local embedded replica (scratch) and Turso holds the data.
+    TURSO_DATABASE_URL: z.string().regex(/^(libsql|https):\/\/\S+$/, "expected libsql://… or https://…").optional(),
+    TURSO_AUTH_TOKEN: z.string().min(1).optional(),
+    TURSO_SYNC_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
     /** Folder with drizzle migrations; defaults to the repo's db/migrations (found from this file). */
     MIGRATIONS_DIR: z.string().min(1).optional(),
     FILES_DIR: z.string().default("./data/files"),
@@ -47,6 +52,9 @@ export const envSchema = z
     VAPID_SUBJECT: z.string().optional(),
   })
   .superRefine((e, ctx) => {
+    if (e.TURSO_DATABASE_URL && !e.TURSO_AUTH_TOKEN) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["TURSO_AUTH_TOKEN"], message: "required with TURSO_DATABASE_URL" });
+    }
     if (e.NODE_ENV !== "production") return;
     if (!e.OWNER_PASSWORD_HASH.startsWith("$argon2")) {
       ctx.addIssue({
@@ -83,6 +91,8 @@ export function parseEnv(
 ): { ok: true; env: Env } | { ok: false; message: string } {
   const nodeEnv = source["NODE_ENV"] ?? "development";
   const input: Record<string, string | undefined> = { ...source };
+  // Zoho Catalyst AppSail tells the app its port in X_ZOHO_CATALYST_LISTEN_PORT.
+  if (!input["PORT"] && input["X_ZOHO_CATALYST_LISTEN_PORT"]) input["PORT"] = input["X_ZOHO_CATALYST_LISTEN_PORT"];
   if (nodeEnv === "development") {
     for (const [k, v] of Object.entries(DEV_DEFAULTS)) {
       if (input[k] === undefined || input[k] === "") input[k] = v;

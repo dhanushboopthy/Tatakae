@@ -19,11 +19,14 @@ Versions are the baseline at skeleton time (Oct 2026). Upgrade deliberately, one
 | Phone notifications | expo-notifications (local) | — | Reliable scheduled reminders without a push server | FCM server push (unneeded) |
 | API | Hono on Node 22 (`@hono/node-server`) | Hono 4 | Tiny, typed, fast; same code could run on edge later | Express (untyped), NestJS (heavy), FastAPI (second language) |
 | Database | SQLite (WAL) via better-sqlite3 + Drizzle | — | One user; zero ops; FTS5 for notes; Litestream backups | Postgres (ops overhead for no gain) |
+| Database on Zoho Catalyst | Turso (hosted libSQL) as an embedded replica via `libsql` (better-sqlite3-compatible, synchronous) | 0.5 | AppSail's disk isn't durable; keeps SQLite, Drizzle, FTS5 and the transactional sync merge unchanged (owner approved, 19 Oct) | Catalyst Data Store (ZCQL, no multi-statement transactions: sync rewrite), SQLite snapshots to Stratus (loses recent writes) |
+| Files and backups on Zoho Catalyst | Stratus over REST (`fetch` + Zoho OAuth refresh token), no SDK | — | Works from the nightly job too (the SDK needs a live request); no new package | `zcatalyst-sdk-node` |
 | Jobs | croner (in-process, Asia/Kolkata) | 9 | No extra service | System cron (outside the app) |
 | Auth | Argon2id + signed sessions; passkeys v4 | @node-rs/argon2 | Single user, works with any domain | Cloudflare Access (needs a Cloudflare zone), OAuth (overkill) |
 | Reverse proxy | Caddy 2 | 2.x | Automatic HTTPS, simple config | Nginx + certbot |
 | Backups | Litestream → OCI Object Storage + nightly JSON | 0.3 | Point-in-time restore, off-box | Volume snapshots only (same failure domain) |
 | Hosting | Oracle Cloud Always Free, A1 Flex 2 OCPU / 12 GB arm64 | — | Free, enough for this; DevOps practice | Cloudflare Workers (original plan; less hands-on), Vercel/Render (sleep/limits) |
+| Hosting (moving to) | Zoho Catalyst AppSail, one Docker container (linux/amd64) serving the API and the website | — | Owner's choice (19 Oct, $250 credit for 180 days; ~$29/month at 512 MB always on after that) | Slate + AppSail (two domains break cookie auth) |
 | IaC | Terraform `oracle/oci` provider + cloud-init | TF ≥ 1.6 | Rebuild the VM from code | Click-ops only |
 | CI/CD | GitHub Actions; arm64 runners; GHCR | — | Native arm64 builds, free for public/student | Self-hosted runner |
 | Admin network | Tailscale | — | No public SSH; CI deploys through tailnet | Open port 22 |

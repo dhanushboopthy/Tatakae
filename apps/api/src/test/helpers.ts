@@ -35,7 +35,8 @@ export async function setup(
     ...overrides,
   });
   if (!parsed.ok) throw new Error(parsed.message);
-  const db = openDb(":memory:");
+  // TEST_MANUAL_SAVEPOINTS=1 runs the suite with the transaction path the Turso replica (libsql) uses.
+  const db = openDb(":memory:", { manualSavepoints: process.env["TEST_MANUAL_SAVEPOINTS"] === "1" });
   runMigrations(db);
   const { token } = createSession(db, { client: "mobile", deviceName: TEST_DEVICE, days: parsed.env.SESSION_DAYS });
   ownerAuth = { authorization: `Bearer ${token}` };
