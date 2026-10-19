@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { verify } from "@node-rs/argon2";
 import { loginInput, reauthInput, type LoginMobileResponse } from "@tatakae/core";
 import type { AppBindings } from "../env";
-import { createSession, listSessions, markAuthenticated, revokeSession } from "../lib/auth.service";
+import { createSession, listSessions, markAuthenticated, revokeOtherSessions, revokeSession } from "../lib/auth.service";
 import { HttpError, NotFound, Unauthorized } from "../lib/errors";
 import { recordSecurityEvent } from "../lib/security.service";
 import { idParam, parseBody } from "../lib/validate";
@@ -15,6 +15,7 @@ import { auth, clearSessionCookie, requireRecentAuth, setSessionCookie } from ".
 // POST /logout, GET /me, GET /devices, DELETE /devices/:id (revoke) — all need auth.
 // POST /reauth { password } → { authAt }: step-up check on this session (403 wrong_password, never 401,
 //   so a typo doesn't sign the device out). Revoking *another* device needs a recent check.
+// POST /devices/sign-out-others → { signedOut }: keep only this session (recent check).
 // The router is mounted before the global auth middleware, so it applies `auth` itself.
 export const session = new Hono<AppBindings>();
 
@@ -103,6 +104,14 @@ session.get("/devices", (c) => {
     current: r.id === current,
   }));
   return c.json({ devices });
+});
+
+// After a lost device or a password change: keep only this one. Needs a recent password check.
+session.post("/devices/sign-out-others", (c) => {
+  requireRecentAuth(c);
+  const signedOut = revokeOtherSessions(c.get("db"), c.get("session")?.id ?? null);
+  recordSecurityEvent(c.get("db"), { kind: "others_signed_out", detail: `${signedOut} device(s)` }, c);
+  return c.json({ signedOut });
 });
 
 session.delete("/devices/:id", (c) => {

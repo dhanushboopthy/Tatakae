@@ -28,7 +28,8 @@ Phone holds an offline copy of v1 data as a last resort.
 
 ## Runbooks
 - **Restore on a new VM:** `terraform apply` → cloud-init → copy `.env` → `restore.sh` → `docker compose up -d` → check `/api/health` → devices resync.
-- **Rotate a lost phone:** revoke device in web Settings → Devices; log in on new phone.
+- **Rotate a lost phone:** revoke device in web Settings → Devices; log in on new phone. Check "Recent sign-ins and changes" there for anything that wasn't you.
+- **Change the password:** `deploy/scripts/hash-password.sh` → replace the `OWNER_PASSWORD_HASH=` line in `/opt/tatakae/.env` → `docker compose up -d api`. On boot the api notices the new login and signs every device out (logged as "Password changed"); sign in again everywhere. Without a restart, Settings → Devices → "Sign out every other device" does the same for the others.
 - **Change domain:** update DNS, `DOMAIN`/`PUBLIC_ORIGIN` in `.env`, redeploy; reinstall web app on laptops; rebuild phone app with new `EXPO_PUBLIC_API_URL`.
 - **Disk full:** `docker image prune -af`, check Litestream retention, check files dir.
 - **Cert issues:** `docker compose logs web`; confirm 80/443 open in both firewalls.

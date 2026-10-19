@@ -102,6 +102,26 @@ export function DevicesSettings() {
     retry: false,
   });
 
+  const [confirmOthers, setConfirmOthers] = useState(false);
+  async function signOutOthers() {
+    try {
+      const body = (await api("/session/devices/sign-out-others", { method: "POST", body: {} })) as { signedOut?: number };
+      const n = body.signedOut ?? 0;
+      toast(n === 0 ? "No other devices were signed in." : `Signed out ${n} other ${n === 1 ? "device" : "devices"}.`);
+      await qc.invalidateQueries({ queryKey: ["rest"] });
+    } catch (e) {
+      toast(
+        isNetworkError(e)
+          ? "Offline. Try again when connected."
+          : statusOf(e) === 403
+            ? "Nothing changed. This needs your password first."
+            : "Couldn't sign the other devices out.",
+      );
+    } finally {
+      setConfirmOthers(false);
+    }
+  }
+
   async function revoke(d: Device) {
     try {
       await api(`/session/devices/${encodeURIComponent(d.id)}`, { method: "DELETE" });
@@ -153,6 +173,26 @@ export function DevicesSettings() {
             </li>
           ))}
         </ul>
+      )}
+
+      {(devices.data ?? []).some((d) => !d.current) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {confirmOthers ? (
+            <>
+              <button type="button" className="btn-danger min-h-tap px-4 text-sm" onClick={() => void signOutOthers()}>
+                Sign them all out
+              </button>
+              <button type="button" className="btn min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setConfirmOthers(false)}>
+                Keep them
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setConfirmOthers(true)}>
+              Sign out every other device…
+            </button>
+          )}
+          <p className="text-xs text-ink-2">After a lost device or a password change. This laptop stays signed in.</p>
+        </div>
       )}
 
       <SecurityActivity />

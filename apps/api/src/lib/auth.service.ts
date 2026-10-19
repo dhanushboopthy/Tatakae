@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
-import { sessions } from "../../../../db/schema";
+import { and, eq, gt, isNull, lte, ne } from "drizzle-orm";
+import { serverMeta, sessions } from "../../../../db/schema";
 import type { SessionInfo } from "../env";
 import type { Db } from "./db";
 
@@ -124,4 +124,30 @@ export function listSessions(db: Db, now: Date = new Date()): SessionRow[] {
 
 export function pruneExpired(db: Db, now: Date = new Date()): void {
   db.delete(sessions).where(lte(sessions.expiresAt, now.toISOString())).run();
+}
+
+/** Revoke every session except `keepId` (Settings → "Sign out every other device"). Returns how many. */
+export function revokeOtherSessions(db: Db, keepId: string | null): number {
+  const res = keepId ? db.delete(sessions).where(ne(sessions.id, keepId)).run() : db.delete(sessions).run();
+  return res.changes;
+}
+
+const LOGIN_FINGERPRINT = "login_fingerprint";
+
+/**
+ * The password lives in .env, so changing it means a new OWNER_PASSWORD_HASH and a restart. On boot,
+ * compare a fingerprint of the owner's email + hash with the last one seen; if it changed, sign every
+ * device out (old sessions were opened with the old password). The first boot only records it.
+ * Returns the number of sessions revoked (0 when nothing changed).
+ */
+export function signOutEverywhereIfLoginChanged(db: Db, email: string, passwordHash: string, now: Date = new Date()): number {
+  const fingerprint = createHash("sha256").update(`${email.trim().toLowerCase()}\n${passwordHash}`, "utf8").digest("hex");
+  const at = now.toISOString();
+  const stored = db.select().from(serverMeta).where(eq(serverMeta.key, LOGIN_FINGERPRINT)).get();
+  db.insert(serverMeta)
+    .values({ key: LOGIN_FINGERPRINT, value: fingerprint, updatedAt: at, deletedAt: null })
+    .onConflictDoUpdate({ target: serverMeta.key, set: { value: fingerprint, updatedAt: at } })
+    .run();
+  if (!stored || stored.value === fingerprint) return 0;
+  return revokeOtherSessions(db, null);
 }

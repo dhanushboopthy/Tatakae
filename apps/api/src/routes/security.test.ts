@@ -172,6 +172,33 @@ describe("security event log", () => {
   });
 });
 
+describe("signing out other devices", () => {
+  it("keeps only this session, after a recent password check", async () => {
+    const { app, db } = await setup();
+    const laptop = await login(app, "mobile", "laptop");
+    const phone = await login(app, "mobile", "phone");
+    ageAuth(db, phone, 60);
+    expect((await call(app, "POST", "/session/devices/sign-out-others", {}, phone)).status).toBe(403);
+    await call(app, "POST", "/session/reauth", { password: OWNER.password }, phone);
+    const res = await call(app, "POST", "/session/devices/sign-out-others", {}, phone);
+    expect(res.status).toBe(200);
+    expect(res.body["signedOut"]).toBe(2); // laptop + test-runner
+    expect((await call(app, "GET", "/session/me", undefined, laptop)).status).toBe(401);
+    expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(200);
+  });
+
+  it("a new password in .env signs every device out on the next boot", async () => {
+    const { app, db } = await setup();
+    const { signOutEverywhereIfLoginChanged } = await import("../lib/auth.service");
+    const phone = await login(app, "mobile");
+    expect(signOutEverywhereIfLoginChanged(db, OWNER.email, "$argon2id$old")).toBe(0); // first boot records it
+    expect(signOutEverywhereIfLoginChanged(db, OWNER.email, "$argon2id$old")).toBe(0); // unchanged
+    expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(200);
+    expect(signOutEverywhereIfLoginChanged(db, OWNER.email, "$argon2id$new")).toBe(2);
+    expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(401);
+  });
+});
+
 describe("stored links", () => {
   it("only accept http(s) links", async () => {
     const { app } = await setup();

@@ -57,6 +57,13 @@
       "when": 1792370926235,
       "tag": "0007_security_events",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792371117254,
+      "tag": "0008_server_meta",
+      "breakpoints": true
     }
   ]
 }

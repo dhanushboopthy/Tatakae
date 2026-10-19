@@ -3,11 +3,19 @@ import { loadEnv } from "./env";
 import { createApp } from "./app";
 import { closeDb, openDb, resolveMigrationsFolder, runMigrations } from "./lib/db";
 import { startJobs } from "./jobs";
+import { signOutEverywhereIfLoginChanged } from "./lib/auth.service";
+import { recordSecurityEvent } from "./lib/security.service";
 
 // Entry point inside the Docker container. Caddy terminates TLS and proxies /api here.
 const env = loadEnv();
 const db = openDb(env.DATABASE_PATH);
 runMigrations(db, resolveMigrationsFolder(env.MIGRATIONS_DIR)); // drizzle migrator + default rows, on every boot
+// A new password (or owner email) in .env signs every device out; see auth.service.
+const revoked = signOutEverywhereIfLoginChanged(db, env.OWNER_EMAIL, env.OWNER_PASSWORD_HASH);
+if (revoked > 0) {
+  console.log(`login changed in .env: signed out ${revoked} session(s)`);
+  recordSecurityEvent(db, { kind: "password_changed", detail: `${revoked} device(s) signed out` });
+}
 const jobs = startJobs(env, db); // croner, Asia/Kolkata
 const app = createApp(env, db);
 

@@ -143,6 +143,14 @@ export const securityEvents = sqliteTable("security_events", {
   ...meta,
 }, (t) => ({ atIdx: index("security_events_at_idx").on(t.at) }));
 
+// Server-only key/value state that isn't a user setting (e.g. the login fingerprint that signs every
+// device out when the password in .env changes). Never synced or exported.
+export const serverMeta = sqliteTable("server_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  ...meta,
+});
+
 export const jobRuns = sqliteTable("job_runs", {
   id: text("id").primaryKey(),
   job: text("job").notNull(),           // backup | morning_push

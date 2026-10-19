@@ -17,7 +17,7 @@ import {
 } from "../../src/native/usageStats";
 import { Icon } from "../../src/components/Icon";
 import { ago, shiftHHMM } from "../../src/lib/format";
-import { apiDelete, apiGet, ApiError, needsReauth } from "../../src/api/client";
+import { apiDelete, apiGet, apiPost, ApiError, needsReauth } from "../../src/api/client";
 import { ReauthPrompt } from "../../src/components/ReauthPrompt";
 import { logout } from "../../src/auth/session";
 import { flush } from "../../src/sync/engine";
@@ -85,6 +85,23 @@ export default function Settings() {
     queryFn: async () => parseDevices(await apiGet("/session/devices")),
     retry: false,
   });
+
+  async function signOutOthers() {
+    try {
+      const body = await apiPost<{ signedOut?: number }>("/session/devices/sign-out-others");
+      const n = body.signedOut ?? 0;
+      say(n === 0 ? "No other devices were signed in." : `Signed out ${n} other ${n === 1 ? "device" : "devices"}.`);
+      setConfirm(null);
+      setReauth(null);
+      await qc.invalidateQueries({ queryKey: ["rest", "devices"] });
+    } catch (e) {
+      if (needsReauth(e)) {
+        setReauth({ action: "Signing out every other device", retry: signOutOthers });
+        return;
+      }
+      say(e instanceof ApiError && e.status === 0 ? "Offline. Try again when connected." : "Couldn't sign the other devices out.");
+    }
+  }
 
   async function revoke(d: Device) {
     try {
@@ -188,6 +205,18 @@ export default function Settings() {
             ) : null}
           </View>
         ))}
+        {(devices.data ?? []).some((d) => !d.current) ? (
+          confirm === "others" ? (
+            <BigButton label="Sign them all out?" variant="danger" onPress={() => void signOutOthers()} />
+          ) : (
+            <BigButton
+              label="Sign out every other device"
+              variant="secondary"
+              onPress={() => setConfirm("others")}
+              accessibilityHint="After a lost device or a password change. This phone stays signed in."
+            />
+          )
+        ) : null}
         {reauth ? (
           <ReauthPrompt
             action={reauth.action}
