@@ -16,7 +16,8 @@
 		# Same-origin React SPA: scripts, workers, API calls and the manifest all come from this origin.
 		# No inline scripts allowed; keep it that way (Vite emits none). Inline styles are allowed for
 		# React style props and editor libraries. data:/blob: images cover icons, previews and uploads.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+		# `?` = only when the response has none, so uploaded files keep the api's `sandbox` CSP.
+		?Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 		-Server
 	}
 

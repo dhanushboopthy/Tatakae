@@ -15,6 +15,8 @@ export const envSchema = z
     /** Folder with drizzle migrations; defaults to the repo's db/migrations (found from this file). */
     MIGRATIONS_DIR: z.string().min(1).optional(),
     FILES_DIR: z.string().default("./data/files"),
+    /** Built website (apps/web/dist). Set where no Caddy serves it (Zoho Catalyst): the api serves it with the same headers. */
+    WEB_DIST: z.string().min(1).optional(),
     PUBLIC_ORIGIN: z.string().url().default("http://localhost:5173"),
     TZ: z.string().default("Asia/Kolkata"),
 

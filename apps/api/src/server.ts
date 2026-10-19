@@ -5,6 +5,7 @@ import { closeDb, openDb, resolveMigrationsFolder, runMigrations, type Db } from
 import { startJobs } from "./jobs";
 import { signOutEverywhereIfLoginChanged } from "./lib/auth.service";
 import { recordSecurityEvent } from "./lib/security.service";
+import { withWebsite } from "./site";
 
 // Entry point inside the Docker container: behind Caddy on a VM, or directly on Zoho Catalyst AppSail
 // (which serves the website from here too, see WEB_DIST). AppSail kills an instance that isn't
@@ -12,7 +13,7 @@ import { recordSecurityEvent } from "./lib/security.service";
 // that arrive meanwhile get a 503 "starting".
 const env = loadEnv();
 
-let app: ReturnType<typeof createApp> | null = null;
+let app: { fetch: (req: Request) => Response | Promise<Response> } | null = null;
 let db: Db | null = null;
 let jobs: ReturnType<typeof startJobs> = [];
 
@@ -42,7 +43,8 @@ setImmediate(() => {
       recordSecurityEvent(opened, { kind: "password_changed", detail: `${revoked} device(s) signed out` });
     }
     jobs = startJobs(env, opened); // croner, Asia/Kolkata
-    app = createApp(env, opened);
+    const api = createApp(env, opened);
+    app = env.WEB_DIST ? withWebsite(api, env, env.WEB_DIST) : api;
     console.log(`ready in ${Date.now() - t0} ms (${replica ? "Turso replica" : "SQLite file"})`);
   } catch (e) {
     console.error("startup failed:", e);
