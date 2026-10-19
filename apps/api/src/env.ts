@@ -43,6 +43,15 @@ export const envSchema = z
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_SECRET_ACCESS_KEY: z.string().optional(),
 
+    // Zoho Catalyst Stratus (files + nightly backups) over REST, for hosts whose disk isn't durable.
+    // Bucket URL e.g. https://tatakae-files.zohostratus.in; a Zoho self-client refresh token with scopes
+    // Stratus.fileop.CREATE,Stratus.fileop.READ. Accounts URL defaults to the one AppSail injects.
+    STRATUS_BUCKET_URL: z.string().url().optional(),
+    ZOHO_ACCOUNTS_URL: z.string().url().optional(),
+    ZOHO_CLIENT_ID: z.string().min(1).optional(),
+    ZOHO_CLIENT_SECRET: z.string().min(1).optional(),
+    ZOHO_REFRESH_TOKEN: z.string().min(1).optional(),
+
     // Nightly JSON backup: local copies (newest 7) live here; defaults to <DATABASE_PATH dir>/backups.
     BACKUP_DIR: z.string().min(1).optional(),
 
@@ -58,6 +67,11 @@ export const envSchema = z
   .superRefine((e, ctx) => {
     if (e.TURSO_DATABASE_URL && !e.TURSO_AUTH_TOKEN) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["TURSO_AUTH_TOKEN"], message: "required with TURSO_DATABASE_URL" });
+    }
+    if (e.STRATUS_BUCKET_URL) {
+      for (const key of ["ZOHO_ACCOUNTS_URL", "ZOHO_CLIENT_ID", "ZOHO_CLIENT_SECRET", "ZOHO_REFRESH_TOKEN"] as const) {
+        if (!e[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: "required with STRATUS_BUCKET_URL" });
+      }
     }
     if (e.NODE_ENV !== "production") return;
     if (!e.OWNER_PASSWORD_HASH.startsWith("$argon2")) {
@@ -97,6 +111,8 @@ export function parseEnv(
   const input: Record<string, string | undefined> = { ...source };
   // Zoho Catalyst AppSail tells the app its port in X_ZOHO_CATALYST_LISTEN_PORT.
   if (!input["PORT"] && input["X_ZOHO_CATALYST_LISTEN_PORT"]) input["PORT"] = input["X_ZOHO_CATALYST_LISTEN_PORT"];
+  // …and the Zoho accounts server of its data centre (used to refresh the Stratus token).
+  if (!input["ZOHO_ACCOUNTS_URL"] && input["X_ZOHO_CATALYST_ACCOUNTS_URL"]) input["ZOHO_ACCOUNTS_URL"] = input["X_ZOHO_CATALYST_ACCOUNTS_URL"];
   if (nodeEnv === "development") {
     for (const [k, v] of Object.entries(DEV_DEFAULTS)) {
       if (input[k] === undefined || input[k] === "") input[k] = v;

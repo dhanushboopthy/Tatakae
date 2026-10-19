@@ -8,6 +8,7 @@ import { newId } from "../lib/ids";
 import { allLocal, putLocal, type LocalRow } from "../lib/local.service";
 import { bumpUpdatedAt } from "../lib/rows.service";
 import { putObject, readLocal, writeLocal } from "../lib/storage";
+import { stratusConfigured, stratusGet, stratusPut } from "../lib/stratus";
 import { idParam, parseQuery } from "../lib/validate";
 
 // Phase v3. Note attachments (REST only).
@@ -15,8 +16,10 @@ import { idParam, parseQuery } from "../lib/validate";
 //   GET    /files?noteId=  → { items }
 //   GET    /files/:id      → the bytes (images/PDF/text inline, anything else as a download)
 //   DELETE /files/:id      → { item } (soft delete; the bytes stay on disk for restores)
-// Bytes go to FILES_DIR/files/<id>, then to Object Storage under the same key when configured.
-// An Object Storage failure is logged and reported as `offsite: false`; the upload still succeeds.
+// VM: bytes go to FILES_DIR/files/<id>, then to Object Storage under the same key when configured; an
+// Object Storage failure is logged and reported as `offsite: false`, the upload still succeeds.
+// Zoho Catalyst (STRATUS_BUCKET_URL): the disk is only a cache, so Stratus is where the file lives:
+// the upload fails (503) if Stratus does, and reads fall back to Stratus when the cache is empty.
 
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
 /** Served inline; everything else is an attachment so uploaded HTML/SVG can never run as our origin. */
@@ -65,11 +68,19 @@ files.post("/", async (c) => {
   const key = `files/${id}`;
   const mime = (file.type || "application/octet-stream").slice(0, 100);
   const bytes = new Uint8Array(await file.arrayBuffer());
+  if (stratusConfigured(env)) {
+    try {
+      await stratusPut(env, key, bytes, mime);
+    } catch (e) {
+      console.error(`files: Stratus upload of ${key} failed:`, e instanceof Error ? e.message : e);
+      throw new HttpError(503, "storage_unavailable", "Couldn't store the file right now. Try again in a moment.");
+    }
+  }
   await writeLocal(env, key, bytes);
 
-  let offsite = false;
+  let offsite = stratusConfigured(env);
   try {
-    offsite = await putObject(env, key, bytes, mime);
+    offsite = (await putObject(env, key, bytes, mime)) || offsite;
   } catch (e) {
     console.error(`files: Object Storage copy of ${key} failed:`, e instanceof Error ? e.message : e);
   }
@@ -98,9 +109,19 @@ files.get("/", (c) => {
 });
 
 files.get("/:id", async (c) => {
+  const env = c.get("env");
   const row = requireLocal(c.get("db"), "files", idParam(c), "file");
-  const bytes = await readLocal(c.get("env"), row.r2Key);
-  if (!bytes) throw new NotFound("The file is missing on disk. Restore it from Object Storage.", "file_missing");
+  let bytes: Uint8Array | null = await readLocal(env, row.r2Key);
+  if (!bytes && stratusConfigured(env)) {
+    try {
+      bytes = await stratusGet(env, row.r2Key);
+    } catch (e) {
+      console.error(`files: Stratus download of ${row.r2Key} failed:`, e instanceof Error ? e.message : e);
+      throw new HttpError(503, "storage_unavailable", "Couldn't fetch the file right now. Try again in a moment.");
+    }
+    if (bytes) await writeLocal(env, row.r2Key, bytes).catch(() => undefined); // warm the cache
+  }
+  if (!bytes) throw new NotFound("The file is missing from storage. Restore it from a backup.", "file_missing");
   const inline = INLINE.test(row.mime);
   const name = encodeURIComponent(row.name ?? row.id);
   return c.body(new Uint8Array(bytes), 200, {
