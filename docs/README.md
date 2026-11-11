@@ -15,6 +15,7 @@ Read in this order. Each file is self-contained; `CLAUDE.md` at the repo root ho
 | 09 | [09-skills-and-workflow.md](09-skills-and-workflow.md) | Claude Code skills/plugins to install and how to work phase by phase |
 | 10 | [10-design-system.md](10-design-system.md) | "Soft Bento" visual system: tokens, type, components, screen compositions (refs in design/references/) |
 | 11 | [11-dashboards-charts-calendar.md](11-dashboards-charts-calendar.md) | Every dashboard, chart, calendar view, scoreboard box and icon, with data sources and phases |
+| 12 | [12-method-research.md](12-method-research.md) | Research behind the next method changes (other traditions, psychology, gamification), gaps, and requirements. Not built yet |
 | — | [DECISIONS.md](DECISIONS.md) | Architecture decision log |
 | — | [DOMAIN.md](DOMAIN.md) | Domain options and the chosen plan |
 | — | [CHANGELOG.md](CHANGELOG.md) | What changed |

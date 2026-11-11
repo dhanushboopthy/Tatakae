@@ -86,5 +86,14 @@ Plan and decisions: `docs/plans/fitness.md`. One task per PR, in order. All fitn
 - [x] **F6** phone quick-log modals + Today card
 - **Gate:** a cut started in the app shows targets, a week of food and weight logged on the phone and reviewed on the laptop.
 
+## Method v2 (decided 11 Nov 2026, not planned into tasks yet)
+Research, decisions and requirements are in `docs/12-method-research.md`. A planner splits §6 of that file into tasks.
+- [ ] Simplify: cap missions at 5; hide micronutrients; hide the Library on the phone (§6.2, §6.3)
+- [ ] Drift tags and the daily energy tap (§6.4)
+- [ ] Obstacle line on P1 (§6.5)
+- [ ] Game layer: ranks, two-miss chain, cycle map, area levels (§6.8–§6.11), with the rule text changes in §7
+- [ ] Character step in the weekly review (§6.6)
+- [ ] Lead measure per goal (§6.7)
+
 ## Later (not scheduled)
 iOS build (needs paid Apple account), Wear OS tile, calendar read-only import, open-sourcing with an empty reference pack.

@@ -22,5 +22,14 @@
 12. **Phone notifications are local,** not server push.
 13. **Skills:** anthropics/skills, ui-ux-pro-max, superpowers, expo, vercel react skills, hashicorp terraform + 3 project skills (docs/09).
 14. **Visual direction "Soft Bento"** from user references (docs/10-design-system.md): light by day, dark at night; ink text on accent fills (references used white text that fails contrast); red removed from deltas.
+15. **Method v2 (11 Nov 2026, decided, not built).** After a research pass (`12-method-research.md`) the owner chose: a
+    gentle game layer (ranks that never drop, a chain that breaks only after two misses in a row, a 12-week cycle map,
+    a level per area); four gap fixes (drift tags and a daily energy tap, an obstacle line on P1, a character step in
+    the weekly review, a lead measure per goal); and three simplifications (missions capped at 5, food micronutrients
+    hidden, the Library hidden on the phone, each behind a setting). *This narrows item 9:* resetting streaks, XP,
+    coins and leaderboards stay out; ranks, the two-miss chain and levels are allowed because they only ever add.
+    Trade-off: more to maintain, and a small risk that rewards weaken intrinsic motivation, so the layer has one off
+    switch and adds no new input. The rule text in `CLAUDE.md`, `01-overview.md` and the guardrails skill changes when
+    the code ships (list in `12-method-research.md` §7).
 
 Full plan: https://claude.ai/code/artifact/f1fb71f2-d965-4018-9858-308733db30e5

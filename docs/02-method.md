@@ -2,6 +2,9 @@
 
 The software exists to run this method. If a feature does not serve a step below, it does not ship.
 
+> **Coming changes (decided 11 Nov 2026, not built):** a gentle game layer, four gap fixes and three simplifications.
+> The research, decisions and requirements are in `12-method-research.md`. This file describes the app as it is today.
+
 ## Principles behind it
 | Principle | Source | How it shows up |
 |---|---|---|
