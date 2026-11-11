@@ -46,9 +46,9 @@ Order (each builds on the previous):
 4. ✅ **web sync:** IndexedDB outbox + engine; optimistic writes; TanStack Query hooks.
 5. ✅ **web screens:** Night ritual wizard (all 8 steps, CapacityBar, P1 validation, forge), **bento Dashboard** (P1 hero, score box, screen StripeTrend, inbox box), **Calendar month view**, Inbox, Welcome back, Settings (basic), Cmd+K palette.
 6. 🟡 **mobile data:** local SQLite schema + migrations, outbox, sync engine (AppState, NetInfo, debounce), Query hooks. (Code written and typechecked; not yet run on a device.)
-7. **mobile screens:** Morning, Today (week strip, chips, P1 hero, 2 scoreboard boxes), **Calendar tab** (month DayCircles, 4 scoreboard boxes, Day sheet), Focus (FocusRing, logs focus_sessions) (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
-8. **mobile notifications:** local schedule (morning, optional afternoon, ritual), reschedule on settings sync, permission asked after first Quick close/login.
-9. **polish:** empty states, copy, accessibility pass (contrast, labels, targets), dark theme.
+7. 🟡 **mobile screens:** (all built and restyled to Soft Bento, typechecked and bundled; not run on a device yet) Morning, Today (week strip, chips, P1 hero, 2 scoreboard boxes), **Calendar tab** (month DayCircles, 4 scoreboard boxes, Day sheet), Focus (FocusRing, logs focus_sessions) (timer from start time, keep-awake, recharge after), Stuck sheet, Capture, Quick close, Welcome back, Settings.
+8. 🟡 **mobile notifications:** (written + planning tested; not tried on a device) local schedule (morning, optional afternoon, ritual), reschedule on settings sync, permission asked after first Quick close/login.
+9. 🟡 **polish:** empty states, copy, accessibility pass (contrast, labels, targets), dark theme. (Guardrails pass in code; the on-screen check needs the device.)
 - **Gate:** 7 consecutive days: ritual on laptop, daily actions on phone.
 
 ## v2 — Reviews, story, native extras (2 – 15 Nov)

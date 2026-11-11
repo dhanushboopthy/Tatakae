@@ -11,11 +11,12 @@ export { SheetHeader } from "./Screen";
 
 export const fill = {
   rose: light.area.rose,
-  roseDeep: "#E57FB8",
+  roseDeep: light.roseDeep,
   lime: light.lime,
   limeSoft: light.limeSoft,
   lavenderSoft: light.lavenderSoft,
-  white: "#FFFFFF",
+  white: light.white,
+  track: light.onFillTrack,
   ink: light.onFill,
   inkMuted: light.onFillMuted,
 } as const;

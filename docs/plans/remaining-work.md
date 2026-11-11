@@ -120,35 +120,40 @@ the top. Port behaviour from the matching web screen where one exists (`apps/web
 - [ ] Also check on the device: the Fitness card and the three fitness log screens (F6 was only typechecked).
 
 ### 3.2 Screens, in this order (task v1.7)
+All built on 18 Oct (branches `feat/m-soft-bento-theme` … `feat/m-polish`), typechecked and bundled for Android.
+The theme and shared components came first so no screen was styled twice. **Not yet run on a device** — 3.1 covers that.
+
 | # | Task | File | Size | Target |
 |---|---|---|---|---|
-| - [ ] a | **Capture**: one autofocused field, Save → `capture()` → outbox → inbox; haptic + toast; opened from the "+" in every header | `app/capture.tsx` | S | ≤ 5 s |
-| - [ ] b | **Quick close**: mission statuses, habits, screen minutes (manual entry; usage-stats prefill comes in v2). Never plans tomorrow | `app/quick-close.tsx` | M | ≤ 45 s |
-| - [ ] c | **Stuck**: 3 big choices (Uncertainty → next physical action; Fear → 10/10/10 + act as if confident; Inertia → 5-minute timer now) → one follow-up; logs `stuck_events`. Reuse `src/components/StuckSheet.tsx` | `app/stuck/[missionId].tsx` | M | ≤ 15 s |
-| - [ ] d | **Recharge**: shown after a focus session; menu from `useRecharge()` | `app/recharge.tsx` | S | — |
-| - [ ] e | **Welcome back**: after ≥ 1 missed day; calm line, grey history (`useRecentDays`), single Restart → plan P1 only (`planP1`), write-off (max 2/month via `writeOffsLeft`). No missed-day count in red | `app/welcome-back.tsx` | M | — |
-| - [ ] f | **Calendar tab**: month of DayCircles, 4 scoreboard boxes; tap a day → Day sheet. Needs components `DayCircle`, `MonthCalendar`, `Scoreboard` (3.3) | `app/(tabs)/calendar.tsx`, `app/day/[date].tsx` | L | — |
-| - [ ] g | **Settings**: times (wake, ritual), story on/off, haptics, devices (list/revoke), sync status. No scoring constants (web only). Default focus length 5–240 (R3-9) — replace the phone's 25/50/90 presets | `app/(tabs)/settings.tsx` | M | — |
-| - [ ] h | **Today Soft Bento restyle**: header (greeting + date, "+" and bell circles), WeekStrip, count chips (Done/Minimum/Open), P1HeroCard (lime Start arrow), P2 lavender + P3 lime-soft cards, habit pills, 2 MetricCards (today's score after shutdown only, days shown up). No streak | `app/(tabs)/index.tsx` (see TODO at line 32) | M | each action ≤ 5 s |
-| - [ ] i | **Bottom nav**: floating charcoal pill, active tab = white circle | `app/(tabs)/_layout.tsx`, `src/components/BottomNav.tsx` | S | — |
+| - [x] a | **Capture**: one autofocused field, Save → `capture()` → outbox → inbox; haptic + toast; opened from the "+" in every header | `app/capture.tsx` | S | ≤ 5 s |
+| - [x] b | **Quick close**: mission statuses, habits, screen minutes (manual entry; usage-stats prefill comes in v2). Never plans tomorrow | `app/quick-close.tsx` | M | ≤ 45 s |
+| - [x] c | **Stuck**: 3 big choices (Uncertainty → next physical action; Fear → 10/10/10 + act as if confident; Inertia → 5-minute timer now) → one follow-up; logs `stuck_events`. Reuse `src/components/StuckSheet.tsx` | `app/stuck/[missionId].tsx` | M | ≤ 15 s |
+| - [x] d | **Recharge**: shown after a focus session; menu from `useRecharge()` | `app/recharge.tsx` | S | — |
+| - [x] e | **Welcome back**: after ≥ 1 missed day; calm line, grey history (`useRecentDays`), single Restart → plan P1 only (`planP1`), write-off (max 2/month via `writeOffsLeft`). No missed-day count in red | `app/welcome-back.tsx` | M | — |
+| - [x] f | **Calendar tab**: month of DayCircles, 4 scoreboard boxes; tap a day → Day sheet. Needs components `DayCircle`, `MonthCalendar`, `Scoreboard` (3.3) | `app/(tabs)/calendar.tsx`, `app/day/[date].tsx` | L | — |
+| - [x] g | **Settings**: times (wake, ritual), story on/off, haptics, devices (list/revoke), sync status. No scoring constants (web only). Default focus length 5–240 (R3-9) — replace the phone's 25/50/90 presets | `app/(tabs)/settings.tsx` | M | — |
+| - [x] h | **Today Soft Bento restyle**: header (greeting + date, "+" and bell circles), WeekStrip, count chips (Done/Minimum/Open), P1HeroCard (lime Start arrow), P2 lavender + P3 lime-soft cards, habit pills, 2 MetricCards (today's score after shutdown only, days shown up). No streak | `app/(tabs)/index.tsx` (see TODO at line 32) | M | each action ≤ 5 s |
+| - [x] i | **Bottom nav**: floating charcoal pill, active tab = white circle | `app/(tabs)/_layout.tsx`, `src/components/BottomNav.tsx` | S | — |
 
 ### 3.3 Components needed by v1 (build when the screen above first needs them)
 Specs: `docs/10-design-system.md` §5 and `docs/11-dashboards-charts-calendar.md`. Mirror the web versions in
 `apps/web/src/components/`. Charts with `react-native-svg`, icons with `lucide-react-native` + core `ICONS`.
-- [ ] `Icon`, `IconCircle`, `BottomNav`, `WeekStrip`, `P1HeroCard`, `MetricCard`, `DayCircle`, `MonthCalendar`,
-      `Scoreboard`, `StripeTrend`, `RingProgress`, `FocusRing`, `SegmentedPills`, `CapacityBar`
+- [x] `Icon`, `IconCircle`, `BottomNav`, `WeekStrip`, `P1HeroCard`, `MetricCard`, `DayCircle`, `MonthCalendar`,
+      `Scoreboard`, `RingProgress`, `FocusRing`, `SegmentedPills` (+ `Screen`, `TextField`, `Kural`).
+      `StripeTrend` moves to v2 with the Week view; `CapacityBar` is only used by the laptop ritual.
 - Leave for v2: `HatchedStackBar`, `BlockBarChart`, `HabitHeatGrid`, `SegmentGauge`, `Sparkline`, `PillBar`.
 
 ### 3.4 Notifications (task v1.8) — M
-- [ ] Fill `src/notifications/local.ts`: local schedule only (no server push to the phone).
+- [x] (code; try it on the device in 3.1) Fill `src/notifications/local.ts`: local schedule only (no server push to the phone).
       1) morning at wake time "P1: <title>. Start?" → opens Morning; 2) optional afternoon, only if P1 not started;
       3) ritual reminder at ritual time. **Max 3/day.** Reschedule when settings or tomorrow's P1 sync.
       Ask permission after the first Quick close or first login, never on launch. If two in a row are ignored, ask
       once whether to change the time. No guilt copy.
 
 ### 3.5 Polish (task v1.9) — M
-- [ ] Empty states, copy, accessibility (contrast, labels, 44 dp targets), dark theme at night. Run
+- [x] (code) Empty states, copy, accessibility (contrast, labels, 44 dp targets), dark theme at night. Run
       `tatakae-guardrails` over every phone screen.
+- [ ] On the device, light and dark: look at every screen once (text fits, nothing hidden by the floating nav).
 
 - **v1 gate:** 7 consecutive days — ritual on the laptop, daily actions on the phone. — met on: ____
 

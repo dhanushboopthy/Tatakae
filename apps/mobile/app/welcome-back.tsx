@@ -8,6 +8,7 @@ import { P1QuickForm } from "../src/components/P1QuickForm";
 import { BigButton } from "../src/components/BigButton";
 import { TextField } from "../src/components/TextField";
 import { Kural } from "../src/components/Kural";
+import { Icon } from "../src/components/Icon";
 import { Card, Screen, ScreenHeader } from "../src/components/Screen";
 import { tapDone } from "../src/haptics";
 import { f, space } from "../src/theme";
@@ -72,7 +73,9 @@ export default function WelcomeBack() {
                   accessible
                   accessibilityRole="image"
                   accessibilityLabel={`${longDate(h.date)}: ${label}`}
-                />
+                >
+                  {!before && !rest && !h.missed ? <Icon name="done" size={18} color={s.tick.color} strokeWidth={2.25} /> : null}
+                </View>
                 <Text style={s.letter} accessibilityElementsHidden importantForAccessibility="no">
                   {weekdayInitial(h.date)}
                 </Text>
@@ -153,7 +156,8 @@ const makeStyles = ({ c }: Theme) =>
     small: { ...f(500, 13, 18), color: c.ink2, marginTop: space(1) },
     history: { flexDirection: "row", justifyContent: "space-between" },
     day: { alignItems: "center", gap: 6 },
-    dot: { width: 40, height: 40, borderRadius: 20 },
+    dot: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+    tick: { color: c.onFill },
     dotBefore: { borderWidth: 2, borderColor: c.line },
     dotRest: { borderWidth: 2, borderColor: c.missed },
     dotMissed: { backgroundColor: c.surface2 },

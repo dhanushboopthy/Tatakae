@@ -16,7 +16,7 @@ import { apiGet, ApiError } from "../src/api/client";
 import { initSync } from "../src/sync/engine"; // also defines the background sync task at module scope
 import { initNotifications } from "../src/notifications/local";
 import { useSettings } from "../src/lib/hooks";
-import { ThemeProvider, useTheme } from "../src/lib/theme";
+import { ThemeProvider, useReducedMotion, useTheme } from "../src/lib/theme";
 import { setHapticsEnabled } from "../src/haptics";
 
 /** Deep links (notification taps) into a modal still get the tabs underneath. */
@@ -94,6 +94,7 @@ async function verifySession(): Promise<void> {
 
 function AuthGate({ ready }: { ready: boolean }) {
   const { c } = useTheme();
+  const reducedMotion = useReducedMotion();
   const auth = useAuthState();
   const segments = useSegments();
   const router = useRouter();
@@ -123,7 +124,7 @@ function AuthGate({ ready }: { ready: boolean }) {
 
   return (
     <View style={[styles.fill, { backgroundColor: c.surface }]}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.surface }, animation: "fade" }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.surface }, animation: reducedMotion ? "none" : "fade" }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="morning" options={{ presentation: "fullScreenModal" }} />

@@ -22,6 +22,12 @@ const shared = {
   /** Secondary text on pastel fills (8.8:1 on rose, 8.6:1 on lime-soft). */
   onFillMuted: "#4A4A50",
   white: "#FFFFFF",
+  /** Darker rose for the tag pill on the rose fitness card. */
+  roseDeep: "#E57FB8",
+  /** Faint ink edge so white chips still show on white cards. */
+  chipEdge: "rgba(28,28,30,0.16)",
+  /** Bar track on a pastel card. */
+  onFillTrack: "rgba(255,255,255,0.6)",
 } as const;
 
 export const light = {
