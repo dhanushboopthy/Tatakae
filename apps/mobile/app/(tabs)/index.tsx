@@ -235,6 +235,16 @@ export default function Today() {
       ) : null}
       {flags?.closed ? <Text style={s.small}>Day closed. Plan tomorrow from the night ritual.</Text> : null}
 
+      <Pressable
+        onPress={() => router.push("/review")}
+        accessibilityRole="button"
+        accessibilityHint="Weekly and monthly reviews"
+        style={({ pressed }) => [s.link, pressed && pressedStyle]}
+      >
+        <Icon name="ritual" size={18} color={c.ink} />
+        <Text style={s.linkText}>Weekly and monthly review</Text>
+      </Pressable>
+
       <UpdateBanner />
 
       <LockReasonModal

@@ -143,6 +143,7 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="morning" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="welcome-back" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="ritual" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="review" options={{ presentation: "modal" }} />
         <Stack.Screen name="quick-close" options={{ presentation: "modal" }} />
         <Stack.Screen name="stuck/[missionId]" options={{ presentation: "modal" }} />
         <Stack.Screen name="recharge" options={{ presentation: "modal" }} />
