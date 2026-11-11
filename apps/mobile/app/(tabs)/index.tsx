@@ -212,17 +212,28 @@ export default function Today() {
       {board.data ? <Scoreboard boxes={board.data} keys={["days_shown_up", "today_score"]} /> : null}
 
       {flags && !flags.closed ? (
-        <Pressable
-          onPress={() => router.push("/quick-close")}
-          accessibilityRole="button"
-          accessibilityHint="Close today here if you can't do the laptop ritual"
-          style={({ pressed }) => [s.link, pressed && pressedStyle]}
-        >
-          <Icon name="ritual" size={18} color={c.ink} />
-          <Text style={s.linkText}>Away from the laptop tonight? Quick close</Text>
-        </Pressable>
+        <>
+          <Pressable
+            onPress={() => router.push("/ritual")}
+            accessibilityRole="button"
+            accessibilityHint="Close today and plan tomorrow, in about five minutes"
+            style={({ pressed }) => [s.link, pressed && pressedStyle]}
+          >
+            <Icon name="ritual" size={18} color={c.ink} />
+            <Text style={s.linkText}>Night ritual: close today, plan tomorrow</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/quick-close")}
+            accessibilityRole="button"
+            accessibilityHint="Close today in under a minute without planning tomorrow"
+            style={({ pressed }) => [s.link, pressed && pressedStyle]}
+          >
+            <Icon name="ritual" size={18} color={c.ink} />
+            <Text style={s.linkText}>Short on time? Quick close</Text>
+          </Pressable>
+        </>
       ) : null}
-      {flags?.closed ? <Text style={s.small}>Day closed. Tomorrow's plan comes from the night ritual.</Text> : null}
+      {flags?.closed ? <Text style={s.small}>Day closed. Plan tomorrow from the night ritual.</Text> : null}
 
       <UpdateBanner />
 

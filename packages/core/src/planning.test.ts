@@ -1,0 +1,121 @@
+import { describe, expect, it } from "vitest";
+import { AFTER_P1, FORGE_PROBLEM_COPY, SLOT_ORDER, anchorsFor, bySlot, firstFreeSlot, freeMinutes, ifThenTemplates, missionsOn, plannedMinutes, toMinutes } from "./planning";
+import type { Anchor, Mission } from "./types";
+
+const AT = "2026-10-20T10:00:00.000Z";
+
+const mission = (over: Partial<Mission>): Mission => ({
+  id: over.id ?? Math.random().toString(36).slice(2),
+  title: "t",
+  dayDate: "2026-10-20",
+  slot: "P1",
+  points: null,
+  status: "open",
+  minimum: null,
+  ifThen: null,
+  resumeNote: null,
+  goalId: null,
+  estMin: null,
+  actualMin: null,
+  rescheduleCount: 0,
+  updatedAt: AT,
+  deletedAt: null,
+  ...over,
+});
+
+const anchor = (startTime: string, endTime: string, weekdays = ""): Anchor => ({
+  id: `${startTime}-${endTime}`,
+  name: "a",
+  startTime,
+  endTime,
+  weekdays,
+  updatedAt: AT,
+  deletedAt: null,
+});
+
+describe("capacity helpers", () => {
+  it("toMinutes", () => {
+    expect(toMinutes("06:30")).toBe(390);
+    expect(toMinutes("bad")).toBe(0);
+  });
+
+  it("anchorsFor filters by weekday (0 = Sunday) and sorts by start", () => {
+    // 2026-10-20 is a Tuesday (2)
+    const as = [anchor("14:00", "15:00", "2,4"), anchor("09:00", "10:00", ""), anchor("11:00", "12:00", "1,3")];
+    expect(anchorsFor(as, "2026-10-20").map((a) => a.startTime)).toEqual(["09:00", "14:00"]);
+  });
+
+  it("freeMinutes subtracts anchors inside the wake→ritual window, merging overlaps", () => {
+    expect(freeMinutes({ wakeTime: "06:30", ritualTime: "21:30", anchors: [] })).toBe(900);
+    expect(
+      freeMinutes({
+        wakeTime: "06:30",
+        ritualTime: "21:30",
+        anchors: [anchor("09:00", "13:00"), anchor("12:00", "14:00"), anchor("05:00", "07:00"), anchor("22:00", "23:00")],
+      }),
+    ).toBe(900 - 300 - 30);
+  });
+
+  it("freeMinutes is 0 for an empty window", () => {
+    expect(freeMinutes({ wakeTime: "22:00", ritualTime: "21:30", anchors: [] })).toBe(0);
+  });
+
+  it("plannedMinutes ignores side quests, rescheduled and deleted missions", () => {
+    const ms = [
+      mission({ estMin: 50 }),
+      mission({ slot: "P2", estMin: 25 }),
+      mission({ slot: "side", estMin: 30 }),
+      mission({ slot: "P3", estMin: 40, status: "rescheduled" }),
+      mission({ slot: "P3", estMin: 90, deletedAt: AT }),
+    ];
+    expect(plannedMinutes(ms)).toBe(75);
+  });
+});
+
+describe("mission helpers", () => {
+  it("slot order is P1…P9 then the side quest, and AFTER_P1 drops P1", () => {
+    expect(SLOT_ORDER).toHaveLength(10);
+    expect(SLOT_ORDER[0]).toBe("P1");
+    expect(SLOT_ORDER[9]).toBe("side");
+    expect(AFTER_P1[0]).toBe("P2");
+  });
+
+  it("missionsOn returns live missions of the date in slot order", () => {
+    const ms = [
+      mission({ id: "s", slot: "side" }),
+      mission({ id: "p2", slot: "P2" }),
+      mission({ id: "p1", slot: "P1" }),
+      mission({ id: "other", dayDate: "2026-10-21" }),
+      mission({ id: "gone", slot: "P3", deletedAt: AT }),
+    ];
+    expect(missionsOn(ms, "2026-10-20").map((m) => m.id)).toEqual(["p1", "p2", "s"]);
+  });
+
+  it("bySlot prefers the mission that wasn't rescheduled", () => {
+    const ms = [mission({ id: "old", status: "rescheduled" }), mission({ id: "new" })];
+    expect(bySlot(ms).P1?.id).toBe("new");
+  });
+
+  it("firstFreeSlot", () => {
+    const ms = [mission({ slot: "P2" })];
+    expect(firstFreeSlot(ms, ["P2", "P3"])).toBe("P3");
+    expect(firstFreeSlot([...ms, mission({ slot: "P3" })], ["P2", "P3"])).toBeNull();
+  });
+
+  it("ifThenTemplates returns distinct P1 plans, most recent first", () => {
+    const ms = [
+      mission({ dayDate: "2026-10-18", ifThen: "If it's 7:00, then I open the laptop" }),
+      mission({ dayDate: "2026-10-19", ifThen: "If I finish lunch, then I start DSA" }),
+      mission({ dayDate: "2026-10-17", ifThen: "if I finish lunch, then I start DSA" }),
+      mission({ dayDate: "2026-10-20", slot: "P2", ifThen: "not a P1" }),
+    ];
+    expect(ifThenTemplates(ms)).toEqual(["If I finish lunch, then I start DSA", "If it's 7:00, then I open the laptop"]);
+  });
+
+  it("every plan-lock problem has calm copy", () => {
+    for (const p of ["no_p1", "p1_missing_minimum", "p1_missing_if_then", "duplicate_slot", "too_many_side"] as const) {
+      expect(FORGE_PROBLEM_COPY[p].length).toBeGreaterThan(5);
+      expect(FORGE_PROBLEM_COPY[p]).not.toMatch(/!|fail/i);
+    }
+  });
+});
