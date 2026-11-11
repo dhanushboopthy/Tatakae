@@ -1,7 +1,7 @@
 # Fitness module — plan
 
-Status: **planned, not started.** To be built in a later phase. When it is picked up, add a
-**Fitness (F1–F6)** block to `docs/06-phases.md` (see §5).
+Status: **built (F1–F6), gate pending.** Tasks are tracked in the **Fitness (F1–F6)** block of
+`docs/06-phases.md`. The phone part (F6) has not run on a device yet.
 
 ## Context
 A Fitness page to run fat-loss / bulk / recomp phases with real numbers: daily → weekly → monthly
