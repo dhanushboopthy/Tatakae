@@ -18,6 +18,7 @@ import { API_URL } from "../config";
 import { getToken } from "../auth/session";
 import { handleUnauthorized } from "../api/client";
 import { sqliteStore } from "./outbox";
+import { recordConflict } from "./conflicts";
 
 /**
  * Phone sync engine = core's createSyncClient on the SQLite store.
@@ -91,6 +92,7 @@ export function getSyncClient(): SyncClient {
       client: "mobile",
       post,
       onChange: (tables) => notifyLocalChange(tables),
+      onConflict: recordConflict,
       onAuthError: () => {
         void handleUnauthorized();
       },

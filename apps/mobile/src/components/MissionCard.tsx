@@ -4,6 +4,7 @@ import { f, minTarget, radius, space } from "../theme";
 import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { STATUS_GLYPH, STATUS_LABEL, StatusChips } from "./StatusChips";
 import { Icon, type AppIcon } from "./Icon";
+import { EditedElsewhere } from "./ConflictNotice";
 
 export const SLOT_LABEL: Record<Slot, string> = {
   ...(Object.fromEntries(RANKED_SLOTS.map((s) => [s, s])) as Record<RankedSlot, string>),
@@ -67,6 +68,7 @@ export function MissionCard({ mission: m, locked = false, onStatus, onStuck, onE
       </Text>
       {m.minimum ? <Text style={[s.small, ink2]}>Minimum · {m.minimum}</Text> : null}
       {m.resumeNote ? <Text style={[s.small, ink2]}>Resume · {m.resumeNote}</Text> : null}
+      <EditedElsewhere table="missions" pk={m.id} color={ink2.color} />
 
       {m.status === "rescheduled" ? (
         <Text style={[s.small, s.ink2]}>Moved to the backlog. Pick it up in the night ritual.</Text>

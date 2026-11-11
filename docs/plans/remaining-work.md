@@ -208,6 +208,8 @@ usage-stats Kotlin in the first dev build (this machine has no Android SDK).
 - [ ] **6.3 Web push** (task v4.5): verify a real push arrives on a laptop in production. — S
 - [ ] **6.4 Conflict UI** (task v4.6): offline edge cases (two devices editing the same mission offline, plan
       lock refusals) and an accessibility audit, laptop + phone, light + dark. — M
+    - [x] Phone conflict notes (toast + card line) and offline edge-case tests (code, branch `feat/m-conflict-notes`)
+    - [ ] Accessibility audit on the phone and laptop, light + dark (needs the device)
 - [ ] **6.5 Area alignment + monthly review polish** (task v4.7): alignment scores are built (Monthly review,
       Settings → Areas). **Ask the owner** what "polish" should cover, then do that list. — S–M
 - **v4 gate:** restore rehearsed and documented. — met on: ____

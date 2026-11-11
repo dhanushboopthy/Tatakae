@@ -15,6 +15,7 @@ import {
   Dumbbell,
   Feather,
   Inbox,
+  Info,
   Languages,
   LifeBuoy,
   Lock,
@@ -89,6 +90,7 @@ const EXTRA = {
   sync: RefreshCw,
   logout: LogOut,
   edit: Pencil,
+  info: Info,
 } satisfies Record<string, LucideIcon>;
 
 export type AppIcon = IconKey | keyof typeof EXTRA;

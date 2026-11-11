@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import type { SyncTable } from "@tatakae/core";
-import { conflictMessage, onConflictBatch, useConflictNote } from "../lib/conflicts";
+import { conflictLabel, conflictMessage, type SyncTable } from "@tatakae/core";
+import { onConflictBatch, useConflictNote } from "../lib/conflicts";
 import { InfoIcon } from "./icons";
 import { useToast } from "./Toast";
 
@@ -22,7 +22,7 @@ export function ConflictNoticeHost() {
 export function EditedElsewhere({ table, pk, className = "" }: { table: SyncTable; pk: string; className?: string }) {
   const note = useConflictNote(table, pk);
   if (!note) return null;
-  const label = note.kind === "newer" ? "Edited elsewhere" : "Change not saved";
+  const label = conflictLabel(note.kind);
   return (
     <span className={`inline-flex items-center gap-1 ${className}`} title={label}>
       <InfoIcon size={14} /> {label}
