@@ -18,6 +18,8 @@ import {
   type MealSlot,
   type Micros,
   type PhaseKind,
+  type Workout,
+  type WorkoutSet,
   type Blocker,
   type Experiment,
   type Goal,
@@ -404,6 +406,36 @@ export async function setFoodLogServings(log: FoodLog, servings: number): Promis
 
 export async function removeFoodLog(id: string): Promise<void> {
   await remove("food_logs", id);
+}
+
+/** Create or update a training session (one row per session). */
+export async function saveWorkout(w: { id?: string; date: ISODate; name: string; durationMin?: number | null; note?: string | null }): Promise<Workout> {
+  return write("workouts", { id: w.id ?? newId(), date: w.date, name: w.name.trim(), durationMin: w.durationMin ?? null, note: w.note ?? null });
+}
+
+/** Delete a session and its sets (soft delete through the outbox). */
+export async function removeWorkout(workout: Pick<Workout, "id">, sets: readonly Pick<WorkoutSet, "id">[]): Promise<void> {
+  for (const s of sets) await remove("workout_sets", s.id);
+  await remove("workouts", workout.id);
+}
+
+export interface SetInput {
+  workoutId: string;
+  exercise: string;
+  muscle: string;
+  reps: number;
+  kg: number;
+  rpe?: number | null;
+  /** Position in the session (the next free number). */
+  order: number;
+}
+
+export async function logSet(s: SetInput): Promise<WorkoutSet> {
+  return write("workout_sets", { id: newId(), ...s, exercise: s.exercise.trim(), rpe: s.rpe ?? null });
+}
+
+export async function removeSet(id: string): Promise<void> {
+  await remove("workout_sets", id);
 }
 
 /** Set (or change) the maintenance for an ISO week. One row per week; later weeks carry it forward until changed. */
