@@ -273,6 +273,10 @@ export const microsSchema = z
   .object(Object.fromEntries(MICRO_KEYS.map((k) => [k, nonNeg.optional()])) as Record<MicroKey, z.ZodOptional<z.ZodNumber>>)
   .strict();
 
+/** Bounds for a calories target typed in by the user (standing or for one day). */
+export const KCAL_TARGET_MIN = 800;
+export const KCAL_TARGET_MAX = 10000;
+
 export const bodyLogRow = z.object({
   id: z.string().min(1),
   date: isoDate,
@@ -281,6 +285,8 @@ export const bodyLogRow = z.object({
   waterMl: z.number().int().min(0).max(20000).nullable(),
   sleepMin: z.number().int().min(0).max(1440).nullable(),
   note: optText(500),
+  // Absent on rows from older app versions: read as "no override".
+  kcalOverride: z.number().int().min(KCAL_TARGET_MIN).max(KCAL_TARGET_MAX).nullable().default(null),
   ...rowMeta,
 }) satisfies RowSchema<BodyLog>;
 
@@ -550,6 +556,10 @@ export const settingValueSchemas = {
   "fitness.waterTargetMl": z.number().int().min(0).max(20000),
   "fitness.sleepTargetMin": z.number().int().min(0).max(1440),
   "fitness.fibreTargetG": z.number().int().min(0).max(200),
+  /** Standing calories target typed in by the user, from `from` onward; null = use the calculated target. */
+  "fitness.manualKcal": z.object({ kcal: z.number().int().min(KCAL_TARGET_MIN).max(KCAL_TARGET_MAX), from: isoDate }).nullable(),
+  /** First day of 12-week Cycle 1; later cycles follow in 84-day steps. */
+  "cycle.start": isoDate,
 } as const;
 
 export type SettingKey = keyof typeof settingValueSchemas;

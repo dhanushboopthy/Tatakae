@@ -3,6 +3,8 @@ import {
   CUT_MAX_DEFICIT_KCAL,
   CUT_MIN_KCAL,
   KCAL_PER_KG,
+  KCAL_TARGET_MAX,
+  KCAL_TARGET_MIN,
   PHASE_DEFAULTS,
   addDays,
   daysBetween,
@@ -14,7 +16,16 @@ import {
 import { WeightTrendChart } from "../../components/WeightTrendChart";
 import { useToast } from "../../components/Toast";
 import { formatDay } from "../../lib/format";
-import { endPhase, savePhase, startPhase, useFitnessPhase, type FitnessPhaseView } from "../../lib/hooks";
+import {
+  changePhaseStart,
+  endPhase,
+  savePhase,
+  setManualKcal,
+  startPhase,
+  useFitnessPhase,
+  type FitnessPhaseView,
+  type PhaseStartProblem,
+} from "../../lib/hooks";
 import { MaintenanceList } from "./Week";
 import { n0, n1, parseNum } from "./shared";
 
@@ -42,7 +53,7 @@ export function PhaseTab({ today, onTab }: { today: ISODate; onTab: (t: "week") 
       {active && data.progress ? (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Hero phase={active} data={data} />
-          <Targets data={data} />
+          <Targets data={data} today={today} />
         </div>
       ) : (
         <section className="card flex flex-col gap-2">
@@ -52,7 +63,7 @@ export function PhaseTab({ today, onTab }: { today: ISODate; onTab: (t: "week") 
       )}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {active && !replacing ? (
-          <EditPhase key={active.id} phase={active} today={today} onReplace={() => setReplacing(true)} />
+          <EditPhase key={active.id} phase={active} phases={data.phases} today={today} onReplace={() => setReplacing(true)} />
         ) : (
           <StartPhase data={data} today={today} onDone={() => setReplacing(false)} onCancel={active ? () => setReplacing(false) : undefined} />
         )}
@@ -141,7 +152,79 @@ function Stat({ label, value, extra }: { label: string; value: string; extra?: s
   );
 }
 
-function Targets({ data }: { data: FitnessPhaseView }) {
+const SOURCE_TEXT = {
+  auto: "Calculated from your phase and maintenance.",
+  manual: "Typed in by you.",
+  day: "Typed in for today.",
+} as const;
+
+/** Set the calories yourself (from a date, until you switch back), or go back to the calculated number. */
+function CaloriesControl({ data, today }: { data: FitnessPhaseView; today: ISODate }) {
+  const toast = useToast();
+  const manual = data.manualKcal;
+  const [kcal, setKcal] = useState(manual ? String(manual.kcal) : "");
+  const [from, setFrom] = useState<ISODate>(manual?.from ?? today);
+  const [problem, setProblem] = useState<string | null>(null);
+  const source = data.targets?.source ?? "auto";
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    const n = Number(kcal);
+    if (!Number.isInteger(n) || n < KCAL_TARGET_MIN || n > KCAL_TARGET_MAX) return setProblem(`Use a whole number from ${KCAL_TARGET_MIN} to ${n0(KCAL_TARGET_MAX)}.`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return setProblem("Pick the date it starts.");
+    setProblem(null);
+    await setManualKcal({ kcal: n, from });
+    toast(`Calories set to ${n0(n)} from ${shortDate(from)}.`);
+  }
+
+  return (
+    <form onSubmit={(e) => void save(e)} aria-labelledby="kcal-title" className="flex flex-col gap-2.5 rounded-card-inner bg-surface-2 px-3.5 py-3">
+      <h3 id="kcal-title" className="text-[15px] font-semibold">
+        Set daily calories
+      </h3>
+      <p className="text-[13px] text-ink-2">
+        {SOURCE_TEXT[source]}
+        {manual ? ` Standing target ${n0(manual.kcal)} kcal since ${shortDate(manual.from)}.` : ""} Protein and fat stay per kg; carbs fill the rest.
+      </p>
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="flex min-w-0 flex-col gap-1">
+          <span className="text-[13px] font-semibold text-ink-2">Calories a day</span>
+          <input value={kcal} onChange={(e) => setKcal(e.target.value.replace(/[^\d]/g, ""))} inputMode="numeric" className="input tnum" placeholder="e.g. 2300" />
+        </label>
+        <label className="flex min-w-0 flex-col gap-1">
+          <span className="text-[13px] font-semibold text-ink-2">From</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="input tnum" />
+        </label>
+      </div>
+      {problem && (
+        <p role="alert" className="text-sm font-medium">
+          {problem}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className="btn-primary">
+          Save calories
+        </button>
+        {manual && (
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={async () => {
+              await setManualKcal(null);
+              setKcal("");
+              toast("Back to the calculated target.");
+            }}
+          >
+            Use the calculated target
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-ink-2">To change a single day, open that day in the Day tab.</p>
+    </form>
+  );
+}
+
+function Targets({ data, today }: { data: FitnessPhaseView; today: ISODate }) {
   const t = data.targets;
   const phase = data.active;
   if (!t || !phase || data.trendKg == null) {
@@ -180,7 +263,8 @@ function Targets({ data }: { data: FitnessPhaseView }) {
           </div>
         ))}
       </div>
-      {phase.kind !== "recomp" && rate > 0 && (
+      <CaloriesControl data={data} today={today} />
+      {t.source === "auto" && phase.kind !== "recomp" && rate > 0 && (
         <p className="border-t border-line pt-3 text-sm leading-relaxed text-ink-2">
           {rate} % of {n1(data.trendKg)} kg = {weeklyKg.toFixed(2)} kg a week
           <br />
@@ -191,7 +275,12 @@ function Targets({ data }: { data: FitnessPhaseView }) {
           Protein {phase.proteinGPerKg} g/kg · fat {phase.fatGPerKg} g/kg · carbs fill the rest
         </p>
       )}
-      {phase.kind === "cut" && (
+      {t.source !== "auto" && phase.kind !== "recomp" && (
+        <p className="rounded-card-inner bg-surface-2 px-3.5 py-3 text-[13px] leading-snug text-ink-2">
+          At {n0(t.kcal)} kcal the expected rate is about <b className="tnum text-ink">{t.expectedRatePct.toFixed(2)} %</b> a week, against your {Math.abs(phase.ratePctPerWeek)} % goal.
+        </p>
+      )}
+      {t.source === "auto" && phase.kind === "cut" && (
         <p className="rounded-card-inner bg-surface-2 px-3.5 py-3 text-[13px] leading-snug text-ink-2">
           {t.capped ? (
             <>
@@ -278,7 +367,13 @@ function NumberFields({ f, set, withWeight }: { f: Fields; set: (p: Partial<Fiel
   );
 }
 
-function EditPhase({ phase, today, onReplace }: { phase: FitnessPhase; today: ISODate; onReplace: () => void }) {
+const START_PROBLEM: Record<PhaseStartProblem, string> = {
+  future: "The start date can't be in the future.",
+  before_previous: "That is on or before the start of the phase before this one.",
+  after_end: "The start date can't be after this phase's end.",
+};
+
+function EditPhase({ phase, phases, today, onReplace }: { phase: FitnessPhase; phases: FitnessPhase[]; today: ISODate; onReplace: () => void }) {
   const toast = useToast();
   const [f, setF] = useState<Fields>({
     kind: phase.kind,
@@ -287,6 +382,7 @@ function EditPhase({ phase, today, onReplace }: { phase: FitnessPhase; today: IS
     fat: String(phase.fatGPerKg),
     weight: "",
   });
+  const [startDate, setStartDate] = useState<ISODate>(phase.startDate);
   const [problem, setProblem] = useState<string | null>(null);
   const set = (p: Partial<Fields>) => setF((s) => ({ ...s, ...p }));
 
@@ -294,8 +390,11 @@ function EditPhase({ phase, today, onReplace }: { phase: FitnessPhase; today: IS
     e.preventDefault();
     const p = parseFields(f, false);
     if (typeof p === "string") return setProblem(p);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return setProblem("Pick a start date.");
+    const bad = await changePhaseStart(phases, phase, startDate, today);
+    if (bad) return setProblem(START_PROBLEM[bad]);
     setProblem(null);
-    await savePhase(phase, { kind: f.kind, ratePctPerWeek: p.ratePctPerWeek, proteinGPerKg: p.proteinGPerKg, fatGPerKg: p.fatGPerKg });
+    await savePhase({ ...phase, startDate }, { kind: f.kind, ratePctPerWeek: p.ratePctPerWeek, proteinGPerKg: p.proteinGPerKg, fatGPerKg: p.fatGPerKg });
     toast("Phase saved.");
   }
 
@@ -306,6 +405,11 @@ function EditPhase({ phase, today, onReplace }: { phase: FitnessPhase; today: IS
       </h2>
       <KindPicker value={f.kind} rate={Number(f.rate) || 0} onChange={(k) => set({ kind: k, ...preset(k) })} />
       <NumberFields f={f} set={set} />
+      <label className="flex max-w-[240px] flex-col gap-1.5">
+        <span className="text-[13px] font-semibold text-ink-2">Start date</span>
+        <input type="date" value={startDate} max={today} onChange={(e) => setStartDate(e.target.value)} className="input tnum" required />
+        <span className="text-xs text-ink-2">Week count and progress follow it. The phase before ends the day before.</span>
+      </label>
       {problem && (
         <p role="alert" className="text-sm font-medium">
           {problem}

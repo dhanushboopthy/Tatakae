@@ -179,6 +179,8 @@ export interface DatedScore {
 export interface StatsIndex {
   today: ISODate;
   scoring: ScoringSettings;
+  /** First day of Cycle 1 (setting `cycle.start`); later cycles follow every 84 days. */
+  cycleStart: ISODate;
   firstUse: ISODate | null;
   days: Map<ISODate, Day>;
   missionsByDate: Map<ISODate, Mission[]>;
@@ -199,7 +201,7 @@ const live = <T extends { deletedAt: string | null }>(rows: readonly T[] | undef
   (rows ?? []).filter((r) => r.deletedAt == null);
 
 /** Build the lookup structures once. `today` is the app day (todayIST); scoring defaults to DEFAULT_SCORING. */
-export function indexStats(data: StatsData, opts: { today?: ISODate; scoring?: ScoringSettings } = {}): StatsIndex {
+export function indexStats(data: StatsData, opts: { today?: ISODate; scoring?: ScoringSettings; cycleStart?: ISODate } = {}): StatsIndex {
   const days = live(data.days);
   const missions = live(data.missions);
   const byDate = new Map<ISODate, Mission[]>();
@@ -215,6 +217,7 @@ export function indexStats(data: StatsData, opts: { today?: ISODate; scoring?: S
   return {
     today: opts.today ?? todayIST(),
     scoring: opts.scoring ?? DEFAULT_SCORING,
+    cycleStart: opts.cycleStart ?? CYCLE_1.start,
     firstUse: firstUseDate(days),
     days: new Map(days.map((d) => [d.date, d] as const)),
     missionsByDate: byDate,
@@ -705,10 +708,10 @@ export function cycleStats(ix: StatsIndex, cycle: { start: ISODate; end: ISODate
 }
 
 /** Cycle containing `date`: Cycle 1, then consecutive 12-week cycles after it. */
-export function cycleFor(date: ISODate): { index: number; start: ISODate; end: ISODate } {
-  const offset = daysBetween(CYCLE_1.start, date);
+export function cycleFor(date: ISODate, cycle1Start: ISODate = CYCLE_1.start): { index: number; start: ISODate; end: ISODate } {
+  const offset = daysBetween(cycle1Start, date);
   const index = offset < 0 ? 0 : Math.floor(offset / 84);
-  const start = addDays(CYCLE_1.start, index * 84);
+  const start = addDays(cycle1Start, index * 84);
   return { index: index + 1, start, end: addDays(start, 83) };
 }
 
@@ -729,7 +732,7 @@ export function scoreboard(
   opts: { date?: ISODate; focusWeekTarget?: number; cycle?: { start: ISODate; end: ISODate } } = {},
 ): MetricBox[] {
   const date = opts.date ?? ix.today;
-  const cycle = opts.cycle ?? cycleFor(date);
+  const cycle = opts.cycle ?? cycleFor(date, ix.cycleStart);
   const today = scoreOn(ix, date);
 
   // Today's score — only after shutdown.
@@ -759,7 +762,7 @@ export function scoreboard(
     delta: null,
     target: elapsed || null,
     progress: pctOf(shown, elapsed),
-    context: `of ${cycleLen} days in Cycle ${cycleFor(cycle.start).index}`,
+    context: `of ${cycleLen} days in Cycle ${cycleFor(cycle.start, ix.cycleStart).index}`,
   };
 
   // 7-day average vs the 7 days before.

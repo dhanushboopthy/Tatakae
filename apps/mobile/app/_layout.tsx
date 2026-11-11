@@ -155,6 +155,7 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="fitness/body" options={{ presentation: "modal" }} />
         <Stack.Screen name="fitness/food" options={{ presentation: "modal" }} />
         <Stack.Screen name="fitness/set" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/targets" options={{ presentation: "modal" }} />
         <Stack.Screen name="day/[date]" />
         <Stack.Screen name="cycle" options={{ presentation: "modal" }} />
         <Stack.Screen name="notes/index" options={{ presentation: "modal" }} />

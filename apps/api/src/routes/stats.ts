@@ -80,7 +80,7 @@ stats.get("/month/:yyyymm", (c) => {
 stats.get("/cycle", (c) => {
   const { date } = parseQuery(c, optionalDate);
   const { ix } = loadStats(c.get("db"));
-  return c.json(cycleStats(ix, cycleFor(date ?? todayIST())));
+  return c.json(cycleStats(ix, cycleFor(date ?? todayIST(), ix.cycleStart)));
 });
 
 stats.get("/habits", (c) => {

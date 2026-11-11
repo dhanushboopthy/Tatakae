@@ -22,7 +22,7 @@ export function loadStats(db: Db, today: ISODate = todayIST()): { ix: StatsIndex
       areas: allRows(db, "areas", live),
       muraEvents: allRows(db, "mura_events", live),
     },
-    { today, scoring: settings.scoring },
+    { today, scoring: settings.scoring, cycleStart: settings["cycle.start"] },
   );
   return { ix, settings };
 }

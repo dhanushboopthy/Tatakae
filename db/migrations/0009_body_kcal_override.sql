@@ -1,0 +1,1 @@
+ALTER TABLE `body_logs` ADD `kcal_override` integer;
