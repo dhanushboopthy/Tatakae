@@ -24,13 +24,7 @@ No Notion import: there is no Notion data, the app starts fresh (decision R2-14,
 | # | Task | Area | Done when |
 |---|---|---|---|
 | 0.1 | `pnpm install`, typecheck/test pass; `.npmrc` decision for Expo | repo | CI green |
-| 📝 0.2 manual — see MANUAL-STEPS.md | OCI account (home region Mumbai/Hyderabad); decide Pay-As-You-Go upgrade + ₹1 budget alert | infra | Documented in DECISIONS |
-| 🟡 0.3 | Terraform: VCN, subnet, security list (80/443), A1 2 OCPU/12 GB arm64, reserved IP, block volume, backup bucket | infra | `terraform apply` succeeds |
-| 🟡 0.4 | cloud-init/bootstrap: Docker, iptables 80/443, ufw, fail2ban, unattended-upgrades, Tailscale; close public 22 | infra | SSH only via tailnet |
-| 📝 0.5 manual — see MANUAL-STEPS.md | Domain: claim `.me` via Student Pack, auto-renew off, A record → reserved IP | infra | `dig` resolves |
-| 🟡 0.6 | Caddy + hello page over HTTPS; `/api/health` | deploy | Valid certificate |
-| 🟡 0.7 | Litestream to Object Storage | deploy | Snapshot visible in bucket |
-| 🟡 0.8 | GitHub Actions deploy (arm64 build → GHCR → Tailscale SSH → health check) | ci | Push to main deploys |
+| ⛔ 0.2–0.8 | Oracle Cloud account, Terraform, cloud-init, domain, Caddy, Litestream, GitHub Actions deploy | infra | Dropped (Nov 2026): the owner has another hosting plan; the Oracle and Zoho Catalyst files were removed |
 | ✅ 0.9 | Auth: `sessions` table, `/api/session/*`, `auth` middleware (cookie + bearer), rate limit, `hash-password.sh` | api | Tests for login/logout/expiry |
 | ✅ 0.10 | Web: Login screen, 401 handling, desktop install prompt (code done; install on the laptops after deploy) | web | Installed on both laptops |
 | 🟡 0.11 | Phone: Expo dev build (`expo run:android` or EAS development), Login with SecureStore, `/api/session/me` | mobile | Dev client installed and logged in to production |
@@ -71,7 +65,7 @@ Order (each builds on the previous):
 
 ## v4 — Hardening (14 Dec – 3 Jan)
 1. ✅ Nightly JSON backup job + `/api/export`; `job_runs` shown in Settings → Data.
-2. **Restore drill** on a fresh VM using `restore.sh` (Terraform → cloud-init → Litestream restore). Record time-to-restore.
+2. ⛔ **Restore drill**: dropped with the Oracle setup. Redo it once the new hosting exists (restore from a volume snapshot or the nightly JSON).
 3. 🟡 Signed release APK workflow on `mobile-v*` tags (✅ written); `/api/app/version` (✅) + in-app "update available" (✅ code, 18 Oct); EAS Update channel for JS fixes (✅ wired, needs `eas init` + the `EAS_PROJECT_ID` variable). Still to do: keystore secrets and the first `mobile-v0.1.0` release.
 4. ✅ Web passkeys (WebAuthn) as primary login; password fallback (R3-8). Production: `PUBLIC_ORIGIN` must be the real https domain.
 5. 🟡 Optional laptop web push.
@@ -79,6 +73,7 @@ Order (each builds on the previous):
 7. ✅ Area alignment scores; monthly review polish (goal progress done vs minimum + the month's experiments, 18 Oct; owner chose the scope).
 8. ✅ Settings: default focus length takes any 5–240 minutes (core schema + Settings → General, R3-9).
 9. 🟡 Security hardening (S1–S14, 19 Oct; branch `feat/security-hardening`, details in CHANGELOG): ✅ no static API token; ✅ step-up re-auth for passkeys / other devices / export; ✅ security event log in Settings → Devices; ✅ sign out every other device, and a new password signs everyone out; ✅ sign out and erase (both clients), phone out of Android backup; ✅ CSRF origin check + `__Host-` cookie; ✅ body caps, password length cap, global wrong-password cap; ✅ passkeys need user verification; ✅ http(s)-only links; ✅ OSV / gitleaks / CodeQL + Dependabot, actions pinned to SHAs; ✅ EAS Update only when signed. Still to do: generate the update-signing certificate (MANUAL-STEPS §17); redo the host-level parts on Zoho Catalyst (pin `NODE_ENV=production`, an edge body cap, least-privilege backup credentials, admin access) once that hosting is set up; then a review/pen-test pass against the deployed site.
+10. ⛔ Hosting on Zoho Catalyst (19 Oct) and the Oracle VM were both dropped by the owner (Nov 2026) and removed from the repo: Terraform, deploy and Catalyst workflows, AppSail image, Turso driver, Stratus storage, API-served website. Kept from that branch: client IP from the trusted proxy hop (`TRUSTED_PROXY_HOPS`). Hosting is undecided; see `docs/08-operations.md`.
 - **Gate:** restore rehearsed and documented.
 
 ## Fitness (F1–F6)

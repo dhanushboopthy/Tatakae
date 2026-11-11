@@ -11,7 +11,7 @@ Read in this order. Each file is self-contained; `CLAUDE.md` at the repo root ho
 | 05 | [05-ui-ux.md](05-ui-ux.md) | UX principles with evidence, screen-by-screen specs for phone and web, visual system, copy, accessibility |
 | 06 | [06-phases.md](06-phases.md) | Phase-by-phase implementation plan with ordered tasks and gates |
 | 07 | [07-data-and-api.md](07-data-and-api.md) | Tables, API routes, sync protocol |
-| 08 | [08-operations.md](08-operations.md) | Oracle VM, deploys, backups and restore, secrets, domain, runbooks |
+| 08 | [08-operations.md](08-operations.md) | Running locally, phone releases, configuration, backups, runbooks (hosting undecided) |
 | 09 | [09-skills-and-workflow.md](09-skills-and-workflow.md) | Claude Code skills/plugins to install and how to work phase by phase |
 | 10 | [10-design-system.md](10-design-system.md) | "Soft Bento" visual system: tokens, type, components, screen compositions (refs in design/references/) |
 | 11 | [11-dashboards-charts-calendar.md](11-dashboards-charts-calendar.md) | Every dashboard, chart, calendar view, scoreboard box and icon, with data sources and phases |

@@ -6,7 +6,7 @@ A personal execution system for one person. Rather than just storing tasks, it e
 |---|---|---|
 | **Website** (`apps/web`) | Laptop browser, installable PWA | Plan and reflect |
 | **Phone app** (`apps/mobile`, Expo) | Android | Do and capture |
-| **API** (`apps/api`, Hono + SQLite) | One Oracle Cloud VM | Source of truth, sync, scoring, backups |
+| **API** (`apps/api`, Hono + SQLite) | Host to be decided | Source of truth, sync, scoring, backups |
 | **Core** (`packages/core`) | Shared, pure TS | Scoring, time, stats, sync merge, story picking |
 
 **Status legend:** ✅ built · 🟡 partly built / written but not yet verified · ⬜ planned · 🚧 uncommitted work in progress
@@ -26,22 +26,22 @@ An 8-step wizard at `/ritual`:
 7. **Side quest**: optional, one, unscored.
 8. **Shutdown complete**: locks tomorrow's plan (`forged_at`).
 
-🚧 **Restart ritual**: unlocks a plan that is already locked, so the ritual can be redone. It is deliberately hard to do: a written reason of at least 20 characters, typing the word "restart", a wait and a hold-to-confirm, once per date and at most twice in 7 days. Each restart is logged as a *mura* event for Sunday's review.
+✅ **Restart ritual** (web): unlocks a plan that is already locked, so the ritual can be redone. It is deliberately hard to do: a written reason of at least 20 characters, typing the word "restart", a wait and a hold-to-confirm, once per date and at most twice in 7 days. Each restart is logged as a *mura* event for Sunday's review.
 
-### Morning (one screen) — ✅ web · ✅ phone
+### Morning (one screen) — ✅ web · 🟡 phone (built, not run on a device)
 "What would make today a win?" → P1 card (title, Minimum, if-then) → **Start**. Nothing else is shown until P1 is started or deferred.
 
 ### During the day
 | Feature | Web | Phone |
 |---|---|---|
-| **Dashboard / Today**: bento grid with the P1 hero, today's score (shown only after shutdown), days shown up, P2–P9 and side quest, habits, inbox, screen-minutes stripe, 7-day average, focus this week, week bars, cycle gauge, goal rings | ✅ | ✅ (week strip, chips, P1 hero, scoreboard) |
-| **Status chips** on every mission | ✅ | ✅ |
-| **Soft plan lock**: editing a locked plan needs a typed reason (stored as a *mura* event); the server answers 423 without one | ✅ | ✅ |
-| **Focus timer**: length comes from the mission's plan or any custom length; it sits in the nav rail with a badge while a session runs; logs `focus_sessions` | ✅ | ✅ (FocusRing, timer from start time) |
-| **Stuck button**: Uncertainty → next physical action · Fear → 10/10/10 · Inertia → 5-minute timer | — | 🟡 component built, screen is a stub |
-| **Recharge menu** after a focus block (walk, music, call, stretch, sketch) | ✅ settings | 🟡 stub |
-| **Quick capture** to the inbox | ✅ (`/capture`, PWA share target) | 🟡 stub |
-| **Quick close** (≤ 45 s close when the laptop ritual is missed) | — | 🟡 stub |
+| **Dashboard / Today**: bento grid with the P1 hero, today's score (shown only after shutdown), days shown up, P2–P9 and side quest, habits, inbox, screen-minutes stripe, 7-day average, focus this week, week bars, cycle gauge, goal rings | ✅ | 🟡 (week strip, chips, P1 hero, scoreboard) |
+| **Status chips** on every mission | ✅ | 🟡 |
+| **Soft plan lock**: editing a locked plan needs a typed reason (stored as a *mura* event); the server answers 423 without one | ✅ | 🟡 |
+| **Focus timer**: length comes from the mission's plan or any custom length; it sits in the nav rail with a badge while a session runs; logs `focus_sessions` | ✅ | 🟡 (FocusRing, timer from start time) |
+| **Stuck button**: Uncertainty → next physical action · Fear → 10/10/10 · Inertia → 5-minute timer | — | 🟡 built, not run on a device |
+| **Recharge menu** after a focus block (walk, music, call, stretch, sketch) | ✅ settings | 🟡 built, not run on a device |
+| **Quick capture** to the inbox | ✅ (`/capture`, PWA share target) | 🟡 built, not run on a device |
+| **Quick close** (≤ 45 s close when the laptop ritual is missed) | — | 🟡 built, not run on a device |
 | **Command palette** (Cmd+K) | ✅ | — |
 
 ### Lapse protocol — ✅ web · 🟡 phone
@@ -70,7 +70,7 @@ Exact and deterministic, in `packages/core/src/scoring.ts` (table-driven tests):
 - **Month view** with DayCircles coloured by mark, and a day sheet.
 - **Week planner**: time rail, area-coloured blocks, a backlog to drag from, **drag to create, resize**, and a **day view**.
 - **Anchors**: fixed commitments that reduce free capacity.
-- Phone Calendar tab and Day sheet: ⬜ stubs.
+- Phone Calendar tab and Day sheet: 🟡 built, not run on a device.
 
 ---
 
@@ -79,30 +79,29 @@ Exact and deterministic, in `packages/core/src/scoring.ts` (table-driven tests):
 - **Monthly review**: averages, BlockBarChart of marks and area minutes, HabitHeatGrid, wins / failures / why, next month's theme.
 - **12-week Cycle page**: at most 4 goals, each passing a "hell-yeah" gate, with SegmentGauge and RingProgress, and areas with a colour and icon.
 - One review per period, enforced by the API.
-- Phone Week view and read-only Cycle: ⬜.
+- Phone Week view and read-only Cycle: 🟡 built, not run on a device.
 
 ---
 
 ## 5. Story layer — ✅ web · 🟡 phone
 - Your watch history becomes **paraphrased lessons (≤ 160 chars)** tied to moments: P1 done, Minimum done, comeback, stuck-fear, stuck-inertia, weekly review, cycle start, rest day.
-- Shown on about 1 in 3 completions, never the same one twice in 14 days, **never on the morning screen**, with a global mute.
+- Story pop-ups (StoryToast) were removed on both clients (R3-10, 18 Oct). The tables, `/api/story/*` and `pickStory` in core remain.
 - Monthly themes follow learning goals.
-- **Watch queue / reward**: completing a weekly review unlocks one episode.
-- Story packs are imported in Settings from local `references/*.local.json` files (git-ignored). No art, no logos, no verbatim quotes.
-- Phone StoryToast: component built, not wired in yet.
+- **Watch queue / reward**: completing a weekly review unlocks one episode. The reward queue is in Settings → General.
+- Story packs are local `references/*.local.json` files (git-ignored). No art, no logos, no verbatim quotes.
 
 ---
 
-## 6. Notes and second brain — ✅ API · 🟡 web · ⬜ phone
+## 6. Notes and second brain — ✅ API · 🟡 web · 🟡 phone
 - **Notes**: list, **BlockNote editor** with autosave, tags, goal and area links, the flags *can-explain / can-implement / misunderstood*, and **full-text search** (SQLite FTS5).
 - **File attachments**: multipart upload to disk, with an optional Object Storage copy.
 - **Applications** tracker, **Stories** (STAR format) and **Japanese study log**, under the Notes rail item.
-- Phone capture-to-note and read-only search: ⬜.
+- Phone capture-to-note and read-only search: 🟡 built, not run on a device.
 
 ---
 
-## 7. Settings — ✅ web · ⬜ phone
-Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sunday guard) · Story · Notifications · Devices (list / revoke sessions) · Data (export, backup job log).
+## 7. Settings — ✅ web · 🟡 phone (built, not run on a device)
+Sections: General (includes the reward queue) · Anchors · Habits · Areas · Recharge · Scoring (even-Sunday guard) · Notifications · Devices (list / revoke sessions) · Data (export, backup job log).
 
 ---
 
@@ -117,14 +116,14 @@ Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sun
 ## 9. Notifications — 🟡
 - At most 3 a day, predictable, never guilt-based: morning, an optional afternoon one, and ritual time.
 - Laptop **web push** (opt-in and a test button, 06:30 morning message): ✅ code.
-- Phone local notifications: ⬜.
+- Phone local notifications: 🟡 built, not run on a device.
 
 ---
 
-## 10. Auth and security — ✅ (passkeys blocked)
+## 10. Auth and security — ✅
 - Password login with **hashed session tokens** and sliding expiry: a signed cookie on web, a bearer token in SecureStore on the phone. No static API token: scripts log in like the phone.
 - Login rate limit, device list and revoke, 401 handling.
-- ⬜ **Passkeys (WebAuthn)**: blocked because the dependency could not be installed.
+- ✅ **Passkeys (WebAuthn)** are the primary login on the web, with the password as fallback. Security hardening: step-up re-auth for sensitive actions, a security event log, trusted client IP from `X-Forwarded-For`, and a body size limit.
 
 ---
 
@@ -132,15 +131,10 @@ Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sun
 | Feature | Status |
 |---|---|
 | `GET /api/export`: full JSON export | ✅ |
-| Nightly JSON backup (newest 7 kept locally, newest 30 in Object Storage), logged to `job_runs` and shown in Settings → Data | ✅ |
-| **Litestream** continuous SQLite replication to Object Storage | 🟡 configured |
-| **Terraform (OCI)**: VCN, A1 arm64 VM, reserved IP, data volume, versioned backup bucket, optional ₹1 budget alert | 🟡 written |
-| **cloud-init bootstrap**: Docker, firewall, Tailscale-only SSH, fail2ban, unattended upgrades | 🟡 written |
-| **Caddy**: HTTPS, CSP, immutable asset caching | 🟡 written |
-| **CI deploy**: arm64 images → GHCR → Tailscale → `deploy.sh` (snapshot, health check, rollback) | 🟡 written |
-| `restore.sh` + **restore drill** | 🟡 script written, drill ⬜ |
+| Nightly JSON backup (newest 7 kept locally, newest 30 in an S3-compatible bucket when configured), logged to `job_runs` and shown in Settings → Data | ✅ |
+| Hosting | ⬜ undecided (the Oracle Cloud and Zoho Catalyst setups were removed, Nov 2026) |
 | Local Docker run (`scripts/local-up.sh`, first free port from 8080) | ✅ |
-| Signed release APK on `mobile-v*` tags, `/api/app/version` | 🟡 workflow + endpoint ✅, in-app "update available" ⬜ |
+| Signed release APK on `mobile-v*` tags, `/api/app/version` | 🟡 workflow + endpoint ✅, in-app "update available" ✅ (code only, not run on a device) |
 
 ---
 
@@ -163,10 +157,9 @@ Sections: General · Anchors · Habits · Areas · Recharge · Scoring (even-Sun
 
 ---
 
-## Still to come (from `docs/06-phases.md`)
-- **Phone**: Capture, Quick close, Stuck, Recharge, Welcome back, Calendar tab, Day sheet, Settings, local notifications.
-- **Phone native extras**: share intent → inbox, launcher quick actions, Android widget (P1 + Start/Done), a usage-stats module to prefill screen minutes, an ongoing focus notification.
-- Passkeys, the in-app update prompt, an EAS Update channel, the restore drill, area alignment scores, an offline and accessibility audit, and installing Playwright for the smoke test.
+## Still to come
+Open work is tracked in `docs/plans/leftover-tasks.md`.
+
 - **Later**: iOS, a Wear OS tile, read-only calendar import, open-sourcing with an empty reference pack.
 
 ## Deliberately not built

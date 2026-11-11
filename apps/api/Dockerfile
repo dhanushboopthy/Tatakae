@@ -1,4 +1,4 @@
-# Multi-arch (built for linux/arm64 for Oracle Ampere A1). Build context = repo root.
+# Build context = repo root.
 FROM node:22-bookworm-slim AS build
 RUN corepack enable && apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo

@@ -12,13 +12,13 @@ type Sqlite = Database.Database;
 /** Raw better-sqlite3 handle per drizzle instance (transactions and generic row SQL use it). */
 const clients = new WeakMap<object, Sqlite>();
 
-/** SQLite on the VM block volume. WAL mode so Litestream can stream it. */
+/** SQLite file in WAL mode. */
 export function openDb(path: string) {
   const inMemory = path === ":memory:" || path.startsWith("file::memory:");
   if (!inMemory) mkdirSync(dirname(resolve(path)), { recursive: true });
   const sqlite = new Database(path);
   sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("synchronous = NORMAL"); // safe with WAL; wal_autocheckpoint stays default for Litestream
+  sqlite.pragma("synchronous = NORMAL"); // safe with WAL
   sqlite.pragma("busy_timeout = 5000");
   sqlite.pragma("foreign_keys = ON");
   const db = drizzle(sqlite, { schema });

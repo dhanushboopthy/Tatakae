@@ -2,8 +2,8 @@ name: security
 
 # Dependency vulnerabilities (OSV, from pnpm-lock.yaml), leaked secrets in the git history (gitleaks)
 # and static analysis (CodeQL, free for public repos). Runs on PRs, on main and weekly, so a new
-# advisory for an unchanged dependency still shows up. Separate from ci.yml/deploy.yml on purpose:
-# a fresh advisory must not block an urgent deploy, it opens a red run here instead.
+# advisory for an unchanged dependency still shows up. Separate from ci.yml on purpose:
+# a fresh advisory must not block an urgent change, it opens a red run here instead.
 on:
   pull_request:
   push:

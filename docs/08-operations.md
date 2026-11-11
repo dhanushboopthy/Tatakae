@@ -1,41 +1,43 @@
 # 08 · Operations
 
-## Oracle Cloud facts (checked Oct 2026)
-- Always Free Ampere A1: **2 OCPU / 12 GB** total since 15 Jun 2026 (was 4/24). Use it as one VM.
-- Block storage 200 GB total (boot + block), Object Storage 20 GB (free-only accounts), 10 TB egress/month.
-- **Idle reclamation:** over 7 days, CPU p95 < 20 % **and** network < 20 % **and** memory < 20 % → may be reclaimed. A one-user app looks idle. Preferred: upgrade to **Pay-As-You-Go** (Always Free stays free) + ₹1 budget alert. Don't fake load by default.
-- "Out of host capacity" for A1 is common: retry off-peak / another AD / PAYG.
-- Oracle Ubuntu images ship iptables rules rejecting all but 22 → open 80/443 in iptables and the security list.
+> **Hosting is undecided.** The Oracle Cloud VM setup and the Zoho Catalyst setup were both removed (owner's
+> decision, Nov 2026). The API is a plain Node process (or the Docker image in `apps/api/Dockerfile`) that needs
+> a durable disk for its SQLite file, so any host that gives it a persistent volume works. This page covers what is
+> independent of the host. Add a "Deploy" section here once the new plan is chosen.
 
-## Deploy
-Push to `main` → `deploy.yml`: build arm64 images on `ubuntu-24.04-arm` → GHCR (`tatakae-api`, `tatakae-web`, tagged with SHA + latest) → join tailnet → copy compose files → `deploy.sh <sha>` (snapshot DB, pull, up -d, health check, roll back on failure) → smoke test.
+## Run locally
+`scripts/local-up.sh` builds the website and API in Docker from `deploy/docker-compose.local.yml` and serves them
+on `127.0.0.1` (first free port from 8080). For development without Docker: `pnpm dev` (API :8787, web :5173).
 
-Phone: tag `mobile-vX.Y.Z` → `mobile.yml` builds a signed APK → GitHub Release → install on phone. JS-only fixes via EAS Update channel `preview`.
+## Phone releases
+Tag `mobile-vX.Y.Z` → `mobile.yml` builds a signed APK → GitHub Release → install on the phone. JS-only fixes go
+out through EAS Update (channel `production`, signed). Steps: `docs/MANUAL-STEPS.md`.
 
-## Secrets
+## Configuration
+The API reads environment variables only (`apps/api/src/env.ts`): `OWNER_EMAIL`, `OWNER_PASSWORD_HASH`,
+`SESSION_SECRET`, `PUBLIC_ORIGIN`, `DATABASE_PATH`, `FILES_DIR`, `BACKUP_DIR`, optional `S3_*` (off-box backups to
+any S3-compatible bucket), `VAPID_*` (web push), `MIN_MOBILE_VERSION` and `LATEST_APK_URL` (phone update banner).
+Secrets stay out of the repo and out of images.
+
 | Where | What |
 |---|---|
-| `/opt/tatakae/.env` (chmod 600) | OWNER_EMAIL, OWNER_PASSWORD_HASH, SESSION_SECRET, S3_*, VAPID_*, DOMAIN |
-| GitHub secrets | TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET, VM_USER, VM_TAILNET_HOST, ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD |
-| GitHub variables | DOMAIN |
-| Your password manager | Android keystore file + passwords (losing it = can't update the app in place) |
+| The API's environment | the variables above |
+| GitHub secrets | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` |
+| Your password manager | Android keystore file + passwords (losing it = can't update the app in place), EAS signing key |
 
 ## Backups
-1. Litestream: continuous WAL replication, 30-day retention.
-2. Nightly JSON export at 02:00 IST (30 kept).
-3. `deploy.sh` takes a `sqlite3 .backup` before each deploy.
-Phone holds an offline copy of v1 data as a last resort.
+1. Nightly JSON export at 02:00 IST: the newest 7 kept on disk, and the newest 30 in the S3 bucket when `S3_*` is set.
+2. Settings → Data downloads everything as JSON at any time.
+The phone also holds an offline copy of the data as a last resort. Whatever host you pick should also snapshot the
+volume that holds `DATABASE_PATH`.
 
 ## Runbooks
-- **Restore on a new VM:** `terraform apply` → cloud-init → copy `.env` → `restore.sh` → `docker compose up -d` → check `/api/health` → devices resync.
-- **Rotate a lost phone:** revoke device in web Settings → Devices; log in on new phone. Check "Recent sign-ins and changes" there for anything that wasn't you.
-- **Change the password:** `deploy/scripts/hash-password.sh` → replace the `OWNER_PASSWORD_HASH=` line in `/opt/tatakae/.env` → `docker compose up -d api`. On boot the api notices the new login and signs every device out (logged as "Password changed"); sign in again everywhere. Without a restart, Settings → Devices → "Sign out every other device" does the same for the others.
-- **Change domain:** update DNS, `DOMAIN`/`PUBLIC_ORIGIN` in `.env`, redeploy; reinstall web app on laptops; rebuild phone app with new `EXPO_PUBLIC_API_URL`.
-- **Disk full:** `docker image prune -af`, check Litestream retention, check files dir.
-- **Cert issues:** `docker compose logs web`; confirm 80/443 open in both firewalls.
+- **Rotate a lost phone:** revoke the device in web Settings → Devices; log in on the new phone. Check "Recent sign-ins and changes" there for anything that wasn't you.
+- **Change the password:** `deploy/scripts/hash-password.sh` → replace `OWNER_PASSWORD_HASH` in the API's environment → restart the API. On boot the API notices the new login and signs every device out (logged as "Password changed"); sign in again everywhere. Without a restart, Settings → Devices → "Sign out every other device" does the same for the others.
+- **Change domain:** update `PUBLIC_ORIGIN` (and `WEBAUTHN_*` if set), reinstall the web app on laptops (passkeys are tied to the domain), and rebuild the phone app with the new `EXPO_PUBLIC_API_URL`.
 
 ## Domain
-See DOMAIN.md — Namecheap `.me` via Student Pack; auto-renew off; DuckDNS fallback.
+See DOMAIN.md.
 
 ## Monitoring (lightweight)
 `/api/health`, `job_runs` in Settings → System, optional free uptime check (e.g. a GitHub Actions cron hitting `/api/health` daily and opening an issue on failure).

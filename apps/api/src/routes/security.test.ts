@@ -62,7 +62,8 @@ describe("login throttling", () => {
   it("successful logins don't count", async () => {
     const { app } = await setup();
     for (let i = 0; i < 40; i++) expect((await wrong(app, `198.51.100.${i}`, OWNER.password)).status).toBe(200);
-  });
+    // 40 real argon2 hashes: slow under a parallel run, so this test gets a longer timeout.
+  }, 30_000);
 });
 
 describe("step-up re-auth", () => {
@@ -196,6 +197,18 @@ describe("signing out other devices", () => {
     expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(200);
     expect(signOutEverywhereIfLoginChanged(db, OWNER.email, "$argon2id$new")).toBe(2);
     expect((await call(app, "GET", "/session/me", undefined, phone)).status).toBe(401);
+  });
+});
+
+describe("client IP behind proxies", () => {
+  it("with two proxies, the address the outer one saw is the client", async () => {
+    const { app } = await setup({ TRUSTED_PROXY_HOPS: "2" });
+    await call(app, "POST", "/session/login", { email: OWNER.email, password: "wrong password!", client: "web", deviceName: "x" }, {
+      "x-forwarded-for": "6.6.6.6, 203.0.113.80, 10.0.0.5", // claimed, seen by the outer proxy, the inner proxy
+    });
+    const phone = await login(app, "mobile");
+    const events = (await call(app, "GET", "/system/security", undefined, phone)).body["events"] as { kind: string; ip: string | null }[];
+    expect(events.find((e) => e.kind === "login_failed")?.ip).toBe("203.0.113.80");
   });
 });
 

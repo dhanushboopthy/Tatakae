@@ -1,10 +1,17 @@
 import type { Context, MiddlewareHandler } from "hono";
+import type { AppBindings } from "../env";
 
-/** Client IP: first hop of X-Forwarded-For (set by Caddy), then X-Real-IP, else "unknown". */
-export function clientIp(c: Context): string {
-  const xff = c.req.header("x-forwarded-for");
-  const first = xff?.split(",")[0]?.trim();
-  if (first) return first;
+/**
+ * Client IP from X-Forwarded-For, counted from the right: each proxy appends the address it saw, so
+ * the entry TRUSTED_PROXY_HOPS from the end was written by our own outermost proxy, and anything to
+ * its left is whatever the client claimed. (Caddy discards a client's header, so with 1 hop this is
+ * the same address as before.) Then X-Real-IP, else "unknown".
+ */
+export function clientIp(c: Context<AppBindings>): string {
+  const hops = c.get("env")?.TRUSTED_PROXY_HOPS ?? 1;
+  const parts = (c.req.header("x-forwarded-for") ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  const picked = parts[Math.max(0, parts.length - hops)];
+  if (picked) return picked;
   return c.req.header("x-real-ip")?.trim() || "unknown";
 }
 
@@ -17,7 +24,7 @@ export function rateLimit(opts: {
   max: number;
   methods?: readonly string[];
   now?: () => number;
-}): MiddlewareHandler {
+}): MiddlewareHandler<AppBindings> {
   const windowMs = opts.windowSec * 1000;
   const now = opts.now ?? Date.now;
   const methods = opts.methods?.map((m) => m.toUpperCase());

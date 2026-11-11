@@ -7,7 +7,7 @@ import { offsiteConfigured, uploadBackup } from "../lib/storage";
 import { buildExport, recordJob } from "../lib/system.service";
 
 /**
- * Second backup layer (Litestream is the first). Every night: the full JSON export →
+ * Nightly backup. Every night: the full JSON export →
  * BACKUP_DIR/YYYY-MM-DD.json (newest 7 kept) and Object Storage backups/YYYY-MM-DD.json (newest 30).
  * The result goes to `job_runs` (Settings → Data). Never throws: a failed run is logged, not fatal.
  */

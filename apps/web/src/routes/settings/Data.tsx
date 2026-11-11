@@ -46,7 +46,7 @@ export function DataSettings() {
   }
 
   return (
-    <Section id="data" title="Data" description="Everything is yours. Litestream streams the database off the VM; a JSON copy is made every night.">
+    <Section id="data" title="Data" description="Everything is yours. A JSON copy of the data is made every night.">
       <button type="button" className="btn-secondary" onClick={() => void exportAll()}>
         <DownloadIcon size={18} /> Download everything (JSON)
       </button>

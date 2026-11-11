@@ -33,8 +33,10 @@ if (easProjectId && !codeSigned) {
 const asset = (file: string): string | undefined =>
   existsSync(join(__dirname, "assets", file)) ? `./assets/${file}` : undefined;
 
-const icon = asset("icon.png"); // TODO(phase0): original 1024×1024 icon, no franchise art
+// Drawn by `node scripts/make-icons.mjs --mobile` (the shared mark, no franchise art).
+const icon = asset("icon.png");
 const adaptiveIcon = asset("adaptive-icon.png");
+const monochrome = asset("monochrome-icon.png");
 
 const config: ExpoConfig = {
   name: "Tatakae",
@@ -49,7 +51,15 @@ const config: ExpoConfig = {
   android: {
     // Owner can change this before the first release build; changing it later means a fresh install.
     package: "dev.dhanush.tatakae",
-    ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#262626" } } : {}),
+    ...(adaptiveIcon
+      ? {
+          adaptiveIcon: {
+            foregroundImage: adaptiveIcon,
+            ...(monochrome ? { monochromeImage: monochrome } : {}),
+            backgroundColor: "#262626",
+          },
+        }
+      : {}),
     permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
     softwareKeyboardLayoutMode: "resize",
     // The local SQLite holds a full copy of the data. Keep it (and everything else) out of Google

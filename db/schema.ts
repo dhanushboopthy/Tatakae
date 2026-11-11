@@ -3,7 +3,7 @@ import { sqliteTable, text, integer, real, primaryKey, index } from "drizzle-orm
 /** Micronutrient JSON (core `Micros`: MICRO_KEYS → amount). Kept local so the schema has no package imports. */
 type Micros = Partial<Record<string, number>>;
 
-// Drizzle schema for SQLite (better-sqlite3 on the Oracle VM). Column names match docs/07-data-and-api.md.
+// Drizzle schema for SQLite (better-sqlite3). Column names match docs/07-data-and-api.md.
 // Conventions: ULID text ids, IST date strings, updated_at on every row, soft delete via deleted_at.
 
 const meta = {

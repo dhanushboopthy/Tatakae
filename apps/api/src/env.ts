@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Db } from "./lib/db";
 
-/** All config comes from environment variables (deploy/.env on the VM). */
+/** All config comes from environment variables. */
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -12,6 +12,8 @@ export const envSchema = z
     FILES_DIR: z.string().default("./data/files"),
     PUBLIC_ORIGIN: z.string().url().default("http://localhost:5173"),
     TZ: z.string().default("Asia/Kolkata"),
+    /** Proxies in front that append to X-Forwarded-For (Caddy: 1). Check the IPs in Settings → Devices after a move. */
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(5).default(1),
 
     // Auth (single user)
     OWNER_EMAIL: z.string().email(),
@@ -24,11 +26,8 @@ export const envSchema = z
     WEBAUTHN_RP_ID: z.string().min(1).optional(),
     WEBAUTHN_ORIGINS: z.string().min(1).optional(),
 
-    // Idle-reclaim guard (see cron/keepWarm.ts). Kept a no-op on purpose.
-    KEEP_WARM: z.enum(["0", "1"]).default("0"),
-
-    // Off-box backups: OCI Object Storage (S3-compatible) or any S3 endpoint
-    S3_ENDPOINT: z.string().url().optional(), // https://<namespace>.compat.objectstorage.<region>.oraclecloud.com
+    // Off-box backups: any S3-compatible endpoint
+    S3_ENDPOINT: z.string().url().optional(),
     S3_REGION: z.string().optional(),
     S3_BUCKET: z.string().optional(),
     S3_ACCESS_KEY_ID: z.string().optional(),
@@ -106,7 +105,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const res = parseEnv(source);
   if (!res.ok) {
     console.error(res.message);
-    console.error("Set these in /opt/tatakae/.env (production) or your shell (development).");
+    console.error("Set these in your .env or shell.");
     process.exit(1);
   }
   return res.env;

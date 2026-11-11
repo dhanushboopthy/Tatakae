@@ -18,16 +18,14 @@ Versions are the baseline at skeleton time (Oct 2026). Upgrade deliberately, one
 | Phone secrets | expo-secure-store | — | Keystore-backed token storage | — |
 | Phone notifications | expo-notifications (local) | — | Reliable scheduled reminders without a push server | FCM server push (unneeded) |
 | API | Hono on Node 22 (`@hono/node-server`) | Hono 4 | Tiny, typed, fast; same code could run on edge later | Express (untyped), NestJS (heavy), FastAPI (second language) |
-| Database | SQLite (WAL) via better-sqlite3 + Drizzle | — | One user; zero ops; FTS5 for notes; Litestream backups | Postgres (ops overhead for no gain) |
+| Database | SQLite (WAL) via better-sqlite3 + Drizzle | — | One user; zero ops; FTS5 for notes; needs a durable disk | Postgres (ops overhead for no gain) |
 | Jobs | croner (in-process, Asia/Kolkata) | 9 | No extra service | System cron (outside the app) |
 | Auth | Argon2id + signed sessions; passkeys v4 | @node-rs/argon2 | Single user, works with any domain | Cloudflare Access (needs a Cloudflare zone), OAuth (overkill) |
-| Reverse proxy | Caddy 2 | 2.x | Automatic HTTPS, simple config | Nginx + certbot |
-| Backups | Litestream → OCI Object Storage + nightly JSON | 0.3 | Point-in-time restore, off-box | Volume snapshots only (same failure domain) |
-| Hosting | Oracle Cloud Always Free, A1 Flex 2 OCPU / 12 GB arm64 | — | Free, enough for this; DevOps practice | Cloudflare Workers (original plan; less hands-on), Vercel/Render (sleep/limits) |
-| IaC | Terraform `oracle/oci` provider + cloud-init | TF ≥ 1.6 | Rebuild the VM from code | Click-ops only |
-| CI/CD | GitHub Actions; arm64 runners; GHCR | — | Native arm64 builds, free for public/student | Self-hosted runner |
-| Admin network | Tailscale | — | No public SSH; CI deploys through tailnet | Open port 22 |
-| Domain | Namecheap `.me` via GitHub Student Pack (`tatakae.<name>.me` or `tatakae.me`) | — | Free year 1 | See DOMAIN.md |
+| Local run | Docker Compose with Caddy 2 (`deploy/docker-compose.local.yml`) | 2.x | Website + API on one origin on the laptop | — |
+| Backups | Nightly JSON export, optional copy to any S3-compatible bucket | — | Off-box, simple to restore | Volume snapshots only (same failure domain) |
+| Hosting | **Undecided** (owner has another plan; Oracle Cloud and Zoho Catalyst were removed) | — | Needs a persistent disk for SQLite | — |
+| CI | GitHub Actions (`ci.yml`, `security.yml`, `mobile.yml`) | — | Typecheck, tests, security scans, signed APK | Self-hosted runner |
+| Domain | See DOMAIN.md | — | — | — |
 | Tests | Vitest; Playwright (web smoke, v4) | — | Fast unit tests for core/api | Jest |
 | Mobile builds | EAS Build (free tier) or local Gradle in Actions; APK via GitHub Releases; EAS Update for JS | — | No Play Store needed for one user | Play Store (fee, review) |
 

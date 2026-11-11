@@ -171,11 +171,14 @@ describe("session routes", () => {
 
   it("rate-limits login to 10 attempts per 15 minutes per IP, but not /me", async () => {
     const { app } = await setup();
-    const attempt = (ip: string) =>
-      call(app, "POST", "/session/login", { email: OWNER.email, password: "wrong password!", client: "web", deviceName: "x" }, { "x-forwarded-for": `${ip}, 10.0.0.1` });
+    // The proxy appends the address it saw; whatever the client sent sits to its left.
+    const attempt = (ip: string, claimed = "192.0.2.1") =>
+      call(app, "POST", "/session/login", { email: OWNER.email, password: "wrong password!", client: "web", deviceName: "x" }, { "x-forwarded-for": `${claimed}, ${ip}` });
     for (let i = 0; i < 10; i++) expect((await attempt("203.0.113.7")).status).toBe(401);
     const limited = await attempt("203.0.113.7");
     expect(limited.status).toBe(429);
+    // Making up a different "client" address in the header doesn't reset the count.
+    expect((await attempt("203.0.113.7", "198.51.100.99")).status).toBe(429);
     expect(Number(limited.res.headers.get("retry-after"))).toBeGreaterThan(0);
     // Another IP is unaffected.
     expect((await attempt("198.51.100.2")).status).toBe(401);

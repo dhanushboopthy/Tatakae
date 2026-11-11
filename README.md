@@ -1,6 +1,6 @@
 # tatakae
 
-Personal execution system — plan the night before (laptop), start strict and act during the day (phone), review weekly and per 12-week cycle. One user, self-hosted on an Oracle Cloud Always Free VM.
+Personal execution system — plan the night before (laptop), start strict and act during the day (phone), review weekly and per 12-week cycle. One user, self-hosted (hosting not decided yet).
 
 > **Skeleton only.** Files contain signatures, types, config and `TODO(phase)` markers. Start with **[START_PROMPT.md](START_PROMPT.md)** and **[docs/](docs/README.md)**.
 
@@ -11,13 +11,12 @@ apps/mobile/           Android app — Expo SDK 57 + Expo Router, local SQLite, 
 apps/api/              API — Hono on Node 22, SQLite (WAL) + Drizzle, croner jobs
 packages/core/         shared types, zod schemas, scoring, time, story, sync helpers
 db/                    Drizzle schema + migrations (applied on API boot)
-deploy/                docker-compose, Caddyfile, litestream, cloud-init, scripts
-infra/terraform/       OCI resources (VCN, A1 VM, reserved IP, volume, bucket)
+deploy/                local Docker run, Caddyfile.local, hash-password.sh
 scripts/               setup-claude.sh, notion-import/
 references/            story-layer format example (real pack stays local)
 docs/                  01-overview … 09-skills-and-workflow, decisions, domain, changelog
 .claude/skills/        project skills: tatakae-guardrails, tatakae-phase-gate, tatakae-story-pack
-.github/workflows/     ci, deploy (arm64 → GHCR → Tailscale), mobile (APK on tags)
+.github/workflows/     ci, security, mobile (APK on tags)
 ```
 
 ## Quick start

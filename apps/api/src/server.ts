@@ -10,10 +10,10 @@ import { recordSecurityEvent } from "./lib/security.service";
 const env = loadEnv();
 const db = openDb(env.DATABASE_PATH);
 runMigrations(db, resolveMigrationsFolder(env.MIGRATIONS_DIR)); // drizzle migrator + default rows, on every boot
-// A new password (or owner email) in .env signs every device out; see auth.service.
+// A new password (or owner email) in the env signs every device out; see auth.service.
 const revoked = signOutEverywhereIfLoginChanged(db, env.OWNER_EMAIL, env.OWNER_PASSWORD_HASH);
 if (revoked > 0) {
-  console.log(`login changed in .env: signed out ${revoked} session(s)`);
+  console.log(`login changed: signed out ${revoked} session(s)`);
   recordSecurityEvent(db, { kind: "password_changed", detail: `${revoked} device(s) signed out` });
 }
 const jobs = startJobs(env, db); // croner, Asia/Kolkata
@@ -50,5 +50,5 @@ function shutdown(signal: NodeJS.Signals): void {
   }
 }
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
