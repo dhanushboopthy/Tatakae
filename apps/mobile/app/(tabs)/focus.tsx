@@ -1,33 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import type { FocusLength, Mission } from "@tatakae/core";
-import {
-  pauseFocus,
-  resumeFocus,
-  startFocus,
-  stopFocus,
-  useDay,
-  useFocusSession,
-  useMission,
-  useToday,
-} from "../../src/lib/hooks";
+import type { Mission } from "@tatakae/core";
+import { pauseFocus, resumeFocus, startFocus, stopFocus, useDay, useFocusSession, useMission, useToday } from "../../src/lib/hooks";
 import { formatClock, isPaused, progress, remainingMs, spokenRemaining } from "../../src/focus/timer";
-import { ProgressRing } from "../../src/components/ProgressRing";
+import { FocusRing } from "../../src/components/FocusRing";
 import { BigButton } from "../../src/components/BigButton";
-import { Choice } from "../../src/components/Choice";
+import { SegmentedPills } from "../../src/components/SegmentedPills";
+import { TextField } from "../../src/components/TextField";
+import { Card, Screen, ScreenHeader } from "../../src/components/Screen";
 import { SLOT_LABEL } from "../../src/components/MissionCard";
 import { tapDone, tapTimerEnd } from "../../src/haptics";
-import { colors, minTarget, legacyRadius, space, text, tnum, type, ui } from "../../src/theme";
+import { f, minTarget, radius, space } from "../../src/theme";
+import { pressedStyle, useStyles, type Theme } from "../../src/lib/theme";
 
 const KEEP_AWAKE_TAG = "tatakae-focus";
-const LENGTHS: readonly { value: FocusLength; label: string }[] = [
-  { value: 25, label: "25" },
-  { value: 50, label: "50" },
-  { value: 90, label: "90" },
-];
+
+/** 25 · 50 · 90, plus the default from Settings when it is another length (any 5–240, R3-9). */
+function lengthsFor(def: number): { value: number; label: string }[] {
+  const set = [...new Set([25, 50, 90, def])].sort((a, b) => a - b);
+  return set.map((v) => ({ value: v, label: String(v) }));
+}
 
 /** Re-render once a second while visible. Time is always derived from the stored start time. */
 function useNow(active: boolean): number {
@@ -41,7 +35,9 @@ function useNow(active: boolean): number {
   return now;
 }
 
+/** Focus (docs/10 §6): huge countdown in a lime ring, mission title, Pause / Done / Stuck, resume note. */
 export default function Focus() {
+  const s = useStyles(makeStyles);
   const { data: session } = useFocusSession();
   const { data: mission } = useMission(session?.missionId);
   const [visible, setVisible] = useState(false);
@@ -102,163 +98,160 @@ export default function Focus() {
   if (!session) return <IdleFocus />;
 
   return (
-    <SafeAreaView style={ui.screen} edges={["top"]}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.titleBlock}>
-            <Text style={text.label}>{mission ? SLOT_LABEL[mission.slot] : "Focus"}</Text>
-            <Text style={text.h1} accessibilityRole="header" numberOfLines={3}>
-              {mission?.title ?? "Focus block"}
-            </Text>
-            {mission?.minimum ? <Text style={text.small}>Minimum: {mission.minimum}</Text> : null}
-          </View>
+    <Screen tab>
+      <View style={s.titleBlock}>
+        <Text style={s.slot}>{mission ? SLOT_LABEL[mission.slot] : "Focus"}</Text>
+        <Text style={s.title} accessibilityRole="header" numberOfLines={3}>
+          {mission?.title ?? "Focus block"}
+        </Text>
+        {mission?.minimum ? <Text style={s.line}>Minimum · {mission.minimum}</Text> : null}
+      </View>
 
-          <View style={styles.ringWrap}>
-            <ProgressRing progress={progress(session, now)} accessibilityLabel={spokenRemaining(remaining)}>
-              <Text style={[styles.clock, tnum]} accessibilityElementsHidden importantForAccessibility="no">
-                {formatClock(remaining)}
-              </Text>
-              <Text style={text.small}>{isPaused(session) ? "Paused" : finished ? "Block done" : `${session.length} min block`}</Text>
-            </ProgressRing>
-          </View>
+      <View style={s.ringWrap}>
+        <FocusRing progress={progress(session, now)} accessibilityLabel={spokenRemaining(remaining)}>
+          <Text style={s.clock} accessibilityElementsHidden importantForAccessibility="no">
+            {formatClock(remaining)}
+          </Text>
+          <Text style={s.line}>{isPaused(session) ? "Paused" : finished ? "Block done" : `${session.length} min block`}</Text>
+        </FocusRing>
+      </View>
 
-          {mission?.resumeNote && !ending ? (
-            <View style={ui.card}>
-              <Text style={text.label}>Resume note</Text>
-              <Text style={text.body}>{mission.resumeNote}</Text>
-            </View>
+      {ending ? (
+        <Card>
+          <Text style={s.cardTitle}>{finished ? "Block done. How did it go?" : "Stopping here."}</Text>
+          <TextField
+            tone="surface"
+            label="Where will you pick it up next time?"
+            value={note}
+            onChangeText={setNote}
+            maxLength={500}
+            multiline
+            placeholder="e.g. Next: wire the subnet output into the module"
+            accessibilityLabel="Resume note"
+          />
+          <View style={s.row}>
+            <BigButton label="Done" icon="done" variant="accent" onPress={() => void finish("done")} style={s.flex} />
+            <BigButton label="Minimum" icon="minimum" variant="secondary" onPress={() => void finish("minimum")} style={s.flex} />
+          </View>
+          <BigButton label="Save note, not finished yet" variant="primary" onPress={() => void finish()} />
+          {!finished ? <BigButton label="Keep going" variant="quiet" onPress={() => setEnding(false)} /> : null}
+        </Card>
+      ) : (
+        <>
+          <View style={s.row}>
+            <BigButton
+              label={isPaused(session) ? "Resume" : "Pause"}
+              icon={isPaused(session) ? "play" : "pause"}
+              variant="secondary"
+              onPress={() => void (isPaused(session) ? resumeFocus() : pauseFocus())}
+              style={s.flex}
+            />
+            <BigButton label="Done" icon="done" variant="accent" onPress={() => void finish("done")} style={s.flex} />
+            <BigButton
+              label="Stuck"
+              icon="stuck"
+              variant="secondary"
+              onPress={() => router.push({ pathname: "/stuck/[missionId]", params: { missionId: session.missionId } })}
+              style={s.flex}
+            />
+          </View>
+          <View style={s.row}>
+            <BigButton label="Minimum" icon="minimum" variant="secondary" onPress={() => void finish("minimum")} style={s.flex} />
+            <BigButton label="Stop" variant="secondary" onPress={() => setEnding(true)} style={s.flex} />
+          </View>
+          {mission?.resumeNote ? (
+            <Card>
+              <Text style={s.slot}>Resume note</Text>
+              <Text style={s.body}>{mission.resumeNote}</Text>
+            </Card>
           ) : null}
-
-          {ending ? (
-            <View style={ui.card}>
-              <Text style={text.h2}>{finished ? "Block done. How did it go?" : "Stopping here."}</Text>
-              <Text style={text.label} nativeID="noteLabel">
-                Where will you pick it up next time?
-              </Text>
-              <TextInput
-                style={[ui.input, styles.note]}
-                value={note}
-                onChangeText={setNote}
-                maxLength={500}
-                multiline
-                placeholder="e.g. Next: wire the subnet output into the module"
-                placeholderTextColor={colors.muted}
-                accessibilityLabelledBy="noteLabel"
-                accessibilityLabel="Resume note"
-              />
-              <View style={styles.row}>
-                <BigButton label="Done" glyph="✓" onPress={() => void finish("done")} style={styles.flex} />
-                <BigButton label="Minimum" glyph="½" variant="secondary" onPress={() => void finish("minimum")} style={styles.flex} />
-              </View>
-              <BigButton label="Save note, not finished yet" variant="secondary" onPress={() => void finish()} />
-              {!finished ? <BigButton label="Keep going" variant="quiet" onPress={() => setEnding(false)} /> : null}
-            </View>
-          ) : (
-            <View style={styles.actions}>
-              <BigButton
-                label={isPaused(session) ? "Resume" : "Pause"}
-                variant="secondary"
-                onPress={() => void (isPaused(session) ? resumeFocus() : pauseFocus())}
-              />
-              <View style={styles.row}>
-                <BigButton label="Done" glyph="✓" onPress={() => void finish("done")} style={styles.flex} />
-                <BigButton label="Minimum" glyph="½" variant="secondary" onPress={() => void finish("minimum")} style={styles.flex} />
-              </View>
-              <View style={styles.row}>
-                <BigButton
-                  label="Stuck"
-                  variant="secondary"
-                  onPress={() => router.push({ pathname: "/stuck/[missionId]", params: { missionId: session.missionId } })}
-                  style={styles.flex}
-                />
-                <BigButton label="Stop" variant="secondary" onPress={() => setEnding(true)} style={styles.flex} />
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </>
+      )}
+    </Screen>
   );
 }
 
 /** No block running: pick a mission (P1 first) and a length. */
 function IdleFocus() {
+  const s = useStyles(makeStyles);
   const today = useToday();
   const { data: view } = useDay(today);
   const open = (view?.missions ?? []).filter((m) => m.status === "open");
   const [picked, setPicked] = useState<string | null>(null);
-  const [length, setLength] = useState<FocusLength | null>(null);
+  const [length, setLength] = useState<number | null>(null);
   const chosen: Mission | undefined = open.find((m) => m.id === picked) ?? open[0];
-  const len = length ?? view?.settings.focus_default ?? 50;
+  const def = view?.settings.focus_default ?? 50;
+  const len = length ?? def;
 
   return (
-    <SafeAreaView style={ui.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={text.h1} accessibilityRole="header">
-          Focus
-        </Text>
-        {open.length === 0 ? (
-          <Text style={text.body}>Nothing open today. Plan a P1 from Today, or rest.</Text>
-        ) : (
-          <>
-            <View style={styles.pickList} accessibilityRole="radiogroup" accessibilityLabel="Mission to focus on">
-              {open.map((m) => {
-                const selected = chosen?.id === m.id;
-                return (
-                  <Pressable
-                    key={m.id}
-                    onPress={() => setPicked(m.id)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    style={[styles.pick, selected && styles.pickSelected]}
-                  >
-                    <Text style={styles.pickGlyph}>{selected ? "◉" : "○"}</Text>
-                    <View style={styles.flex}>
-                      <Text style={text.label}>{SLOT_LABEL[m.slot]}</Text>
-                      <Text style={text.body}>{m.title}</Text>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <Choice options={LENGTHS} value={len} onChange={setLength} accessibilityLabel="Focus length in minutes" />
-            <BigButton
-              label={`Start ${len} min`}
-              size="large"
-              onPress={() => {
-                if (chosen) void startFocus(chosen.id, len);
-              }}
-              disabled={!chosen}
-            />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    <Screen tab>
+      <ScreenHeader title="Focus" />
+      {open.length === 0 ? (
+        <Text style={s.body}>Nothing open today. Plan a P1 from Today, or rest.</Text>
+      ) : (
+        <>
+          <View style={s.pickList} accessibilityRole="radiogroup" accessibilityLabel="Mission to focus on">
+            {open.map((m) => {
+              const selected = chosen?.id === m.id;
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => setPicked(m.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  style={({ pressed }) => [s.pick, selected && s.pickSelected, pressed && pressedStyle]}
+                >
+                  <View style={[s.radio, selected && s.radioOn]}>{selected ? <View style={s.radioDot} /> : null}</View>
+                  <View style={s.flex}>
+                    <Text style={s.slot}>{SLOT_LABEL[m.slot]}</Text>
+                    <Text style={s.body}>{m.title}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          <SegmentedPills options={lengthsFor(def)} value={len} onChange={setLength} accessibilityLabel="Focus length in minutes" stretch />
+          <BigButton
+            label={`Start ${len} min`}
+            variant="accent"
+            size="large"
+            onPress={() => {
+              if (chosen) void startFocus(chosen.id, len);
+            }}
+            disabled={!chosen}
+          />
+        </>
+      )}
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { padding: space(2), gap: space(3), paddingBottom: space(6) },
-  titleBlock: { gap: space(0.5) },
-  ringWrap: { alignItems: "center" },
-  clock: { color: colors.paper, fontSize: type.timer - 8, fontWeight: "600" },
-  actions: { gap: space(1.5) },
-  row: { flexDirection: "row", gap: space(1) },
-  flex: { flex: 1 },
-  note: { minHeight: 88, textAlignVertical: "top" },
-  pickList: { gap: space(1) },
-  pick: {
-    minHeight: minTarget + 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(1.5),
-    padding: space(1.5),
-    borderRadius: legacyRadius.card,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.ink2,
-  },
-  pickSelected: { borderColor: colors.paper, borderWidth: 2 },
-  pickGlyph: { color: colors.paper, fontSize: type.h2 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    titleBlock: { gap: space(0.5), marginTop: space(1) },
+    slot: { ...f(600, 13, 18), color: c.ink2 },
+    title: { ...f(600, 24, 30), color: c.ink },
+    line: { ...f(500, 14, 20), color: c.ink2 },
+    body: { ...f(400, 16, 24), color: c.ink },
+    cardTitle: { ...f(600, 18, 24), color: c.ink },
+    ringWrap: { alignItems: "center", paddingVertical: space(1) },
+    clock: { ...f(600, 60, 66), color: c.ink, letterSpacing: -1.2, fontVariant: ["tabular-nums"] },
+    row: { flexDirection: "row", gap: space(1) },
+    flex: { flex: 1 },
+    pickList: { gap: space(1) },
+    pick: {
+      minHeight: minTarget + 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space(1.5),
+      padding: space(2),
+      borderRadius: radius.inner,
+      backgroundColor: c.surface2,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    pickSelected: { borderColor: c.ink },
+    radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.ink2, alignItems: "center", justifyContent: "center" },
+    radioOn: { borderColor: c.ink },
+    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.ink },
+  });

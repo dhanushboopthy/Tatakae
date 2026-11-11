@@ -5,11 +5,16 @@ import { router } from "expo-router";
 import { istTimeHHMM, mealForTime, remaining, searchFoods, type Food, type MealSlot } from "@tatakae/core";
 import { copyFoodLogs, logFood, saveFood, useFitnessDay } from "../../src/lib/fitness";
 import { useToday } from "../../src/lib/hooks";
-import { Choice } from "../../src/components/Choice";
+import { SegmentedPills } from "../../src/components/SegmentedPills";
 import { Toast } from "../../src/components/Toast";
+import { TextField } from "../../src/components/TextField";
+import { Icon } from "../../src/components/Icon";
 import { MiniBar, PillButton, SheetHeader, fill, n0, parseNum } from "../../src/components/fitnessUi";
 import { tapDone } from "../../src/haptics";
-import { colors, legacyRadius, minTarget, space, text, tnum, type, ui } from "../../src/theme";
+import { f, minTarget, radius, space } from "../../src/theme";
+import { pressedStyle, useStyles, useTheme, type Theme } from "../../src/lib/theme";
+
+const tnum = { fontVariant: ["tabular-nums" as const] };
 
 // Log food (design canvas "Phone · Log food"): meal slot preselected by the time of day, search your saved foods,
 // copy yesterday's meal, recents and favourites one tap each, and "New food (enter by hand)". Manual entry only,
@@ -25,6 +30,8 @@ const MEALS: readonly { value: MealSlot; label: string }[] = [
 const line = (f: Food) => `${f.servingLabel} · ${n0(f.kcal)} kcal · P ${Math.round(f.proteinG)} g`;
 
 export default function LogFood() {
+  const styles = useStyles(makeStyles);
+  const { c } = useTheme();
   const today = useToday();
   const { data } = useFitnessDay(today);
   const [meal, setMeal] = useState<MealSlot>(() => mealForTime(istTimeHHMM()));
@@ -47,7 +54,7 @@ export default function LogFood() {
     return out;
   }, [data, query]);
 
-  if (!data) return <SafeAreaView style={ui.screen} edges={["top"]} />;
+  if (!data) return <SafeAreaView style={styles.screen} edges={["top"]} />;
 
   const eaten = data.totals.kcal;
   const target = data.targets?.kcal ?? data.maintenance.kcal;
@@ -66,9 +73,11 @@ export default function LogFood() {
   }
 
   return (
-    <SafeAreaView style={ui.screen} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <SheetHeader title={creating ? "New food" : "Add food"} onClose={() => (creating ? setCreating(false) : router.back())} />
+        <View style={styles.headerPad}>
+          <SheetHeader title={creating ? "New food" : "Add food"} onClose={() => (creating ? setCreating(false) : router.back())} closeLabel={creating ? "Back" : "Close"} />
+        </View>
         {creating ? (
           <NewFood
             meal={meal}
@@ -82,16 +91,18 @@ export default function LogFood() {
         ) : (
           <>
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-              <Choice options={MEALS} value={meal} onChange={setMeal} accessibilityLabel="Meal" />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <SegmentedPills options={MEALS} value={meal} onChange={setMeal} accessibilityLabel="Meal" />
+              </ScrollView>
 
               <TextInput
                 value={query}
                 onChangeText={setQuery}
                 placeholder="Search your foods"
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={c.ink2}
                 accessibilityLabel="Search your foods"
                 returnKeyType="search"
-                style={[ui.input, styles.search]}
+                style={styles.search}
               />
 
               {query.trim() === "" && yesterdayMeal.length > 0 && todayMeal.length === 0 ? (
@@ -112,13 +123,13 @@ export default function LogFood() {
                       {yesterdayMeal.length > 2 ? ` + ${yesterdayMeal.length - 2}` : ""} · {n0(yKcal)} kcal · P {yProtein} g
                     </Text>
                   </View>
-                  <Text style={styles.copyGlyph}>⧉</Text>
+                  <Icon name="reschedule" color={fill.ink} />
                 </Pressable>
               ) : null}
 
-              <Text style={text.label}>{query.trim() === "" ? "Recent and favourites" : "Your foods"}</Text>
+              <Text style={styles.label}>{query.trim() === "" ? "Recent and favourites" : "Your foods"}</Text>
               {list.length === 0 ? (
-                <Text style={text.small}>
+                <Text style={styles.small}>
                   {data.foods.length === 0 ? "No saved foods yet. Add your first one by hand below. It is saved for next time." : `No saved food matches "${query}".`}
                 </Text>
               ) : (
@@ -129,7 +140,7 @@ export default function LogFood() {
                         {f.favourite ? "★ " : ""}
                         {f.name}
                       </Text>
-                      <Text style={[text.small, tnum]} numberOfLines={1}>
+                      <Text style={[styles.small, tnum]} numberOfLines={1}>
                         {line(f)}
                       </Text>
                     </View>
@@ -139,7 +150,7 @@ export default function LogFood() {
                       accessibilityLabel={`Add ${f.name}`}
                       style={({ pressed }) => [styles.add, pressed && styles.pressed]}
                     >
-                      <Text style={styles.addGlyph}>+</Text>
+                      <Icon name="capture" color={fill.ink} strokeWidth={2.25} />
                     </Pressable>
                   </View>
                 ))
@@ -158,7 +169,7 @@ export default function LogFood() {
             <View style={styles.totals}>
               <View style={styles.totalsRow}>
                 <Text style={styles.totalsLabel}>Today</Text>
-                <Text style={[text.body, tnum]}>
+                <Text style={[styles.body, tnum]}>
                   <Text style={styles.bold}>{n0(eaten)}</Text> / {n0(target)} kcal
                   {proteinTarget != null ? (
                     <>
@@ -169,10 +180,10 @@ export default function LogFood() {
                 </Text>
               </View>
               <View style={styles.totalsBars}>
-                <MiniBar pct={kcal.pct} color={colors.paper} label="Calories eaten" style={styles.fill} />
-                {proteinTarget != null ? <MiniBar pct={proteinTarget > 0 ? (protein / proteinTarget) * 100 : 0} color={colors.paper} label="Protein eaten" style={styles.fill} /> : null}
+                <MiniBar pct={kcal.pct} color={c.limeDeep} label="Calories eaten" style={styles.fill} />
+                {proteinTarget != null ? <MiniBar pct={proteinTarget > 0 ? (protein / proteinTarget) * 100 : 0} color={c.lavenderDeep} label="Protein eaten" style={styles.fill} /> : null}
               </View>
-              {kcal.over ? <Text style={text.small}>{n0(Math.abs(kcal.left))} kcal over today's target.</Text> : null}
+              {kcal.over ? <Text style={styles.small}>{n0(Math.abs(kcal.left))} kcal over today's target.</Text> : null}
             </View>
           </>
         )}
@@ -186,6 +197,7 @@ export default function LogFood() {
 
 /** Manual new-food form. Calories and the three macros are needed (0 is fine); fibre is optional. */
 function NewFood({ meal, onSaved }: { meal: MealSlot; onSaved: (food: Food, addIt: boolean) => Promise<void> }) {
+  const styles = useStyles(makeStyles);
   const [f, setF] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "", fibre: "" });
   const [problem, setProblem] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
@@ -204,17 +216,14 @@ function NewFood({ meal, onSaved }: { meal: MealSlot; onSaved: (food: Food, addI
   }
 
   const field = (label: string, key: keyof typeof f, numeric: boolean, flex = false) => (
-    <View style={[styles.field, flex && styles.fill]}>
-      <Text style={text.label}>{label}</Text>
-      <TextInput
-        value={f[key]}
-        onChangeText={set(key)}
-        keyboardType={numeric ? "decimal-pad" : "default"}
-        accessibilityLabel={label}
-        placeholderTextColor={colors.muted}
-        style={[ui.input, numeric && tnum]}
-      />
-    </View>
+    <TextField
+      label={label}
+      value={f[key]}
+      onChangeText={set(key)}
+      keyboardType={numeric ? "decimal-pad" : "default"}
+      containerStyle={flex ? styles.fill : undefined}
+      style={numeric ? tnum : undefined}
+    />
   );
 
   return (
@@ -230,9 +239,9 @@ function NewFood({ meal, onSaved }: { meal: MealSlot; onSaved: (food: Food, addI
         {field("Fat g", "fat", true, true)}
         {field("Fibre g", "fibre", true, true)}
       </View>
-      <Text style={text.small}>Numbers are for one serving. More nutrients can be added on the laptop.</Text>
+      <Text style={styles.small}>Numbers are for one serving. More nutrients can be added on the laptop.</Text>
       {problem ? (
-        <Text accessibilityRole="alert" style={text.body}>
+        <Text accessibilityRole="alert" style={styles.body}>
           {problem}
         </Text>
       ) : null}
@@ -242,39 +251,42 @@ function NewFood({ meal, onSaved }: { meal: MealSlot; onSaved: (food: Food, addI
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { paddingHorizontal: space(2), paddingBottom: space(3), gap: space(1.5) },
-  search: { borderRadius: legacyRadius.pill, minHeight: 48 },
-  copy: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(1.5),
-    minHeight: minTarget + 12,
-    paddingHorizontal: space(2),
-    paddingVertical: space(1.25),
-    backgroundColor: fill.lavenderSoft,
-    borderRadius: legacyRadius.card,
-  },
-  copyText: { flex: 1 },
-  copyTitle: { color: fill.ink, fontSize: type.small, fontWeight: "600" },
-  copySub: { color: fill.inkMuted, fontSize: 12 },
-  copyGlyph: { color: fill.ink, fontSize: 20 },
-  item: { flexDirection: "row", alignItems: "center", gap: space(1.5), minHeight: minTarget + 8 },
-  itemText: { flex: 1 },
-  itemName: { color: colors.paper, fontSize: type.body, fontWeight: "600" },
-  add: { width: minTarget, height: minTarget, borderRadius: legacyRadius.pill, backgroundColor: colors.ember, alignItems: "center", justifyContent: "center" },
-  addGlyph: { color: fill.ink, fontSize: 26, fontWeight: "600", marginTop: -2 },
-  newFood: { minHeight: 52, borderRadius: legacyRadius.pill, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.lineStrong, alignItems: "center", justifyContent: "center" },
-  newFoodText: { color: colors.paper, fontSize: type.body, fontWeight: "600" },
-  totals: { paddingHorizontal: space(2), paddingVertical: space(1.5), gap: space(1), backgroundColor: colors.ink2, borderTopColor: colors.line, borderTopWidth: StyleSheet.hairlineWidth },
-  totalsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(1), flexWrap: "wrap" },
-  totalsLabel: { color: colors.paper, fontSize: type.small, fontWeight: "600" },
-  totalsBars: { flexDirection: "row", gap: space(1) },
-  bold: { fontWeight: "700" },
-  field: { gap: 6 },
-  macros: { flexDirection: "row", gap: space(1.5) },
-  tall: { minHeight: 52 },
-  pressed: { opacity: 0.85 },
-  toast: { position: "absolute", bottom: 140, left: 0, right: 0 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    fill: { flex: 1 },
+    headerPad: { paddingHorizontal: space(2.5), paddingTop: space(1) },
+    content: { paddingHorizontal: space(2.5), paddingTop: space(1), paddingBottom: space(3), gap: space(1.5) },
+    body: { ...f(400, 16, 24), color: c.ink },
+    small: { ...f(500, 13, 18), color: c.ink2 },
+    label: { ...f(600, 13, 18), color: c.ink },
+    search: { borderRadius: radius.pill, minHeight: minTarget + 4, backgroundColor: c.surface2, paddingHorizontal: space(2), color: c.ink, ...f(500, 16) },
+    copy: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space(1.5),
+      minHeight: minTarget + 12,
+      paddingHorizontal: space(2),
+      paddingVertical: space(1.25),
+      backgroundColor: fill.lavenderSoft,
+      borderRadius: radius.inner,
+    },
+    copyText: { flex: 1 },
+    copyTitle: { ...f(600, 14), color: fill.ink },
+    copySub: { ...f(500, 12, 16), color: fill.inkMuted },
+    item: { flexDirection: "row", alignItems: "center", gap: space(1.5), minHeight: minTarget + 8 },
+    itemText: { flex: 1 },
+    itemName: { ...f(600, 16, 22), color: c.ink },
+    add: { width: minTarget, height: minTarget, borderRadius: radius.pill, backgroundColor: c.lime, alignItems: "center", justifyContent: "center" },
+    newFood: { minHeight: 52, borderRadius: radius.pill, borderWidth: 1.5, borderStyle: "dashed", borderColor: c.ink2, alignItems: "center", justifyContent: "center" },
+    newFoodText: { ...f(600, 16), color: c.ink },
+    totals: { paddingHorizontal: space(2.5), paddingVertical: space(1.5), gap: space(1), backgroundColor: c.surface2 },
+    totalsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(1), flexWrap: "wrap" },
+    totalsLabel: { ...f(600, 14), color: c.ink },
+    totalsBars: { flexDirection: "row", gap: space(1) },
+    bold: { ...f(700, 16) },
+    macros: { flexDirection: "row", gap: space(1.5) },
+    tall: { minHeight: 52 },
+    pressed: pressedStyle,
+    toast: { position: "absolute", bottom: 140, left: 0, right: 0 },
+  });

@@ -1,13 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MissionStatus } from "@tatakae/core";
-import { colors, minTarget, legacyRadius, space, type } from "../theme";
+import { f, minTarget, radius, space } from "../theme";
+import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { tapLight } from "../haptics";
+import { Icon, type AppIcon } from "./Icon";
 
-/** Text glyphs, not an icon font. Shape + label carry the meaning; colour is only a third cue. */
+/** Text glyphs for compact status tags. Shape + label carry the meaning; colour is only a third cue. */
 export const STATUS_GLYPH: Record<MissionStatus, string> = {
   open: "○",
   done: "✓",
-  minimum: "½",
+  minimum: "◐",
   missed: "–",
   rescheduled: "↻",
   backlog: "○",
@@ -23,68 +25,57 @@ export const STATUS_LABEL: Record<MissionStatus, string> = {
 };
 
 type Chip = "done" | "minimum" | "missed" | "rescheduled";
-const CHIPS: readonly { status: Chip; label: string; hint: string }[] = [
-  { status: "done", label: "Done", hint: "Full points" },
-  { status: "minimum", label: "Minimum", hint: "Half points. The minimum version counts" },
-  { status: "missed", label: "Missed", hint: "Turns grey. Nothing resets" },
-  { status: "rescheduled", label: "Reschedule", hint: "Moves this mission to the backlog" },
+const CHIPS: readonly { status: Chip; label: string; hint: string; icon: AppIcon }[] = [
+  { status: "done", label: "Done", hint: "Full points", icon: "done" },
+  { status: "minimum", label: "Minimum", hint: "Half points. The minimum version counts", icon: "minimum" },
+  { status: "missed", label: "Missed", hint: "Turns grey. Nothing resets", icon: "missed" },
+  { status: "rescheduled", label: "Reschedule", hint: "Moves this mission to the backlog", icon: "reschedule" },
 ];
 
 export interface StatusChipsProps {
   status: MissionStatus;
   onChange: (next: MissionStatus) => void;
   disabled?: boolean;
-  /** Hide Reschedule (e.g. in Quick close, where it is still allowed but rarely wanted). */
+  /** Hide Reschedule (Quick close, where it is rarely wanted). */
   hideReschedule?: boolean;
   /** Mission title, read by screen readers with each chip. */
   missionTitle?: string;
 }
 
 /**
- * Done / Minimum / Missed / Reschedule — glyph + label, never colour alone. Tapping the selected chip
- * again sets the mission back to open (undo). Reschedule is a one-way action.
+ * Done (lime, ✓) / Minimum (lavender, ◐) / Missed (grey border, —) / Reschedule (→) — icon + label,
+ * never colour alone (docs/10 §5). White pills with ink text work on every card colour in both themes.
+ * Tapping the selected chip again sets the mission back to open (undo). Reschedule is one-way.
  */
 export function StatusChips({ status, onChange, disabled = false, hideReschedule = false, missionTitle }: StatusChipsProps) {
+  const s = useStyles(makeStyles);
   const chips = hideReschedule ? CHIPS.filter((c) => c.status !== "rescheduled") : CHIPS;
   return (
-    <View style={styles.row} accessibilityRole="toolbar" accessibilityLabel={missionTitle ? `Status for ${missionTitle}` : "Status"}>
-      {chips.map((c) => {
-        const selected = status === c.status;
+    <View style={s.row} accessibilityRole="toolbar" accessibilityLabel={missionTitle ? `Status for ${missionTitle}` : "Status"}>
+      {chips.map((chip) => {
+        const selected = status === chip.status;
         return (
           <Pressable
-            key={c.status}
+            key={chip.status}
             disabled={disabled}
             onPress={() => {
               tapLight();
-              onChange(selected && c.status !== "rescheduled" ? "open" : c.status);
+              onChange(selected && chip.status !== "rescheduled" ? "open" : chip.status);
             }}
             accessibilityRole="button"
-            accessibilityLabel={missionTitle ? `${c.label}, ${missionTitle}` : c.label}
-            accessibilityHint={selected ? "Selected. Tap again to set back to open" : c.hint}
+            accessibilityLabel={missionTitle ? `${chip.label}, ${missionTitle}` : chip.label}
+            accessibilityHint={selected ? "Selected. Tap again to set back to open" : chip.hint}
             accessibilityState={{ selected, disabled }}
-            hitSlop={4}
             style={({ pressed }) => [
-              styles.chip,
-              selected && c.status === "done" && styles.doneOn,
-              selected && c.status === "minimum" && styles.minimumOn,
-              selected && c.status === "missed" && styles.missedOn,
-              pressed && styles.pressed,
-              disabled && styles.disabled,
+              s.chip,
+              selected && s.selected,
+              selected && s[chip.status],
+              pressed && pressedStyle,
+              disabled && s.disabled,
             ]}
           >
-            <Text
-              style={[
-                styles.glyph,
-                c.status === "done" && styles.jadeGlyph,
-                c.status === "minimum" && styles.jadeGlyph,
-                c.status === "missed" && styles.mutedGlyph,
-                c.status === "rescheduled" && styles.mutedGlyph,
-                selected && (c.status === "done" || c.status === "missed") && styles.inkText,
-              ]}
-            >
-              {STATUS_GLYPH[c.status]}
-            </Text>
-            <Text style={[styles.label, selected && (c.status === "done" || c.status === "missed") && styles.inkText]}>{c.label}</Text>
+            <Icon name={chip.icon} color={s.text.color} size={18} strokeWidth={2} />
+            <Text style={s.text}>{chip.label}</Text>
           </Pressable>
         );
       })}
@@ -92,28 +83,25 @@ export function StatusChips({ status, onChange, disabled = false, hideReschedule
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
-  chip: {
-    minHeight: minTarget,
-    minWidth: minTarget,
-    paddingHorizontal: space(1.5),
-    borderRadius: legacyRadius.pill,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.ink3,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  doneOn: { backgroundColor: colors.jade, borderColor: colors.paper },
-  minimumOn: { backgroundColor: colors.jadeSoft, borderColor: colors.jade, borderWidth: 2 },
-  missedOn: { backgroundColor: colors.muted, borderColor: colors.paper },
-  pressed: { opacity: 0.8 },
-  disabled: { opacity: 0.5 },
-  glyph: { fontSize: type.body, fontWeight: "700", color: colors.paper },
-  jadeGlyph: { color: colors.jade },
-  mutedGlyph: { color: colors.muted },
-  inkText: { color: colors.ink },
-  label: { fontSize: type.small, fontWeight: "600", color: colors.paper },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    row: { flexDirection: "row", flexWrap: "wrap", gap: space(0.75) },
+    chip: {
+      minHeight: minTarget,
+      paddingHorizontal: space(1.5),
+      borderRadius: radius.pill,
+      backgroundColor: c.white,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    selected: { borderWidth: 2, borderColor: c.onFill },
+    done: { backgroundColor: c.lime },
+    minimum: { backgroundColor: c.lavender },
+    missed: { backgroundColor: c.white, borderColor: c.missed },
+    rescheduled: {},
+    disabled: { opacity: 0.5 },
+    text: { ...f(600, 13), color: c.onFill },
+  });

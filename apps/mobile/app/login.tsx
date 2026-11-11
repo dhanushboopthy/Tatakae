@@ -1,18 +1,12 @@
 import { useRef, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { login, LoginError, type LoginProblem } from "../src/auth/session";
 import { BigButton } from "../src/components/BigButton";
-import { colors, space, text, ui } from "../src/theme";
+import { TextField } from "../src/components/TextField";
+import { Card, Screen } from "../src/components/Screen";
+import { f, space } from "../src/theme";
+import { useStyles, type Theme } from "../src/lib/theme";
 
 const PROBLEM_COPY: Record<LoginProblem, string> = {
   credentials: "That email and password didn't match. Try again.",
@@ -23,6 +17,7 @@ const PROBLEM_COPY: Record<LoginProblem, string> = {
 
 /** Email + password + device name → POST /api/session/login { client: "mobile" } → token in SecureStore. */
 export default function Login() {
+  const s = useStyles(makeStyles);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [deviceName, setDeviceName] = useState("phone");
@@ -49,93 +44,82 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={ui.screen}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <Text style={text.h1} accessibilityRole="header">
-              Tatakae
-            </Text>
-            <Text style={text.small}>Sign in once on this phone. Everything works offline after that.</Text>
-          </View>
+    <Screen contentStyle={s.content}>
+      <View style={s.header}>
+        <View style={s.mark} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <View style={[s.step, s.step1]} />
+          <View style={[s.step, s.step2]} />
+          <View style={[s.step, s.step3]} />
+        </View>
+        <Text style={s.title} accessibilityRole="header">
+          Tatakae
+        </Text>
+        <Text style={s.line}>Sign in once on this phone. Everything works offline after that.</Text>
+      </View>
 
-          <View style={styles.field}>
-            <Text style={text.label} nativeID="emailLabel">
-              Email
-            </Text>
-            <TextInput
-              style={ui.input}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              keyboardType="email-address"
-              textContentType="username"
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              accessibilityLabelledBy="emailLabel"
-              accessibilityLabel="Email"
-              placeholderTextColor={colors.muted}
-            />
-          </View>
+      <Card>
+        <TextField
+          tone="surface"
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="username"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+        <TextField
+          ref={passwordRef}
+          tone="surface"
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="next"
+          onSubmitEditing={() => deviceRef.current?.focus()}
+        />
+        <TextField
+          ref={deviceRef}
+          tone="surface"
+          label="Device name"
+          hint="Shown in the devices list so you can sign this phone out later."
+          value={deviceName}
+          onChangeText={setDeviceName}
+          maxLength={40}
+          autoCapitalize="none"
+          returnKeyType="go"
+          onSubmitEditing={() => void submit()}
+        />
+      </Card>
 
-          <View style={styles.field}>
-            <Text style={text.label} nativeID="passwordLabel">
-              Password
-            </Text>
-            <TextInput
-              ref={passwordRef}
-              style={ui.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="current-password"
-              textContentType="password"
-              returnKeyType="next"
-              onSubmitEditing={() => deviceRef.current?.focus()}
-              accessibilityLabelledBy="passwordLabel"
-              accessibilityLabel="Password"
-            />
-          </View>
+      {problem ? (
+        <Text style={s.problem} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          {problem}
+        </Text>
+      ) : null}
 
-          <View style={styles.field}>
-            <Text style={text.label} nativeID="deviceLabel">
-              Device name
-            </Text>
-            <TextInput
-              ref={deviceRef}
-              style={ui.input}
-              value={deviceName}
-              onChangeText={setDeviceName}
-              maxLength={40}
-              autoCapitalize="none"
-              returnKeyType="go"
-              onSubmitEditing={() => void submit()}
-              accessibilityLabelledBy="deviceLabel"
-              accessibilityLabel="Device name"
-              accessibilityHint="Shown in the devices list so you can revoke this phone later"
-            />
-          </View>
-
-          {problem ? (
-            <Text style={styles.problem} accessibilityLiveRegion="polite" accessibilityRole="alert">
-              {problem}
-            </Text>
-          ) : null}
-
-          <BigButton label="Sign in" onPress={() => void submit()} disabled={!canSubmit} busy={busy} size="large" />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <BigButton label="Sign in" onPress={() => void submit()} disabled={!canSubmit} busy={busy} size="large" />
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: "center", padding: space(3), gap: space(2) },
-  header: { gap: space(1), marginBottom: space(2) },
-  field: { gap: space(0.5) },
-  problem: { color: colors.paper, fontSize: 16, lineHeight: 24 },
-});
+const makeStyles = ({ c }: Theme) =>
+  StyleSheet.create({
+    content: { flexGrow: 1, justifyContent: "center" },
+    header: { gap: space(1), marginBottom: space(1) },
+    // The app mark: three rising steps, grey → lavender → lime (docs/11 §6).
+    mark: { flexDirection: "row", alignItems: "flex-end", gap: 4, width: 56, height: 56, padding: 10, borderRadius: 16, backgroundColor: c.hero, marginBottom: space(1) },
+    step: { flex: 1, borderRadius: 4 },
+    step1: { height: 14, backgroundColor: c.missed },
+    step2: { height: 24, backgroundColor: c.lavender },
+    step3: { height: 34, backgroundColor: c.lime },
+    title: { ...f(600, 30, 36), color: c.ink, letterSpacing: -0.6 },
+    line: { ...f(500, 15, 22), color: c.ink2 },
+    problem: { ...f(500, 16, 24), color: c.ink },
+  });

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { Mission } from "@tatakae/core";
 import type { MissionEdit } from "../lib/hooks";
-import { colors, legacyRadius, space, text, ui } from "../theme";
+import { radius, space } from "../theme";
+import { useStyles, type Theme } from "../lib/theme";
 import { BigButton } from "./BigButton";
+import { SheetHeader } from "./Screen";
+import { TextField } from "./TextField";
 
 export interface LockReasonModalProps {
   mission: Mission | null;
@@ -18,6 +21,7 @@ export interface LockReasonModalProps {
  * why, and the reason shows up in Sunday's Mura review. No hard locks.
  */
 export function LockReasonModal({ mission, locked, onClose, onSave }: LockReasonModalProps) {
+  const s = useStyles(makeStyles);
   const [title, setTitle] = useState("");
   const [minimum, setMinimum] = useState("");
   const [ifThen, setIfThen] = useState("");
@@ -55,30 +59,22 @@ export function LockReasonModal({ mission, locked, onClose, onSave }: LockReason
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.sheet} accessibilityViewIsModal>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <Text style={text.h2} accessibilityRole="header">
-              Edit mission
-            </Text>
-            {locked ? <Text style={text.small}>The plan is locked. You can still change it — say why in a few words.</Text> : null}
+      <KeyboardAvoidingView style={s.backdrop} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={s.sheet} accessibilityViewIsModal>
+          <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+            <SheetHeader title="Edit mission" onClose={onClose} closeLabel="Cancel" />
+            {locked ? <Text style={s.note}>The plan is locked. You can still change it — say why in a few words.</Text> : null}
 
-            <Field label="Title" value={title} onChange={setTitle} max={200} />
-            <Field label="Minimum version" value={minimum} onChange={setMinimum} max={200} />
-            <Field label="If-then plan" value={ifThen} onChange={setIfThen} max={300} multiline />
+            <TextField label="Title" value={title} onChangeText={setTitle} maxLength={200} />
+            <TextField label="Minimum version" value={minimum} onChangeText={setMinimum} maxLength={200} />
+            <TextField label="If-then plan" value={ifThen} onChangeText={setIfThen} maxLength={300} multiline />
             {locked ? (
-              <Field
-                label="Reason for the change"
-                value={reason}
-                onChange={setReason}
-                max={300}
-                placeholder="e.g. Meeting moved into the morning"
-              />
+              <TextField label="Reason for the change" value={reason} onChangeText={setReason} maxLength={300} placeholder="e.g. Meeting moved into the morning" />
             ) : null}
 
-            <View style={styles.actions}>
-              <BigButton label="Cancel" variant="secondary" onPress={onClose} style={styles.flex} />
-              <BigButton label="Save" onPress={() => void save()} disabled={!canSave} busy={busy} style={styles.flex} />
+            <View style={s.actions}>
+              <BigButton label="Cancel" variant="secondary" onPress={onClose} style={s.flex} />
+              <BigButton label="Save" onPress={() => void save()} disabled={!canSave} busy={busy} style={s.flex} />
             </View>
           </ScrollView>
         </View>
@@ -87,44 +83,12 @@ export function LockReasonModal({ mission, locked, onClose, onSave }: LockReason
   );
 }
 
-function Field(props: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  max: number;
-  multiline?: boolean;
-  placeholder?: string;
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={text.label}>{props.label}</Text>
-      <TextInput
-        style={[ui.input, props.multiline && styles.multiline]}
-        value={props.value}
-        onChangeText={props.onChange}
-        maxLength={props.max}
-        multiline={props.multiline}
-        placeholder={props.placeholder}
-        placeholderTextColor={colors.muted}
-        accessibilityLabel={props.label}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: "flex-end" },
-  sheet: {
-    backgroundColor: colors.ink2,
-    borderTopLeftRadius: legacyRadius.card,
-    borderTopRightRadius: legacyRadius.card,
-    borderColor: colors.line,
-    borderWidth: 1,
-    maxHeight: "90%",
-  },
-  content: { padding: space(2), gap: space(2), paddingBottom: space(4) },
-  field: { gap: 4 },
-  multiline: { minHeight: 88, textAlignVertical: "top" },
-  actions: { flexDirection: "row", gap: space(1) },
-  flex: { flex: 1 },
-});
+const makeStyles = ({ c, t }: Theme) =>
+  StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: c.scrim, justifyContent: "flex-end" },
+    sheet: { backgroundColor: c.surface, borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, maxHeight: "90%" },
+    content: { padding: space(2.5), gap: space(2), paddingBottom: space(4) },
+    note: { ...t.secondary },
+    actions: { flexDirection: "row", gap: space(1) },
+    flex: { flex: 1 },
+  });

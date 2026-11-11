@@ -2,8 +2,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { f, minTarget, radius, space } from "../theme";
 import { pressedStyle, useStyles, type Theme } from "../lib/theme";
 import { tapSelect } from "../haptics";
+import { Icon } from "./Icon";
 
-/** Day / Week / Month (or 25 · 50 · 90) pills: selected = lime fill with ink text, others surface-2 (docs/10 §5). */
+/**
+ * Day / Week / Month (or 25 · 50 · 90) pills: selected = lime fill with ink text and a ✓, others
+ * surface-2 (docs/10 §5). The ✓ keeps the choice readable without colour.
+ */
 export function SegmentedPills<T extends string | number>(props: {
   options: readonly { value: T; label: string }[];
   value: T;
@@ -29,6 +33,7 @@ export function SegmentedPills<T extends string | number>(props: {
             accessibilityLabel={o.label}
             style={({ pressed }) => [s.pill, props.stretch && s.stretch, selected && s.selected, pressed && pressedStyle]}
           >
+            {selected ? <Icon name="done" color={s.labelSelected.color} size={16} strokeWidth={2.25} /> : null}
             <Text style={[s.label, selected && s.labelSelected]}>{o.label}</Text>
           </Pressable>
         );
@@ -48,6 +53,8 @@ const makeStyles = ({ c }: Theme) =>
       backgroundColor: c.surface2,
       alignItems: "center",
       justifyContent: "center",
+      flexDirection: "row",
+      gap: 4,
     },
     stretch: { flex: 1 },
     selected: { backgroundColor: c.lime },

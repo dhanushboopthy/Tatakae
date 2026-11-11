@@ -1,40 +1,26 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, legacyRadius, light, minTarget, space, tnum, type } from "../theme";
+import { f, light, minTarget, radius, space } from "../theme";
+import { pressedStyle, useStyles, useTheme, type Theme } from "../lib/theme";
 import { tapLight } from "../haptics";
 
 // Small building blocks for the Fitness phone screens (Today card, Log body, Log food, Log set).
-// Pastel fills always carry ink text (`fill.ink`); on the dark screens the neutral surfaces use the app's tokens.
+// Pastel fills are the same in both themes and always carry ink text (`fill.ink`).
+
+export { SheetHeader } from "./Screen";
 
 export const fill = {
   rose: light.area.rose,
+  roseDeep: "#E57FB8",
   lime: light.lime,
   limeSoft: light.limeSoft,
   lavenderSoft: light.lavenderSoft,
   white: "#FFFFFF",
-  ink: light.ink,
-  inkMuted: "#4A4A50", // 8.8:1 on rose and 8.6:1 on lime-soft
+  ink: light.onFill,
+  inkMuted: light.onFillMuted,
 } as const;
 
-/** Sheet title row with a 44dp close button. */
-export function SheetHeader(props: { title: string; subtitle?: string; onClose: () => void; right?: ReactNode }) {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerText}>
-        <Text style={styles.title} accessibilityRole="header">
-          {props.title}
-        </Text>
-        {props.subtitle ? <Text style={styles.subtitle}>{props.subtitle}</Text> : null}
-      </View>
-      {props.right}
-      <Pressable onPress={props.onClose} accessibilityRole="button" accessibilityLabel="Close" style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-        <Text style={styles.closeGlyph}>✕</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-/** Pill button, 44dp tall. `tone` picks the pastel fill (ink text on every one) or the neutral dark surface. */
+/** Pill button, 44dp tall. `tone` picks a pastel fill (ink text on every one), surface-2 or the charcoal primary. */
 export function PillButton(props: {
   label: string;
   onPress: () => void;
@@ -44,9 +30,11 @@ export function PillButton(props: {
   style?: StyleProp<ViewStyle>;
   flex?: boolean;
 }) {
+  const s = useStyles(makeStyles);
+  const { c } = useTheme();
   const tone = props.tone ?? "neutral";
-  const bg = { white: fill.white, lime: fill.lime, lavender: fill.lavenderSoft, neutral: colors.ink3, primary: colors.ember }[tone];
-  const fg = tone === "neutral" ? colors.paper : fill.ink;
+  const bg = { white: fill.white, lime: fill.lime, lavender: fill.lavenderSoft, neutral: c.surface2, primary: c.hero }[tone];
+  const fg = tone === "neutral" ? c.ink : tone === "primary" ? c.onHero : fill.ink;
   return (
     <Pressable
       onPress={() => {
@@ -57,58 +45,57 @@ export function PillButton(props: {
       accessibilityRole="button"
       accessibilityLabel={props.accessibilityLabel ?? props.label}
       accessibilityState={{ disabled: props.disabled === true }}
-      style={({ pressed }) => [styles.pill, { backgroundColor: bg }, props.flex && styles.flex, pressed && styles.pressed, props.disabled && styles.disabled, props.style]}
+      style={({ pressed }) => [s.pill, { backgroundColor: bg }, props.flex && s.flex, pressed && pressedStyle, props.disabled && s.disabled, props.style]}
     >
-      <Text style={[styles.pillLabel, { color: fg }]} numberOfLines={1}>
+      <Text style={[s.pillLabel, { color: fg }]} numberOfLines={1}>
         {props.label}
       </Text>
     </Pressable>
   );
 }
 
-/** Round − / + buttons around a value, 48dp each. */
+/** Round − / + buttons around a value, 52dp each. `light` = white circles on a pastel card. */
 export function Stepper(props: { value: ReactNode; onMinus: () => void; onPlus: () => void; minusLabel: string; plusLabel: string; tone?: "light" | "dark" }) {
-  const light_ = props.tone === "light";
+  const s = useStyles(makeStyles);
+  const { c } = useTheme();
+  const onCard = props.tone === "light";
+  const bg = onCard ? fill.white : c.surface2;
+  const fg = onCard ? fill.ink : c.ink;
+  const button = (glyph: string, label: string, onPress: () => void) => (
+    <Pressable
+      onPress={() => {
+        tapLight();
+        onPress();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [s.round, { backgroundColor: bg }, pressed && pressedStyle]}
+    >
+      <Text style={[s.roundGlyph, { color: fg }]}>{glyph}</Text>
+    </Pressable>
+  );
   return (
-    <View style={styles.stepper}>
-      <Pressable
-        onPress={() => {
-          tapLight();
-          props.onMinus();
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={props.minusLabel}
-        style={({ pressed }) => [styles.round, { backgroundColor: light_ ? fill.white : colors.ink3 }, pressed && styles.pressed]}
-      >
-        <Text style={[styles.roundGlyph, { color: light_ ? fill.ink : colors.paper }]}>−</Text>
-      </Pressable>
+    <View style={s.stepper}>
+      {button("−", props.minusLabel, props.onMinus)}
       {props.value}
-      <Pressable
-        onPress={() => {
-          tapLight();
-          props.onPlus();
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={props.plusLabel}
-        style={({ pressed }) => [styles.round, { backgroundColor: light_ ? fill.white : colors.ink3 }, pressed && styles.pressed]}
-      >
-        <Text style={[styles.roundGlyph, { color: light_ ? fill.ink : colors.paper }]}>+</Text>
-      </Pressable>
+      {button("+", props.plusLabel, props.onPlus)}
     </View>
   );
 }
 
 /** Thin progress bar; the number next to it always says the same thing, so colour is never the only signal. */
 export function MiniBar(props: { pct: number; track?: string; color: string; label: string; style?: StyleProp<ViewStyle> }) {
+  const s = useStyles(makeStyles);
+  const { c } = useTheme();
   const p = Math.max(0, Math.min(100, Math.round(props.pct)));
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityLabel={props.label}
       accessibilityValue={{ min: 0, max: 100, now: p }}
-      style={[styles.bar, { backgroundColor: props.track ?? colors.line }, props.style]}
+      style={[s.bar, { backgroundColor: props.track ?? c.line }, props.style]}
     >
-      <View style={[styles.barFill, { width: `${p}%`, backgroundColor: props.color }]} />
+      <View style={[s.barFill, { width: `${p}%`, backgroundColor: props.color }]} />
     </View>
   );
 }
@@ -131,21 +118,15 @@ export function parseNum(text: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: space(1), paddingHorizontal: space(2), paddingVertical: space(1) },
-  headerText: { flex: 1 },
-  title: { color: colors.paper, fontSize: type.h1, fontWeight: "600", lineHeight: 32 },
-  subtitle: { color: colors.muted, fontSize: type.small },
-  close: { width: minTarget, height: minTarget, borderRadius: legacyRadius.pill, backgroundColor: colors.ink3, alignItems: "center", justifyContent: "center" },
-  closeGlyph: { color: colors.paper, fontSize: 18 },
-  pill: { minHeight: minTarget, paddingHorizontal: space(2), borderRadius: legacyRadius.pill, alignItems: "center", justifyContent: "center" },
-  pillLabel: { fontSize: type.small, fontWeight: "600" },
-  flex: { flex: 1 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  disabled: { opacity: 0.5 },
-  stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space(2) },
-  round: { width: 52, height: 52, borderRadius: legacyRadius.pill, alignItems: "center", justifyContent: "center" },
-  roundGlyph: { fontSize: 26, fontWeight: "600", ...tnum },
-  bar: { height: 8, borderRadius: legacyRadius.pill, overflow: "hidden" },
-  barFill: { height: "100%", borderRadius: legacyRadius.pill },
-});
+const makeStyles = (_: Theme) =>
+  StyleSheet.create({
+    pill: { minHeight: minTarget, paddingHorizontal: space(2), borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+    pillLabel: { ...f(600, 14) },
+    flex: { flex: 1 },
+    disabled: { opacity: 0.5 },
+    stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space(2) },
+    round: { width: 52, height: 52, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+    roundGlyph: { ...f(600, 26), fontVariant: ["tabular-nums"] },
+    bar: { height: 8, borderRadius: radius.pill, overflow: "hidden" },
+    barFill: { height: "100%", borderRadius: radius.pill },
+  });
