@@ -17,6 +17,7 @@ const shared = {
   area: { sage: "#A3B56B", rose: "#F7A8D3", butter: "#F4D978", sky: "#B9CBF0" },
   danger: "#C2410C",
   butter: "#F4D978",
+  butterDeep: "#B38F12",
   /** Text and icons on every pastel / lime / lavender fill, in both themes (docs/10 §2 accessibility). */
   onFill: "#1C1C1E",
   /** Secondary text on pastel fills (8.8:1 on rose, 8.6:1 on lime-soft). */
