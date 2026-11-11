@@ -11,6 +11,7 @@ import { Scoreboard } from "../../src/components/Scoreboard";
 import { HatchedStackBar } from "../../src/components/HatchedStackBar";
 import { StripeTrend } from "../../src/components/StripeTrend";
 import { AreaSplit } from "../../src/components/BlockBarChart";
+import { BigButton } from "../../src/components/BigButton";
 import { SegmentedPills } from "../../src/components/SegmentedPills";
 import { IconCircle } from "../../src/components/IconCircle";
 import { Icon } from "../../src/components/Icon";
@@ -51,6 +52,7 @@ export default function Calendar() {
         }
       />
       <SegmentedPills options={MODES} value={mode} onChange={setMode} accessibilityLabel="View" stretch />
+      <BigButton label="Week planner" variant="secondary" size="compact" onPress={() => router.push("/planner")} accessibilityHint="Plan missions on a time rail, one day at a time" />
       {mode === "week" ? <WeekView /> : <MonthView />}
       <View style={s.spacer} />
     </Screen>

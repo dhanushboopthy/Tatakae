@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { AFTER_P1, FORGE_PROBLEM_COPY, SLOT_ORDER, anchorsFor, bySlot, firstFreeSlot, freeMinutes, ifThenTemplates, missionsOn, plannedMinutes, toMinutes } from "./planning";
+import {
+  AFTER_P1,
+  FORGE_PROBLEM_COPY,
+  SLOT_ORDER,
+  anchorsFor,
+  bySlot,
+  durationLabel,
+  firstFreeSlot,
+  freeMinutes,
+  hhmmOf,
+  ifThenTemplates,
+  istMinutesOf,
+  missionsOn,
+  plannedMinutes,
+  railSpan,
+  rangeLabel,
+  toMinutes,
+} from "./planning";
 import type { Anchor, Mission } from "./types";
 
 const AT = "2026-10-20T10:00:00.000Z";
@@ -69,6 +86,28 @@ describe("capacity helpers", () => {
       mission({ slot: "P3", estMin: 90, deletedAt: AT }),
     ];
     expect(plannedMinutes(ms)).toBe(75);
+  });
+});
+
+describe("planner time rail", () => {
+  it("istMinutesOf reads IST wall-clock minutes", () => {
+    expect(istMinutesOf("2026-10-20T03:30:00.000Z")).toBe(9 * 60);
+    expect(istMinutesOf("2026-10-20T19:00:00.000Z")).toBe(30);
+    expect(istMinutesOf("nope")).toBe(0);
+  });
+  it("railSpan places and clips blocks", () => {
+    expect(railSpan(6 * 60, 18 * 60)).toEqual({ top: 0, height: 1 });
+    expect(railSpan(15 * 60, 54)).toEqual({ top: 0.5, height: 0.05 });
+    expect(railSpan(5 * 60, 30)).toBeNull();
+    expect(railSpan(30, 60)).toBeNull();
+    expect(railSpan(23 * 60 + 30, 60)).toEqual({ top: (17.5 * 60) / 1080, height: 30 / 1080 });
+  });
+  it("hhmmOf wraps at 24 h, labels read well", () => {
+    expect(hhmmOf(9 * 60 + 5)).toBe("09:05");
+    expect(hhmmOf(1440 + 30)).toBe("00:30");
+    expect(durationLabel(45)).toBe("45 min");
+    expect(durationLabel(120)).toBe("2 h");
+    expect(rangeLabel(9 * 60 + 30, 90)).toBe("09:30–11:00 · 1 h 30 min");
   });
 });
 

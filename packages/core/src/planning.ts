@@ -120,6 +120,53 @@ export function ifThenTemplates(missions: readonly Mission[], limit = 5): string
   return out;
 }
 
+// ---------- week planner time rail ----------
+
+/** The planner's visible day: 06:00 to 24:00. */
+export const RAIL = { startMin: 6 * 60, endMin: 24 * 60 } as const;
+
+/** Minutes since IST midnight (wall clock) for an ISO timestamp. IST is a fixed +05:30. */
+export function istMinutesOf(iso: string): number {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return 0;
+  const minutes = Math.floor((ms + 330 * 60_000) / 60_000);
+  return ((minutes % 1440) + 1440) % 1440;
+}
+
+/**
+ * Vertical placement of a block on the rail as fractions (0..1) of the rail height, clipped to the rail.
+ * Blocks before 04:00 (next calendar day, same app day) are placed after midnight, so they clip at the end.
+ * Returns null when nothing of the block is visible.
+ */
+export function railSpan(startMin: number, durationMin: number, rail: { startMin: number; endMin: number } = RAIL): { top: number; height: number } | null {
+  const s = startMin < 4 * 60 ? startMin + 1440 : startMin;
+  const e = s + Math.max(1, durationMin);
+  const a = Math.max(rail.startMin, s);
+  const b = Math.min(rail.endMin, e);
+  if (b <= a) return null;
+  const len = rail.endMin - rail.startMin;
+  return { top: (a - rail.startMin) / len, height: (b - a) / len };
+}
+
+/** "HH:MM" for minutes since midnight (wraps at 24 h). */
+export function hhmmOf(minutes: number): string {
+  const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+/** "1 h 30 min", "45 min", "2 h". */
+export function durationLabel(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** "09:30–11:00 · 1 h 30 min" */
+export function rangeLabel(startMin: number, durationMin: number): string {
+  return `${hhmmOf(startMin)}–${hhmmOf(startMin + durationMin)} · ${durationLabel(durationMin)}`;
+}
+
 /** What the plan lock reports when it refuses, in the words both apps show. */
 export const FORGE_PROBLEM_COPY: Record<ForgeProblem, string> = {
   no_p1: "Pick a P1 first.",

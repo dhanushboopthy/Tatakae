@@ -4,6 +4,7 @@ import {
   RITUAL_RESTART,
   firstFreeSlot,
   ifThenTemplates,
+  isLockedChange,
   newId,
   nowIso,
   validateForge,
@@ -42,6 +43,15 @@ export function useBacklog() {
       (await store.getAll("missions"))
         .filter((m) => m.deletedAt == null && m.slot === "backlog")
         .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)),
+  });
+}
+
+/** Live missions planned on days in [from, to] (no backlog), for the week planner. */
+export function useMissionsRange(from: ISODate, to: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, ["missions"], "missions-range", from, to],
+    queryFn: async (): Promise<Mission[]> =>
+      (await store.getAll("missions")).filter((m) => m.deletedAt == null && m.slot !== "backlog" && m.dayDate != null && m.dayDate >= from && m.dayDate <= to),
   });
 }
 
@@ -157,6 +167,52 @@ export async function loadRitualProgress(date: ISODate): Promise<RitualProgress>
 
 export async function saveRitualProgress(date: ISODate, p: RitualProgress): Promise<void> {
   await store.setMeta(progressKey(date), JSON.stringify(p));
+}
+
+// ---------- week planner ----------
+
+export type PlanOutcome = { ok: true } | { ok: false; why: "no_slot" | "needs_reason" };
+
+/**
+ * Put a mission on a day at a start time (the week planner's "Plan" sheet). A mission already on that day keeps its
+ * slot; one from the backlog or another day takes the first free slot after P1. Changing a locked day needs a typed
+ * reason (a mura event for Sunday's review), exactly like the website.
+ */
+export async function planMission(input: {
+  mission: Mission | null;
+  title: string;
+  date: ISODate;
+  plannedStart: string;
+  estMin: number;
+  reason?: string;
+}): Promise<PlanOutcome> {
+  const { mission, date } = input;
+  const day = await store.get("days", date);
+  const forged = day?.forgedAt != null;
+  const onDay = mission != null && mission.dayDate === date && mission.slot !== "backlog";
+  let next: Mission;
+  if (onDay && mission) {
+    next = { ...mission, plannedStart: input.plannedStart, estMin: input.estMin };
+  } else {
+    const slot = firstFreeSlot(await missionsFor(date), AFTER_P1);
+    if (!slot) return { ok: false, why: "no_slot" };
+    next = mission
+      ? { ...mission, dayDate: date, slot, status: "open", plannedStart: input.plannedStart, estMin: input.estMin }
+      : { ...blankMission({ title: input.title.trim(), slot, dayDate: date, plannedStart: input.plannedStart, estMin: input.estMin }), updatedAt: nowIso(), deletedAt: null };
+  }
+  if (isLockedChange(mission, next, forged)) {
+    const reason = input.reason?.trim() ?? "";
+    if (reason.length < 3) return { ok: false, why: "needs_reason" };
+    await write("missions", next, { lockReason: reason });
+  } else {
+    await write("missions", next);
+  }
+  return { ok: true };
+}
+
+/** Take a mission off the time rail (it stays on its day, unscheduled). */
+export async function unplanMission(m: Mission): Promise<void> {
+  await write("missions", { ...m, plannedStart: null });
 }
 
 // ---------- inbox ----------
