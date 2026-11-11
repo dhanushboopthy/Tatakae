@@ -62,7 +62,8 @@ describe("login throttling", () => {
   it("successful logins don't count", async () => {
     const { app } = await setup();
     for (let i = 0; i < 40; i++) expect((await wrong(app, `198.51.100.${i}`, OWNER.password)).status).toBe(200);
-  });
+    // 40 real argon2 hashes: slow under a parallel run, so this test gets a longer timeout.
+  }, 30_000);
 });
 
 describe("step-up re-auth", () => {
