@@ -26,6 +26,7 @@ import { SegmentedPills } from "../../src/components/SegmentedPills";
 import { Stepper } from "../../src/components/fitnessUi";
 import { BigButton } from "../../src/components/BigButton";
 import { Toast } from "../../src/components/Toast";
+import { PendingFixNote, UpdateBanner } from "../../src/components/UpdateBanner";
 import { Card, Screen, ScreenHeader } from "../../src/components/Screen";
 import { f, space } from "../../src/theme";
 
@@ -182,6 +183,8 @@ export default function Settings() {
         <BigButton label="Sign out of this phone" icon="logout" variant="secondary" onPress={() => void logout()} accessibilityHint="Your data stays on this phone until you sign in again" />
       </Section>
 
+      <UpdateBanner persistent />
+      <PendingFixNote />
       {__DEV__ ? <BigButton label="Design page (development only)" variant="quiet" onPress={() => router.push("/dev/design")} /> : null}
       <Text style={s.version}>Tatakae {version}</Text>
       <View style={s.toast} pointerEvents="none">

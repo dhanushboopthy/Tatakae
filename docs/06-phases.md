@@ -72,7 +72,7 @@ Order (each builds on the previous):
 ## v4 — Hardening (14 Dec – 3 Jan)
 1. ✅ Nightly JSON backup job + `/api/export`; `job_runs` shown in Settings → Data.
 2. **Restore drill** on a fresh VM using `restore.sh` (Terraform → cloud-init → Litestream restore). Record time-to-restore.
-3. Signed release APK workflow on `mobile-v*` tags; `/api/app/version` (✅) + in-app "update available"; EAS Update channel for JS fixes.
+3. 🟡 Signed release APK workflow on `mobile-v*` tags (✅ written); `/api/app/version` (✅) + in-app "update available" (✅ code, 18 Oct); EAS Update channel for JS fixes (✅ wired, needs `eas init` + the `EAS_PROJECT_ID` variable). Still to do: keystore secrets and the first `mobile-v0.1.0` release.
 4. ✅ Web passkeys (WebAuthn) as primary login; password fallback (R3-8). Production: `PUBLIC_ORIGIN` must be the real https domain.
 5. 🟡 Optional laptop web push.
 6. 🟡 Conflict UI (subtle "edited elsewhere" note) ✅ code; on-screen visual check, laptop + phone, light + dark ✅ (R3-3); Playwright smoke test ✅ 4/4 (`pnpm --filter web e2e`, R3-5/R3-6); phone conflict notes ✅ code (18 Oct); offline edge cases ✅ (two-client end-to-end tests, 18 Oct); accessibility audit on the device pending.

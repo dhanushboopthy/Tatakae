@@ -12,8 +12,12 @@ const { join } = require<{ join(...parts: string[]): string }>("path");
 // - EXPO_PUBLIC_API_URL  production API origin, e.g. https://tatakae.example.me (no trailing /api)
 // - EAS_PROJECT_ID       set once the EAS project exists; enables EAS Update (v4). Without it the
 //                        build has no `updates` block, so local/CI builds never point at a placeholder.
+// - EAS_UPDATE_CHANNEL   channel this build listens to (default "production", see eas.json). The
+//                        release APK is built by Gradle in mobile.yml, not EAS Build, so the channel
+//                        is sent as a request header instead of being set by EAS.
 
 const easProjectId = process.env.EAS_PROJECT_ID?.trim() || null;
+const updateChannel = process.env.EAS_UPDATE_CHANNEL?.trim() || "production";
 
 /** Only reference artwork that exists, so `expo prebuild` works before the icon is drawn. */
 const asset = (file: string): string | undefined =>
@@ -69,7 +73,19 @@ const config: ExpoConfig = {
       },
     ],
   ],
-  ...(easProjectId ? { updates: { url: `https://u.expo.dev/${easProjectId}` } } : {}), // TODO(v4) EAS Update channel
+  // JS-only fixes (v4.3): checked on launch, downloaded in the background, applied on the next launch.
+  // The launch never waits for the network (fallbackToCacheTimeout 0). Same app version only
+  // (runtimeVersion below), so a fix never reaches an APK it wasn't built for.
+  ...(easProjectId
+    ? {
+        updates: {
+          url: `https://u.expo.dev/${easProjectId}`,
+          checkAutomatically: "ON_LOAD" as const,
+          fallbackToCacheTimeout: 0,
+          requestHeaders: { "expo-channel-name": updateChannel },
+        },
+      }
+    : {}),
   runtimeVersion: { policy: "appVersion" },
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:8787", // Android emulator → host

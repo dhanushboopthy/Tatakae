@@ -34,6 +34,7 @@ import { Icon, type AppIcon } from "../../src/components/Icon";
 import { Card, Screen, ScreenHeader } from "../../src/components/Screen";
 import { LockReasonModal } from "../../src/components/LockReasonModal";
 import { EditedElsewhere } from "../../src/components/ConflictNotice";
+import { UpdateBanner } from "../../src/components/UpdateBanner";
 import { BigButton } from "../../src/components/BigButton";
 import { tapDone } from "../../src/haptics";
 import { f, minTarget, radius, space } from "../../src/theme";
@@ -222,6 +223,8 @@ export default function Today() {
         </Pressable>
       ) : null}
       {flags?.closed ? <Text style={s.small}>Day closed. Tomorrow's plan comes from the night ritual.</Text> : null}
+
+      <UpdateBanner />
 
       <LockReasonModal
         mission={editing}
