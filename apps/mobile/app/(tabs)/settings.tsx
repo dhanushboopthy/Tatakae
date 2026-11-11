@@ -141,6 +141,7 @@ export default function Settings() {
 
       <Section title="Plan and score" note="Anchors, habits, areas, the recharge menu, the reward queue and the scoring constants. Reviews and the inbox are on Today.">
         <BigButton label="More settings" variant="secondary" onPress={() => router.push("/manage")} />
+        <BigButton label="Library: applications, stories, Japanese" variant="secondary" onPress={() => router.push("/library")} />
       </Section>
 
       <Section title="Day" note="Morning reminder at wake time, the ritual reminder at ritual time. Dark theme runs from ritual time to wake time.">

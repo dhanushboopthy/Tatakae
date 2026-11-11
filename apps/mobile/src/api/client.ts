@@ -30,7 +30,7 @@ export async function handleUnauthorized(): Promise<void> {
   }
 }
 
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export async function apiFetch<T>(path: string, method: Method = "GET", body?: unknown): Promise<T> {
   const token = await getToken();
@@ -95,4 +95,5 @@ export async function confirmPassword(password: string): Promise<ReauthOutcome> 
 
 export const apiGet = <T>(path: string): Promise<T> => apiFetch<T>(path, "GET");
 export const apiPost = <T>(path: string, body?: unknown): Promise<T> => apiFetch<T>(path, "POST", body ?? {});
+export const apiPatch = <T>(path: string, body: unknown): Promise<T> => apiFetch<T>(path, "PATCH", body);
 export const apiDelete = <T>(path: string): Promise<T> => apiFetch<T>(path, "DELETE");

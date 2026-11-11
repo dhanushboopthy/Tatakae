@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blocksToText, excerptOf, ftsQuery, normalizeTags, snippetAround, textToBlocks } from "./notes";
+import { blocksToText, excerptOf, ftsQuery, isPlainBody, normalizeTags, plainBodyText, snippetAround, textToBlocks } from "./notes";
 
 const doc = [
   { type: "heading", props: { level: 2 }, content: [{ type: "text", text: "Raft", styles: {} }], children: [] },
@@ -56,6 +56,28 @@ describe("ftsQuery", () => {
   });
   it("keeps non-Latin words", () => {
     expect(ftsQuery("日本語 の")).toBe('"日本語"* "の"*');
+  });
+});
+
+describe("plain note bodies (phone editor)", () => {
+  const para = (text: string, styles: Record<string, unknown> = {}) => ({ type: "paragraph", content: text ? [{ type: "text", text, styles }] : [] });
+  it("plain paragraphs are safe to edit as text and round-trip", () => {
+    const blocks = textToBlocks("first\n\nthird");
+    expect(isPlainBody(blocks)).toBe(true);
+    expect(plainBodyText(blocks)).toBe("first\n\nthird");
+    expect(plainBodyText(textToBlocks(plainBodyText(blocks)))).toBe("first\n\nthird");
+  });
+  it("empty and missing bodies are plain", () => {
+    expect(isPlainBody(null)).toBe(true);
+    expect(isPlainBody([])).toBe(true);
+  });
+  it("formatting the phone editor would flatten is not plain", () => {
+    expect(isPlainBody([{ type: "heading", props: { level: 2 }, content: [{ type: "text", text: "h", styles: {} }] }])).toBe(false);
+    expect(isPlainBody([{ type: "bulletListItem", content: [{ type: "text", text: "x", styles: {} }] }])).toBe(false);
+    expect(isPlainBody([para("bold", { bold: true })])).toBe(false);
+    expect(isPlainBody([{ type: "paragraph", content: [{ type: "link", href: "https://a.b", content: [{ type: "text", text: "a", styles: {} }] }] }])).toBe(false);
+    expect(isPlainBody([{ ...para("x"), children: [para("nested")] }])).toBe(false);
+    expect(isPlainBody("nope")).toBe(false);
   });
 });
 
