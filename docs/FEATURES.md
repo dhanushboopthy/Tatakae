@@ -15,7 +15,8 @@ A personal execution system for one person. Rather than just storing tasks, it e
 
 ## 1. The daily loop
 
-### Night ritual (laptop, about 5 minutes) — ✅ web
+### Night ritual (about 5 minutes) — ✅ web · 🟡 phone (built, not run on a device)
+The phone has the same eight steps, the plan lock and the deliberate restart flow (`app/ritual.tsx`), always dark, resumable per day. Quick close stays as the one-minute fallback. Weekly and monthly review (with the fitness check-in), Inbox triage, Cycle goal editing, the Week planner (time rail and a Plan sheet instead of dragging) and Settings → More settings (anchors, habits, areas, recharge menu, reward queue, scoring, sharing a copy of your data) are also on the phone now, all 🟡. So are Notes (write, edit, tags, flags, delete; a note with formatting the phone can't keep opens without its text), the Library (applications, interview stories, Japanese log) and Fitness → More (week, month, training, phase, saved foods). Only passkeys (laptop sign-in) and the command palette stay website-only, and note file attachments need a file picker the app doesn't have yet.
 An 8-step wizard at `/ritual`:
 1. **Close today**: mark each mission Done / Minimum / Missed / Rescheduled and enter recreational screen minutes.
 2. **Small win**: one line, which you can skip.
@@ -79,7 +80,7 @@ Exact and deterministic, in `packages/core/src/scoring.ts` (table-driven tests):
 - **Monthly review**: averages, BlockBarChart of marks and area minutes, HabitHeatGrid, wins / failures / why, next month's theme.
 - **12-week Cycle page**: at most 4 goals, each passing a "hell-yeah" gate, with SegmentGauge and RingProgress, and areas with a colour and icon.
 - One review per period, enforced by the API.
-- Phone Week view and read-only Cycle: 🟡 built, not run on a device.
+- Phone Week view, Cycle (goal editing included), weekly and monthly review: 🟡 built, not run on a device.
 
 ---
 

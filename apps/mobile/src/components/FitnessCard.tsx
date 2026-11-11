@@ -37,6 +37,15 @@ export function FitnessCard({ date }: { date: ISODate }) {
           <View style={styles.chip}>
             <Text style={styles.chipText}>{label}</Text>
           </View>
+          <View style={styles.topButtons}>
+            <PillButton label="More" tone="white" onPress={() => router.push("/fitness/overview")} accessibilityLabel="Week, month, training, phase and foods" />
+            <PillButton
+              label="Targets"
+              tone="white"
+              onPress={() => router.push("/fitness/targets")}
+              accessibilityLabel="Change calorie targets and phase start date"
+            />
+          </View>
         </View>
 
         <View style={styles.stats}>
@@ -110,7 +119,8 @@ const makeStyles = ({ c }: Theme) =>
   StyleSheet.create({
     wrap: { gap: space(1) },
     card: { backgroundColor: fill.rose, borderRadius: radius.card, padding: space(2.5), gap: space(1.75) },
-    top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space(1) },
+    topButtons: { flexDirection: "row", gap: space(1) },
     chip: { backgroundColor: fill.roseDeep, borderRadius: radius.pill, paddingHorizontal: space(1.5), paddingVertical: 6 },
     chipText: { ...f(600, 13), color: fill.ink },
     stats: { flexDirection: "row", gap: space(2) },

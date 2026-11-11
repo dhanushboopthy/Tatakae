@@ -24,7 +24,7 @@ const rowsOf = (res: SyncResponse, table: string) => res.changes.filter((c) => c
 const meta = (minutes = 0) => ({ updatedAt: at(minutes), deletedAt: null });
 
 const body = (o: Partial<BodyLog> = {}): BodyLog => ({
-  id: "B1", date: "2026-10-20", weightKg: 82.4, steps: 9100, waterMl: 2750, sleepMin: 445, note: null, ...meta(), ...o,
+  id: "B1", date: "2026-10-20", weightKg: 82.4, steps: 9100, waterMl: 2750, sleepMin: 445, note: null, kcalOverride: 2150, ...meta(), ...o,
 });
 const food = (o: Partial<Food> = {}): Food => ({
   id: "F1", name: "Paneer", servingLabel: "100 g", servingG: 100, kcal: 265, proteinG: 18.3, carbsG: 1.2, fatG: 20.8,
@@ -88,6 +88,7 @@ describe("POST /sync — fitness tables", () => {
     ["foods with an unknown micronutrient", "foods", { ...food(), micros: { caffeine: 80 } }],
     ["maintenance_weeks with a malformed week", "maintenance_weeks", { ...maintenance(), isoWeek: "2026-43" }],
     ["body_logs with an impossible weight", "body_logs", { ...body(), weightKg: 4 }],
+    ["body_logs with an impossible calories target", "body_logs", { ...body(), kcalOverride: 120 }],
     ["fitness_phases with an unknown kind", "fitness_phases", { ...phase(), kind: "shred" }],
   ] as const)("rejects %s as a conflict", async (_name, table, row) => {
     const { app } = await setup();

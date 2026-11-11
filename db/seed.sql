@@ -16,7 +16,9 @@ INSERT OR IGNORE INTO settings (key, value, editable_from, updated_at, deleted_a
   ('fitness.stepsTarget', '8000', NULL, '1970-01-01T00:00:00.000Z', NULL),
   ('fitness.waterTargetMl', '3000', NULL, '1970-01-01T00:00:00.000Z', NULL),
   ('fitness.sleepTargetMin', '450', NULL, '1970-01-01T00:00:00.000Z', NULL),
-  ('fitness.fibreTargetG', '30', NULL, '1970-01-01T00:00:00.000Z', NULL);
+  ('fitness.fibreTargetG', '30', NULL, '1970-01-01T00:00:00.000Z', NULL),
+  ('fitness.manualKcal', 'null', NULL, '1970-01-01T00:00:00.000Z', NULL),
+  ('cycle.start', '"2026-10-12"', NULL, '1970-01-01T00:00:00.000Z', NULL);
 
 INSERT OR IGNORE INTO recharge_items (id, name, kind, updated_at, deleted_at) VALUES
   ('0000000000RECHARGE00000001', 'Walk', 'walk', '1970-01-01T00:00:00.000Z', NULL),

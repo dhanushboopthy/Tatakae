@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { isOffline, useNoteSearch, useRecentNotes } from "../../src/lib/notes";
 import { ago } from "../../src/lib/format";
+import { BigButton } from "../../src/components/BigButton";
 import { Card, Screen, SheetHeader } from "../../src/components/Screen";
 import { TextField } from "../../src/components/TextField";
 import { f, minTarget, radius, space } from "../../src/theme";
@@ -44,12 +45,13 @@ export default function Notes() {
   } else if (active.isPending) {
     status = searching ? "Searching…" : "Loading…";
   } else if (rows.length === 0) {
-    status = searching ? "Nothing matches that. Try a different word." : "No notes yet. Write them on the laptop, or save a capture as a note.";
+    status = searching ? "Nothing matches that. Try a different word." : "No notes yet. Write one here, or save a capture as a note.";
   }
 
   return (
     <Screen sheet>
-      <SheetHeader title="Notes" subtitle="Search and read. Editing stays on the laptop." onClose={() => router.back()} />
+      <SheetHeader title="Notes" subtitle="Search, read, write and edit. Notes need a connection." onClose={() => router.back()} />
+      <BigButton label="New note" variant="accent" onPress={() => router.push({ pathname: "/notes/[id]", params: { id: "new" } })} />
       <TextField
         value={text}
         onChangeText={setText}

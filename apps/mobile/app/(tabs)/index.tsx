@@ -12,6 +12,7 @@ import {
   useDay,
   useDayFlags,
   useHabits,
+  useInbox,
   useScoreboard,
   useSyncStatus,
   useToday,
@@ -55,6 +56,7 @@ export default function Today() {
   const dayQ = useDay(today);
   const flagsQ = useDayFlags(today);
   const habitsQ = useHabits(today);
+  const inboxQ = useInbox();
   const week = useWeekDays(today);
   const board = useScoreboard();
   const sync = useSyncStatus();
@@ -212,17 +214,48 @@ export default function Today() {
       {board.data ? <Scoreboard boxes={board.data} keys={["days_shown_up", "today_score"]} /> : null}
 
       {flags && !flags.closed ? (
-        <Pressable
-          onPress={() => router.push("/quick-close")}
-          accessibilityRole="button"
-          accessibilityHint="Close today here if you can't do the laptop ritual"
-          style={({ pressed }) => [s.link, pressed && pressedStyle]}
-        >
-          <Icon name="ritual" size={18} color={c.ink} />
-          <Text style={s.linkText}>Away from the laptop tonight? Quick close</Text>
-        </Pressable>
+        <>
+          <Pressable
+            onPress={() => router.push("/ritual")}
+            accessibilityRole="button"
+            accessibilityHint="Close today and plan tomorrow, in about five minutes"
+            style={({ pressed }) => [s.link, pressed && pressedStyle]}
+          >
+            <Icon name="ritual" size={18} color={c.ink} />
+            <Text style={s.linkText}>Night ritual: close today, plan tomorrow</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/quick-close")}
+            accessibilityRole="button"
+            accessibilityHint="Close today in under a minute without planning tomorrow"
+            style={({ pressed }) => [s.link, pressed && pressedStyle]}
+          >
+            <Icon name="ritual" size={18} color={c.ink} />
+            <Text style={s.linkText}>Short on time? Quick close</Text>
+          </Pressable>
+        </>
       ) : null}
-      {flags?.closed ? <Text style={s.small}>Day closed. Tomorrow's plan comes from the night ritual.</Text> : null}
+      {flags?.closed ? <Text style={s.small}>Day closed. Plan tomorrow from the night ritual.</Text> : null}
+
+      <Pressable
+        onPress={() => router.push("/inbox")}
+        accessibilityRole="button"
+        accessibilityHint="Sort captured items into missions or notes"
+        style={({ pressed }) => [s.link, pressed && pressedStyle]}
+      >
+        <Icon name="capture" size={18} color={c.ink} />
+        <Text style={s.linkText}>{(inboxQ.data?.length ?? 0) > 0 ? `Inbox: ${inboxQ.data?.length} to sort` : "Inbox"}</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.push("/review")}
+        accessibilityRole="button"
+        accessibilityHint="Weekly and monthly reviews"
+        style={({ pressed }) => [s.link, pressed && pressedStyle]}
+      >
+        <Icon name="ritual" size={18} color={c.ink} />
+        <Text style={s.linkText}>Weekly and monthly review</Text>
+      </Pressable>
 
       <UpdateBanner />
 

@@ -1,6 +1,7 @@
 import {
   EDITABLE_FROM,
   addDays,
+  checkPhaseStart,
   isLockedChange,
   newId,
   nowIso,
@@ -18,6 +19,7 @@ import {
   type MealSlot,
   type Micros,
   type PhaseKind,
+  type PhaseStartCheck,
   type Workout,
   type WorkoutSet,
   type Blocker,
@@ -341,7 +343,7 @@ export type { RechargeItem };
 
 // ---------- fitness (docs/plans/fitness.md) ----------
 
-export type BodyPatch = Partial<Pick<BodyLog, "weightKg" | "steps" | "waterMl" | "sleepMin" | "note">>;
+export type BodyPatch = Partial<Pick<BodyLog, "weightKg" | "steps" | "waterMl" | "sleepMin" | "note" | "kcalOverride">>;
 
 /** Merge a patch into the day's body log (one row per date; creates it on first write). */
 export async function logBody(date: ISODate, patch: BodyPatch): Promise<BodyLog> {
@@ -355,8 +357,24 @@ export async function logBody(date: ISODate, patch: BodyPatch): Promise<BodyLog>
     waterMl: base?.waterMl ?? null,
     sleepMin: base?.sleepMin ?? null,
     note: base?.note ?? null,
+    kcalOverride: base?.kcalOverride ?? null,
     ...patch,
   });
+}
+
+/** Type in the calories target for one day (null = back to the calculated or standing target). */
+export async function setKcalOverride(date: ISODate, kcal: number | null): Promise<void> {
+  await logBody(date, { kcalOverride: kcal == null ? null : Math.round(kcal) });
+}
+
+/** The standing calories target from `from` onward (null = calculated again). */
+export async function setManualKcal(value: { kcal: number; from: ISODate } | null): Promise<void> {
+  await saveSetting("fitness.manualKcal", value == null ? null : { kcal: Math.round(value.kcal), from: value.from });
+}
+
+/** First day of Cycle 1 (later cycles follow every 84 days). */
+export async function saveCycleStart(date: ISODate): Promise<void> {
+  await saveSetting("cycle.start", date);
 }
 
 export interface FoodInput {
@@ -473,6 +491,28 @@ export async function savePhase(
 ): Promise<void> {
   await write("fitness_phases", { ...phase, ...patch });
 }
+
+/**
+ * Move a phase's start date (checked with core `checkPhaseStart`). The phase before it, which normally ended the
+ * day before, now ends the day before the new start, so two phases never overlap. Returns the problem, if any.
+ */
+export async function changePhaseStart(
+  phases: readonly FitnessPhase[],
+  phase: FitnessPhase,
+  startDate: ISODate,
+  today: ISODate,
+): Promise<PhaseStartProblem | null> {
+  if (startDate === phase.startDate) return null;
+  const check = checkPhaseStart(phases, phase, startDate, today);
+  if (!check.ok) return check.reason;
+  if (check.prevEnd) {
+    const prev = phases.find((p) => p.id === check.prevEnd?.id);
+    if (prev) await write("fitness_phases", { ...prev, endDate: check.prevEnd.endDate });
+  }
+  await write("fitness_phases", { ...phase, startDate });
+  return null;
+}
+export type PhaseStartProblem = Extract<PhaseStartCheck, { ok: false }>["reason"];
 
 export async function endPhase(phase: FitnessPhase, endDate: ISODate): Promise<void> {
   await write("fitness_phases", { ...phase, endDate: endDate < phase.startDate ? phase.startDate : endDate });

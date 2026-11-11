@@ -85,9 +85,9 @@ export default function QuickClose() {
   return (
     <Screen
       sheet
-      footer={<BigButton label="Close the day" onPress={() => void close()} busy={busy} disabled={!minutesOk} size="large" accessibilityHint="Saves today. Tomorrow is planned on the laptop." />}
+      footer={<BigButton label="Close the day" onPress={() => void close()} busy={busy} disabled={!minutesOk} size="large" accessibilityHint="Saves today. Plan tomorrow from the night ritual." />}
     >
-      <SheetHeader title="Quick close" subtitle="Three things, under a minute. Planning stays on the laptop." onClose={() => router.back()} />
+      <SheetHeader title="Quick close" subtitle="Three things, under a minute. To plan tomorrow, use the night ritual." onClose={() => router.back()} />
 
       {missions.length === 0 ? (
         <Card tone="surface">

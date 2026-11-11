@@ -142,6 +142,13 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="morning" options={{ presentation: "fullScreenModal" }} />
         <Stack.Screen name="welcome-back" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="ritual" options={{ presentation: "fullScreenModal" }} />
+        <Stack.Screen name="review" options={{ presentation: "modal" }} />
+        <Stack.Screen name="inbox" options={{ presentation: "modal" }} />
+        <Stack.Screen name="planner" options={{ presentation: "modal" }} />
+        <Stack.Screen name="manage" options={{ presentation: "modal" }} />
+        <Stack.Screen name="library" options={{ presentation: "modal" }} />
+        <Stack.Screen name="goal" options={{ presentation: "modal" }} />
         <Stack.Screen name="quick-close" options={{ presentation: "modal" }} />
         <Stack.Screen name="stuck/[missionId]" options={{ presentation: "modal" }} />
         <Stack.Screen name="recharge" options={{ presentation: "modal" }} />
@@ -149,6 +156,8 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="fitness/body" options={{ presentation: "modal" }} />
         <Stack.Screen name="fitness/food" options={{ presentation: "modal" }} />
         <Stack.Screen name="fitness/set" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/targets" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/overview" options={{ presentation: "modal" }} />
         <Stack.Screen name="day/[date]" />
         <Stack.Screen name="cycle" options={{ presentation: "modal" }} />
         <Stack.Screen name="notes/index" options={{ presentation: "modal" }} />

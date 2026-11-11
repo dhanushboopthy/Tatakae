@@ -116,6 +116,7 @@ export function buildFitnessDay(date: ISODate, rows: FitnessRows): FitnessDay {
     maintenanceWeeks: liveRows(rows.maintenanceWeeks),
     defaultMaintenance: rows.settings["fitness.maintenanceKcal"],
     fibreTargetG: rows.settings["fitness.fibreTargetG"],
+    manualKcal: rows.settings["fitness.manualKcal"],
   });
   const trend = trendWeight(bodyLogs.filter((b) => b.date <= date), date);
   const previous = bodyLogs.filter((b) => b.date < date && b.weightKg != null).sort((a, b) => b.date.localeCompare(a.date))[0];

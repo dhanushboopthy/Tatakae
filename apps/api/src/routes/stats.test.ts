@@ -77,6 +77,27 @@ describe("stats routes", () => {
     expect((await call(app, "GET", "/stats/habits?days=7")).status).toBe(200);
     expect((await call(app, "GET", "/stats/focus-hours")).status).toBe(200);
   });
+
+  it("the Cycle follows the editable start date (setting cycle.start)", async () => {
+    const { app } = await setup();
+    const first = await call(app, "GET", "/stats/cycle");
+    expect(first.body["start"]).toBe("2026-10-12");
+    expect((await call(app, "PUT", "/settings/cycle.start", { value: "2026-10-19" })).status).toBe(200);
+    const moved = await call(app, "GET", "/stats/cycle");
+    expect(moved.body["start"]).toBe("2026-10-19");
+    expect(moved.body["end"]).toBe("2027-01-10");
+    expect((await call(app, "PUT", "/settings/cycle.start", { value: "soon" })).status).toBe(400);
+  });
+
+  it("the standing calories target is a setting that can be set and cleared", async () => {
+    const { app } = await setup();
+    expect((await call(app, "GET", "/settings")).body["fitness.manualKcal"]).toBeNull();
+    expect((await call(app, "PUT", "/settings/fitness.manualKcal", { value: { kcal: 2300, from: "2026-10-22" } })).status).toBe(200);
+    expect((await call(app, "GET", "/settings")).body["fitness.manualKcal"]).toEqual({ kcal: 2300, from: "2026-10-22" });
+    expect((await call(app, "PUT", "/settings/fitness.manualKcal", { value: { kcal: 90, from: "2026-10-22" } })).status).toBe(400);
+    expect((await call(app, "PUT", "/settings/fitness.manualKcal", { value: null })).status).toBe(200);
+    expect((await call(app, "GET", "/settings")).body["fitness.manualKcal"]).toBeNull();
+  });
 });
 
 describe("focus routes", () => {

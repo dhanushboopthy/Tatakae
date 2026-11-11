@@ -160,7 +160,7 @@ export async function markAskedAboutTimes(): Promise<void> {
 function openFrom(response: Notifications.NotificationResponse | null): void {
   const data = response?.notification.request.content.data as { url?: unknown; key?: unknown } | undefined;
   if (typeof data?.key === "string") void recordOpened(data.key);
-  if (data?.url === "/morning" || data?.url === "/quick-close" || data?.url === "/" || data?.url === "/focus") {
+  if (data?.url === "/morning" || data?.url === "/quick-close" || data?.url === "/ritual" || data?.url === "/" || data?.url === "/focus") {
     try {
       router.push(data.url);
     } catch {

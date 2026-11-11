@@ -357,7 +357,7 @@ async function loadStats(today: ISODate): Promise<{ ix: StatsIndex; settings: Re
   const settings = readSettings(settingRows);
   const ix = indexStats(
     { days, missions, focusSessions, habits, habitLogs, stuckEvents, inbox, goals, areas, muraEvents },
-    { today, scoring: settings.scoring },
+    { today, scoring: settings.scoring, cycleStart: settings["cycle.start"] },
   );
   return { ix, settings };
 }
@@ -395,7 +395,7 @@ export function useMonthStats(yyyymm: string) {
 
 export function useCycleStats(date?: ISODate) {
   return useStats("cycle", [date], (ix) => {
-    const cycle = cycleFor(date ?? ix.today);
+    const cycle = cycleFor(date ?? ix.today, ix.cycleStart);
     return { ...cycleStats(ix, cycle), index: cycle.index };
   });
 }

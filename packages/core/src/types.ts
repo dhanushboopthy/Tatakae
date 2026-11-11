@@ -296,6 +296,8 @@ export interface BodyLog extends RowMeta {
   waterMl: number | null;
   sleepMin: number | null;
   note: string | null;
+  /** Calories target typed in for this one day; replaces the calculated and the standing manual target. */
+  kcalOverride: number | null;
 }
 
 export interface Food extends RowMeta {

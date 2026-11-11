@@ -139,6 +139,11 @@ export default function Settings() {
     <Screen tab>
       <ScreenHeader title="Settings" />
 
+      <Section title="Plan and score" note="Anchors, habits, areas, the recharge menu, the reward queue and the scoring constants. Reviews and the inbox are on Today.">
+        <BigButton label="More settings" variant="secondary" onPress={() => router.push("/manage")} />
+        <BigButton label="Library: applications, stories, Japanese" variant="secondary" onPress={() => router.push("/library")} />
+      </Section>
+
       <Section title="Day" note="Morning reminder at wake time, the ritual reminder at ritual time. Dark theme runs from ritual time to wake time.">
         <TimeRow label="Wake time" value={settings.wake_time} onChange={(v) => void saveSetting("wake_time", v)} />
         <TimeRow label="Ritual time" value={settings.ritual_time} onChange={(v) => void saveSetting("ritual_time", v)} />

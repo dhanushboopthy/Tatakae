@@ -14,7 +14,7 @@ export interface Reminder {
   title: string;
   body: string;
   /** Route opened when tapped. */
-  url: "/morning" | "/" | "/quick-close";
+  url: "/morning" | "/" | "/quick-close" | "/ritual";
 }
 
 export interface DayInput {
@@ -88,9 +88,9 @@ export function planReminders(input: PlanInput): Reminder[] {
         kind: "ritual",
         date: d.date,
         at: istInstant(d.date, input.ritual),
-        title: `Laptop ritual at ${input.ritual}`,
-        body: "Away from the laptop? Quick close here in under a minute.",
-        url: "/quick-close",
+        title: `Night ritual at ${input.ritual}`,
+        body: "Plan tomorrow here or on the laptop. Short on time? Quick close takes a minute.",
+        url: "/ritual",
       });
     }
     out.push(...day.slice(0, MAX_PER_DAY));

@@ -9,13 +9,64 @@ import { SegmentGauge } from "../components/SegmentGauge";
 import { useToast } from "../components/Toast";
 import { AREA_COLORS, isAreaColor } from "../lib/colors";
 import { formatDay } from "../lib/format";
-import { removeGoal, saveGoal, useAreas, useCalendarMonth, useCycleStats, useExperiments, useGoals, useToday } from "../lib/hooks";
+import { removeGoal, saveCycleStart, saveGoal, useAreas, useCalendarMonth, useCycleStats, useExperiments, useGoals, useSettings, useToday } from "../lib/hooks";
 import { ExperimentCard } from "./WeeklyReview";
 
 // Cycle (docs/02, docs/11 C4/C5, ref 04): big 12-segment gauge, goal rings (max 4 active, each passed
 // the hell-yeah gate), the cycle calendar (12 weeks × 7 circles) and the experiment log.
 
 const STATUS_LABEL: Record<GoalStatus, string> = { active: "Active", paused: "Paused", done: "Done", dropped: "Dropped" };
+
+/** Cycle 1's first day. Later cycles follow every 12 weeks, so moving it moves them all. */
+function CycleStart() {
+  const toast = useToast();
+  const start = useSettings().data?.["cycle.start"];
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  if (!start) return null;
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    await saveCycleStart(value);
+    toast(`Cycle 1 now starts on ${formatDay(value)}.`);
+    setOpen(false);
+  }
+
+  return (
+    <div className="flex max-w-read flex-wrap items-center gap-3 text-sm text-ink-2">
+      {open ? (
+        <form onSubmit={(e) => void save(e)} className="flex flex-wrap items-end gap-2.5">
+          <label className="flex flex-col gap-1">
+            <span className="text-[13px] font-semibold">Cycle 1 starts on</span>
+            <input type="date" value={value} onChange={(e) => setValue(e.target.value)} className="input tnum" required autoFocus />
+          </label>
+          <button type="submit" className="btn-primary">
+            Save
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </button>
+          <p className="basis-full text-xs">Each cycle is 12 weeks, so every later cycle moves with it. Your logged days and goals stay as they are.</p>
+        </form>
+      ) : (
+        <p>
+          Cycle 1 starts on <b className="text-ink">{formatDay(start)}</b> ·{" "}
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              setValue(start);
+              setOpen(true);
+            }}
+          >
+            Change start date
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function Cycle() {
   const today = useToday();
@@ -29,6 +80,7 @@ export function Cycle() {
         title={`Cycle ${cycle?.index ?? 1}`}
       />
       <Kural n={595} className="max-w-read" />
+      <CycleStart />
       {cycle && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section aria-labelledby="gauge-title" className="card flex flex-col items-center gap-3">

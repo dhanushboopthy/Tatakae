@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from "./settings";
 import type { BodyLog, FitnessPhase, Food, FoodLog } from "./types";
 
 const meta = { updatedAt: "2026-10-14T10:00:00.000Z", deletedAt: null };
-const body = (date: string, weightKg: number | null, extra: Partial<BodyLog> = {}): BodyLog => ({ id: `b-${date}`, date, weightKg, steps: null, waterMl: null, sleepMin: null, note: null, ...meta, ...extra });
+const body = (date: string, weightKg: number | null, extra: Partial<BodyLog> = {}): BodyLog => ({ id: `b-${date}`, date, weightKg, steps: null, waterMl: null, sleepMin: null, note: null, kcalOverride: null, ...meta, ...extra });
 const food = (id: string, name: string, extra: Partial<Food> = {}): Food => ({ id, name, servingLabel: "1", servingG: null, kcal: 100, proteinG: 10, carbsG: 5, fatG: 2, fibreG: null, micros: {}, favourite: false, ...meta, ...extra });
 const log = (id: string, date: string, foodId: string | null, extra: Partial<FoodLog> = {}): FoodLog => ({
   id, date, meal: "lunch", foodId, name: "x", servings: 1, kcal: 100, proteinG: 10, carbsG: 5, fatG: 2, fibreG: null, micros: {}, ...meta, ...extra,

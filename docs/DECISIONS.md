@@ -18,7 +18,7 @@
 9. Simple scoring; habits tracked not scored. No streaks, no XP, grey misses. Story layer = paraphrased text only.
 
 10. **Two clients: laptop website + native Android app (Expo SDK 57).** The phone needs reliable local notifications, share intent, a home-screen widget, automatic screen-time (UsageStatsManager) and background-safe timers — a PWA does these poorly or not at all. Trade-off: two UIs; mitigated by sharing `packages/core` (types, zod, scoring, story, sync) and one API. iOS possible later (needs paid Apple account).
-11. **Night ritual is laptop-only;** the phone gets a 45-second Quick close fallback.
+11. **Night ritual started laptop-only;** the phone got a 45-second Quick close fallback. *Changed Nov 2026:* the owner wanted every feature on the phone, so the phone now has the full eight-step ritual too (`app/ritual.tsx`), plus reviews, inbox triage, goal editing, the week planner and the remaining settings. Quick close stays as the fast fallback.
 12. **Phone notifications are local,** not server push.
 13. **Skills:** anthropics/skills, ui-ux-pro-max, superpowers, expo, vercel react skills, hashicorp terraform + 3 project skills (docs/09).
 14. **Visual direction "Soft Bento"** from user references (docs/10-design-system.md): light by day, dark at night; ink text on accent fills (references used white text that fails contrast); red removed from deltas.

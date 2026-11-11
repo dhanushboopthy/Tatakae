@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
-import { useCycleStats, useToday } from "../src/lib/hooks";
+import { saveSetting, useCycleStats, useSettings, useToday } from "../src/lib/hooks";
 import { AREA_COLORS, UNASSIGNED, isAreaColor } from "../src/lib/colors";
-import { shortDate } from "../src/lib/format";
+import { longDate, shortDate } from "../src/lib/format";
+import { BigButton } from "../src/components/BigButton";
+import { DateStepper } from "../src/components/DateStepper";
+import { tapDone } from "../src/haptics";
+import type { ISODate } from "@tatakae/core";
 import { SegmentGauge } from "../src/components/SegmentGauge";
 import { RingProgress } from "../src/components/RingProgress";
 import { Kural } from "../src/components/Kural";
@@ -13,8 +18,8 @@ import { useStyles, type Theme } from "../src/lib/theme";
 const WEEK_WORD = { Strong: "Strong", Solid: "Solid", Light: "Light", Unplanned: "Rest", Missed: "Grey", Future: "Ahead" } as const;
 
 /**
- * Cycle, read-only on the phone (docs/11 C4/C5, ref 04): the 12-segment gauge with days shown up,
- * goal rings and the weeks so far. Goals and experiments are edited on the laptop.
+ * Cycle on the phone (docs/11 C4/C5, ref 04): the 12-segment gauge with days shown up, goal rings (add and edit
+ * goals here), the weeks so far, and the start date of Cycle 1. Experiments are in the review.
  */
 export default function Cycle() {
   const s = useStyles(makeStyles);
@@ -30,6 +35,7 @@ export default function Cycle() {
         onClose={() => router.back()}
       />
       <Kural n={595} />
+      <CycleStart />
       {cycle ? (
         <>
           <Card tone="surface">
@@ -47,7 +53,8 @@ export default function Cycle() {
 
           <Card tone="surface">
             <Text style={s.heading}>Cycle goals</Text>
-            {cycle.goals.length === 0 ? <Text style={s.small}>No goals yet. Set up to four on the laptop.</Text> : null}
+            <Text style={s.small}>Up to four active, each a hell yeah.</Text>
+            {cycle.goals.length === 0 ? <Text style={s.small}>No goals yet.</Text> : null}
             {cycle.goals.map((g) => {
               const col = isAreaColor(g.color) ? AREA_COLORS[g.color] : UNASSIGNED;
               return (
@@ -60,9 +67,11 @@ export default function Cycle() {
                       {g.target != null ? ` of ${g.target}` : ""} points
                     </Text>
                   </View>
+                  <BigButton label="Edit" variant="secondary" size="compact" onPress={() => router.push({ pathname: "/goal", params: { id: g.id } })} accessibilityLabel={`Edit ${g.name}`} />
                 </View>
               );
             })}
+            <BigButton label="Add goal" variant="secondary" onPress={() => router.push("/goal")} />
           </Card>
 
           <Card tone="surface">
@@ -84,6 +93,52 @@ export default function Cycle() {
         </>
       ) : null}
     </Screen>
+  );
+}
+
+/** Cycle 1's first day; every later 12-week cycle follows it, so moving it moves them all. */
+function CycleStart() {
+  const s = useStyles(makeStyles);
+  const start = useSettings().data?.["cycle.start"];
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState<ISODate | null>(null);
+  const [saved, setSaved] = useState(false);
+  if (!start) return null;
+  return (
+    <Card tone="surface">
+      <Text style={s.heading}>Cycle 1 starts on {longDate(start)}</Text>
+      {editing ? (
+        <>
+          <DateStepper label="Cycle 1 starts on" value={value ?? start} onChange={setValue} />
+          <Text style={s.small}>Each cycle is 12 weeks, so later cycles move with it. Your logged days and goals stay as they are.</Text>
+          <BigButton
+            label="Save start date"
+            variant="accent"
+            disabled={(value ?? start) === start}
+            onPress={async () => {
+              await saveSetting("cycle.start", value ?? start);
+              tapDone();
+              setSaved(true);
+              setEditing(false);
+            }}
+          />
+          <BigButton label="Cancel" variant="quiet" onPress={() => setEditing(false)} />
+        </>
+      ) : (
+        <>
+          {saved ? <Text style={s.small}>Saved.</Text> : null}
+          <BigButton
+            label="Change start date"
+            variant="secondary"
+            onPress={() => {
+              setValue(start);
+              setSaved(false);
+              setEditing(true);
+            }}
+          />
+        </>
+      )}
+    </Card>
   );
 }
 

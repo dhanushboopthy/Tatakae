@@ -14,6 +14,33 @@ export function textToBlocks(text: string): unknown[] {
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+/**
+ * True when a note body is only plain paragraphs (no headings, lists, links, images, bold and the like), so a plain
+ * text editor can open it and save it back without losing anything. Empty and missing bodies count as plain.
+ */
+export function isPlainBody(blocks: unknown): boolean {
+  if (blocks == null) return true;
+  if (!Array.isArray(blocks)) return false;
+  return blocks.every((b) => {
+    if (!isRecord(b) || b["type"] !== "paragraph") return false;
+    if (Array.isArray(b["children"]) && b["children"].length > 0) return false;
+    const props = b["props"];
+    if (isRecord(props) && Object.entries(props).some(([k, v]) => !["textColor", "backgroundColor", "textAlignment"].includes(k) || (v !== "default" && v !== "left"))) return false;
+    const content = b["content"];
+    if (content == null) return true;
+    if (!Array.isArray(content)) return false;
+    return content.every((c) => isRecord(c) && c["type"] === "text" && typeof c["text"] === "string" && (!isRecord(c["styles"]) || Object.keys(c["styles"]).length === 0));
+  });
+}
+
+/** The text of a plain body for editing: one line per paragraph, blank lines kept (unlike `blocksToText`). */
+export function plainBodyText(blocks: unknown): string {
+  if (!Array.isArray(blocks)) return "";
+  return blocks
+    .map((b) => (isRecord(b) && Array.isArray(b["content"]) ? b["content"].map((c) => (isRecord(c) && typeof c["text"] === "string" ? c["text"] : "")).join("") : ""))
+    .join("\n");
+}
+
 function inlineText(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.map(inlineText).join("");
