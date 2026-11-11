@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import {
   DEFAULT_RECHARGE_ITEMS,
+  EDITABLE_FROM,
   addDays,
   calendarDay,
   calendarMonth,
@@ -19,6 +20,8 @@ import {
   weekStats,
   type Blocker,
   type FocusSession as FocusSessionRow,
+  type SettingKey,
+  type SettingValues,
   type CalendarDay,
   type StatsIndex,
   firstUseDate,
@@ -519,6 +522,11 @@ export async function planP1(date: ISODate, f: P1Fields, opts?: { lockReason?: s
 
 export async function logHabit(habitId: string, date: ISODate, done: boolean): Promise<void> {
   await write("habit_logs", { habitId, date, done });
+}
+
+/** Write one setting through the outbox (same row shape as the website). Scoring stays web-only. */
+export async function saveSetting<K extends Exclude<SettingKey, "scoring">>(key: K, value: SettingValues[K]): Promise<void> {
+  await write("settings", { key, value: JSON.stringify(value), editableFrom: EDITABLE_FROM[key] ?? null });
 }
 
 /** One stuck_events row: which blocker, and the next action / first step typed for it. */
