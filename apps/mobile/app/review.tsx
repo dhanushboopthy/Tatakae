@@ -17,6 +17,7 @@ import {
   type WeekStats,
 } from "@tatakae/core";
 import { useAreas, useMonthStats, useToday, useWeekStats } from "../src/lib/hooks";
+import { setMaintenance, useFitnessWeek } from "../src/lib/fitness";
 import {
   saveArea,
   saveExperiment,
@@ -102,6 +103,7 @@ function Weekly({ today }: { today: ISODate }) {
       {stats ? (
         <>
           <WeekBoxes stats={stats} />
+          <FitnessCheckIn week={week} today={today} />
           <WeekForm key={existing?.id ?? start} start={start} end={end} stats={stats} existing={existing} />
           <Kural n={620} meaning={false} />
         </>
@@ -136,6 +138,49 @@ function WeekBoxes({ stats }: { stats: WeekStats }) {
         <MetricCard key={b.key} box={b} tone="surface2" bar={i % 2 ? "lavender" : "lime"} />
       ))}
     </>
+  );
+}
+
+/**
+ * Fitness block for the weekly review: one plain sentence on the week (informational only, it never changes
+ * maintenance) and the natural place to set next week's maintenance. Hidden until there is something to say.
+ */
+function FitnessCheckIn({ week, today }: { week: { year: number; week: number }; today: ISODate }) {
+  const s = useStyles(makeStyles);
+  const key = formatIsoWeek(week);
+  const { end } = isoWeekRange(week.year, week.week);
+  const nextKey = formatIsoWeek(isoWeek(addDays(end, 1)));
+  const { data } = useFitnessWeek(key, today);
+  const { data: next } = useFitnessWeek(nextKey, today);
+  const [text, setText] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  if (!data || !next) return null;
+  if (data.summary.daysLogged === 0 && data.summary.weighIns === 0 && !data.phase) return null;
+  const shown = text ?? String(next.summary.maintenanceSetForWeek ? next.summary.maintenanceKcal : data.summary.maintenanceKcal);
+  return (
+    <Card tone="surface">
+      <Text style={s.heading}>Fitness check-in</Text>
+      <Text style={s.body}>{data.checkIn}</Text>
+      <TextField
+        label={`Maintenance for next week (kcal)${next.summary.maintenanceSetForWeek ? " · set" : " · carries over if you leave it"}`}
+        value={shown}
+        onChangeText={(v) => setText(v.replace(/[^0-9]/g, ""))}
+        keyboardType="number-pad"
+        maxLength={4}
+      />
+      <BigButton
+        label="Save maintenance"
+        variant="secondary"
+        onPress={async () => {
+          const n = Number(shown);
+          if (!Number.isInteger(n) || n < 800 || n > 8000) return void setMsg("Enter a number between 800 and 8,000.");
+          await setMaintenance(nextKey, n);
+          tapDone();
+          setMsg(`Maintenance for W${nextKey.slice(-2)} is ${n.toLocaleString("en-US")} kcal.`);
+        }}
+      />
+      {msg ? <Text style={s.small}>{msg}</Text> : null}
+    </Card>
   );
 }
 

@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  addDays,
   buildFitnessDay,
+  buildFitnessMonth,
+  buildFitnessPhase,
+  buildFitnessWeek,
   buildTraining,
   checkPhaseStart,
   foodSnapshot,
@@ -9,6 +13,12 @@ import {
   type BodyLog,
   type PhaseStartCheck,
   type FitnessDay,
+  type FitnessMonth,
+  type FitnessPhase,
+  type FitnessPhaseView,
+  type FitnessRows,
+  type FitnessWeek,
+  type PhaseKind,
   type Food,
   type FoodLog,
   type ISODate,
@@ -19,7 +29,7 @@ import {
   type WorkoutSet,
 } from "@tatakae/core";
 import { sqliteStore as store } from "../sync/outbox";
-import { LOCAL, write } from "../sync/engine";
+import { LOCAL, remove, write } from "../sync/engine";
 import { saveSetting } from "./hooks";
 
 // Fitness on the phone (docs/plans/fitness.md §4): reads from the local SQLite store through core's pure
@@ -28,22 +38,62 @@ import { saveSetting } from "./hooks";
 const DAY_TABLES = ["body_logs", "foods", "food_logs", "fitness_phases", "maintenance_weeks", "settings"] as const;
 const TRAINING_TABLES = ["workouts", "workout_sets", "fitness_phases"] as const;
 
-export type { FitnessDay, TrainingData };
+export type { FitnessDay, FitnessMonth, FitnessPhaseView, FitnessWeek, TrainingData };
+
+const live = <T extends { deletedAt: string | null }>(rows: readonly T[]): T[] => rows.filter((r) => r.deletedAt == null);
+
+async function loadRows(): Promise<FitnessRows> {
+  const [bodyLogs, foods, foodLogs, phases, maintenanceWeeks, settingRows] = await Promise.all([
+    store.getAll("body_logs"),
+    store.getAll("foods"),
+    store.getAll("food_logs"),
+    store.getAll("fitness_phases"),
+    store.getAll("maintenance_weeks"),
+    store.getAll("settings"),
+  ]);
+  return {
+    settings: readSettings(settingRows),
+    bodyLogs: live(bodyLogs),
+    foods: live(foods).sort((a, b) => a.name.localeCompare(b.name)),
+    foodLogs: live(foodLogs),
+    phases: live(phases).sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    maintenanceWeeks: live(maintenanceWeeks),
+  };
+}
 
 export function useFitnessDay(date: ISODate) {
   return useQuery({
     queryKey: [LOCAL, DAY_TABLES, "fitness-day", date],
-    queryFn: async (): Promise<FitnessDay> => {
-      const [bodyLogs, foods, foodLogs, phases, maintenanceWeeks, settingRows] = await Promise.all([
-        store.getAll("body_logs"),
-        store.getAll("foods"),
-        store.getAll("food_logs"),
-        store.getAll("fitness_phases"),
-        store.getAll("maintenance_weeks"),
-        store.getAll("settings"),
-      ]);
-      return buildFitnessDay(date, { settings: readSettings(settingRows), bodyLogs, foods, foodLogs, phases, maintenanceWeeks });
-    },
+    queryFn: async (): Promise<FitnessDay> => buildFitnessDay(date, await loadRows()),
+  });
+}
+
+export function useFitnessWeek(week: string, today: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, DAY_TABLES, "fitness-week", week, today],
+    queryFn: async (): Promise<FitnessWeek> => buildFitnessWeek(await loadRows(), week, today),
+  });
+}
+
+export function useFitnessMonth(yyyymm: string, today: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, DAY_TABLES, "fitness-month", yyyymm, today],
+    queryFn: async (): Promise<FitnessMonth> => buildFitnessMonth(await loadRows(), yyyymm, today),
+  });
+}
+
+export function useFitnessPhase(today: ISODate) {
+  return useQuery({
+    queryKey: [LOCAL, DAY_TABLES, "fitness-phase", today],
+    queryFn: async (): Promise<FitnessPhaseView> => buildFitnessPhase(await loadRows(), today),
+  });
+}
+
+/** Saved foods (the library), favourites first then by name. */
+export function useFoodLibrary() {
+  return useQuery({
+    queryKey: [LOCAL, ["foods"], "food-library"],
+    queryFn: async (): Promise<Food[]> => [...(await loadRows()).foods].sort((a, b) => Number(b.favourite) - Number(a.favourite) || a.name.localeCompare(b.name)),
   });
 }
 
@@ -182,4 +232,68 @@ export async function finishWorkout(workout: Workout, durationMin: number | null
 
 export async function logSet(input: { workoutId: string; exercise: string; muscle: string; reps: number; kg: number; order: number }): Promise<WorkoutSet> {
   return write("workout_sets", { id: newId(), ...input, exercise: input.exercise.trim(), rpe: null });
+}
+
+/** Delete a session and its sets (soft delete through the outbox). */
+export async function removeWorkout(workout: Pick<Workout, "id">, sets: readonly Pick<WorkoutSet, "id">[]): Promise<void> {
+  for (const s of sets) await remove("workout_sets", s.id);
+  await remove("workouts", workout.id);
+}
+
+export async function removeSet(id: string): Promise<void> {
+  await remove("workout_sets", id);
+}
+
+// ---------- maintenance and phases ----------
+
+/** Set (or change) the maintenance for an ISO week. One row per week; later weeks carry it forward until changed. */
+export async function setMaintenance(isoWeek: string, kcal: number, note: string | null = null): Promise<void> {
+  const prev = await store.get("maintenance_weeks", isoWeek);
+  await write("maintenance_weeks", { id: prev?.id ?? newId(), isoWeek, kcal: Math.round(kcal), note });
+}
+
+export interface PhaseInput {
+  kind: PhaseKind;
+  ratePctPerWeek: number;
+  proteinGPerKg: number;
+  fatGPerKg: number;
+  startWeightKg: number;
+  startDate: ISODate;
+  note?: string | null;
+}
+
+/**
+ * Start a phase. A phase that is still running ends the day before (or is removed when the new one starts on the
+ * same day, so two phases never share a start date).
+ */
+export async function startPhase(input: PhaseInput, current: FitnessPhase | null): Promise<FitnessPhase> {
+  if (current && current.endDate == null) {
+    if (current.startDate >= input.startDate) await remove("fitness_phases", current.id);
+    else await write("fitness_phases", { ...current, endDate: addDays(input.startDate, -1) });
+  }
+  return write("fitness_phases", { ...input, id: newId(), endDate: null, note: input.note ?? null });
+}
+
+/** Edit the numbers of a phase (type, rate, protein, fat). Past days keep using whatever phase was active then. */
+export async function savePhase(phase: FitnessPhase, patch: Partial<Pick<FitnessPhase, "kind" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg" | "note">>): Promise<void> {
+  await write("fitness_phases", { ...phase, ...patch });
+}
+
+export async function endPhase(phase: FitnessPhase, endDate: ISODate): Promise<void> {
+  await write("fitness_phases", { ...phase, endDate: endDate < phase.startDate ? phase.startDate : endDate });
+}
+
+// ---------- food library ----------
+
+export async function setFoodFavourite(food: Food, favourite: boolean): Promise<void> {
+  await write("foods", { ...food, favourite });
+}
+
+/** Edit a saved food. Logs already made keep their own snapshot of the nutrients. */
+export async function updateFood(food: Food, patch: Partial<Pick<Food, "name" | "servingLabel" | "kcal" | "proteinG" | "carbsG" | "fatG" | "fibreG">>): Promise<void> {
+  await write("foods", { ...food, ...patch, name: (patch.name ?? food.name).trim() });
+}
+
+export async function removeFood(id: string): Promise<void> {
+  await remove("foods", id);
 }
