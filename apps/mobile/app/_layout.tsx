@@ -150,6 +150,8 @@ function AuthGate({ ready }: { ready: boolean }) {
         <Stack.Screen name="fitness/set" options={{ presentation: "modal" }} />
         <Stack.Screen name="day/[date]" />
         <Stack.Screen name="cycle" options={{ presentation: "modal" }} />
+        <Stack.Screen name="notes/index" options={{ presentation: "modal" }} />
+        <Stack.Screen name="notes/[id]" />
         <Stack.Screen name="dev/design" options={{ presentation: "modal" }} />
       </Stack>
       {auth === "loading" || !ready ? <View style={[StyleSheet.absoluteFill, { backgroundColor: c.surface }]} /> : null}

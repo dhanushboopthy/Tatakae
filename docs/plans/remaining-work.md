@@ -71,7 +71,8 @@ loopback). `tsx` needs its IPC socket, so the API may have to run outside the sa
 
 ## Stage 1 — Housekeeping (S, one session)
 
-- [ ] **1.1 Push the fitness stack and open six PRs** (owner chose this, 18 Oct). Branches in order:
+- [x] **1.1 Push the fitness stack and open six PRs** (owner chose this, 18 Oct). Done 18 Oct: all 19 branches
+      pushed, stacked PRs #1–#19 on GitHub; merge them in order with merge commits. Branches in order:
       `feat/f1-fitness-core` → `f2-fitness-sync` → `f3-fitness-day` → `f4-fitness-week-month-phase` →
       `f5-fitness-training` → `f6-fitness-phone`, then every later branch stacked on top.
       **Blocked:** no GitHub credentials on this machine (`git push` asks for a password; `gh` is not logged in).
@@ -187,9 +188,9 @@ usage-stats Kotlin in the first dev build (this machine has no Android SDK).
 
 ## Stage 5 — v3 phone
 
-- [ ] **5.1 Capture-to-note** on the phone (task v3.3). Notes are REST-only (R2-7), not synced, so this posts to
-      `/notes` directly and needs a connection; say so calmly when offline. — M
-- [ ] **5.2 Read-only note search** on the phone via `/notes/search`. Editing stays on the laptop. — M
+- [x] **5.1 Capture-to-note** on the phone (task v3.3). Notes are REST-only (R2-7), not synced, so this posts to
+      `/notes` directly and needs a connection; say so calmly when offline. — M (code, branch `feat/m-notes`)
+- [x] **5.2 Read-only note search** on the phone via `/notes/search`. Editing stays on the laptop. — M (code, same branch)
 - **v3 gate:** one full week of notes kept in the app. — met on: ____
 
 ---
