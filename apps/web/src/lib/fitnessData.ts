@@ -79,6 +79,7 @@ function targetsFor(rows: Rows, date: ISODate) {
     maintenanceWeeks: rows.maintenanceWeeks,
     defaultMaintenance: rows.settings["fitness.maintenanceKcal"],
     fibreTargetG: rows.settings["fitness.fibreTargetG"],
+    manualKcal: rows.settings["fitness.manualKcal"],
   });
 }
 
@@ -219,6 +220,8 @@ export interface FitnessPhaseView {
   endWeights: Record<string, number | null>;
   latestWeightKg: number | null;
   fibreTargetG: number;
+  /** The standing calories target typed in (setting), null while targets are calculated. */
+  manualKcal: { kcal: number; from: ISODate } | null;
 }
 
 export function useFitnessPhase(today: ISODate) {
@@ -249,6 +252,7 @@ export function useFitnessPhase(today: ISODate) {
         endWeights,
         latestWeightKg: latest?.weightKg ?? null,
         fibreTargetG: rows.settings["fitness.fibreTargetG"],
+        manualKcal: rows.settings["fitness.manualKcal"],
       };
     },
   });

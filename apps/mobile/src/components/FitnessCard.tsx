@@ -37,6 +37,12 @@ export function FitnessCard({ date }: { date: ISODate }) {
           <View style={styles.chip}>
             <Text style={styles.chipText}>{label}</Text>
           </View>
+          <PillButton
+            label="Targets"
+            tone="white"
+            onPress={() => router.push("/fitness/targets")}
+            accessibilityLabel="Change calorie targets and phase start date"
+          />
         </View>
 
         <View style={styles.stats}>

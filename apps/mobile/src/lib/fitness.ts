@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import {
   buildFitnessDay,
   buildTraining,
+  checkPhaseStart,
   foodSnapshot,
   newId,
   readSettings,
   type BodyLog,
+  type PhaseStartCheck,
   type FitnessDay,
   type Food,
   type FoodLog,
@@ -18,6 +20,7 @@ import {
 } from "@tatakae/core";
 import { sqliteStore as store } from "../sync/outbox";
 import { LOCAL, write } from "../sync/engine";
+import { saveSetting } from "./hooks";
 
 // Fitness on the phone (docs/plans/fitness.md §4): reads from the local SQLite store through core's pure
 // builders (the same ones the website uses), writes through the outbox (optimistic, works offline).
@@ -56,7 +59,7 @@ export function useTraining(today: ISODate) {
 
 // ---------- body ----------
 
-export type BodyPatch = Partial<Pick<BodyLog, "weightKg" | "steps" | "waterMl" | "sleepMin" | "note">>;
+export type BodyPatch = Partial<Pick<BodyLog, "weightKg" | "steps" | "waterMl" | "sleepMin" | "note" | "kcalOverride">>;
 
 /** Merge a patch into the day's body log (one row per date). */
 export async function logBody(date: ISODate, patch: BodyPatch): Promise<BodyLog> {
@@ -70,8 +73,40 @@ export async function logBody(date: ISODate, patch: BodyPatch): Promise<BodyLog>
     waterMl: base?.waterMl ?? null,
     sleepMin: base?.sleepMin ?? null,
     note: base?.note ?? null,
+    kcalOverride: base?.kcalOverride ?? null,
     ...patch,
   });
+}
+
+/** Type in the calories target for one day (null = back to the calculated or standing target). */
+export async function setKcalOverride(date: ISODate, kcal: number | null): Promise<void> {
+  await logBody(date, { kcalOverride: kcal == null ? null : Math.round(kcal) });
+}
+
+/** The standing calories target from `from` onward (null = calculated again). */
+export async function setManualKcal(value: { kcal: number; from: ISODate } | null): Promise<void> {
+  await saveSetting("fitness.manualKcal", value == null ? null : { kcal: Math.round(value.kcal), from: value.from });
+}
+
+export type PhaseStartProblem = Extract<PhaseStartCheck, { ok: false }>["reason"] | "missing";
+
+/**
+ * Move a phase's start date (core `checkPhaseStart`). The phase before it, which normally ended the day
+ * before, now ends the day before the new start. Returns the problem, or null when it worked.
+ */
+export async function changePhaseStart(phaseId: string, startDate: ISODate, today: ISODate): Promise<PhaseStartProblem | null> {
+  const phases = (await store.getAll("fitness_phases")).filter((p) => p.deletedAt == null);
+  const phase = phases.find((p) => p.id === phaseId);
+  if (!phase) return "missing";
+  if (startDate === phase.startDate) return null;
+  const check = checkPhaseStart(phases, phase, startDate, today);
+  if (!check.ok) return check.reason;
+  if (check.prevEnd) {
+    const prev = phases.find((p) => p.id === check.prevEnd?.id);
+    if (prev) await write("fitness_phases", { ...prev, endDate: check.prevEnd.endDate });
+  }
+  await write("fitness_phases", { ...phase, startDate });
+  return null;
 }
 
 /** +250 ml style tap: adds to whatever is already logged today. */

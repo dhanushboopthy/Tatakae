@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { MICRO_INFO, MICRO_KEYS, isoWeek, remaining, type Food, type FoodLog, type ISODate, type MealSlot } from "@tatakae/core";
+import { KCAL_TARGET_MAX, KCAL_TARGET_MIN, MICRO_INFO, MICRO_KEYS, isoWeek, remaining, type Food, type FoodLog, type ISODate, type MealSlot } from "@tatakae/core";
 import { Kural } from "../../components/Kural";
 import { PillBar } from "../../components/PillBar";
 import { RingProgress } from "../../components/RingProgress";
@@ -12,6 +12,7 @@ import {
   logBody,
   removeFoodLog,
   setFoodLogServings,
+  setKcalOverride,
   useFitnessDay,
   useIstTime,
   type FitnessDay,
@@ -59,6 +60,70 @@ export function DayTab({ date, today, onTab }: { date: ISODate; today: ISODate; 
 
 // ---------- calories ----------
 
+/** Type in the calories target for this one day, or clear it to use the calculated / standing target. */
+function DayCalories({ data }: { data: FitnessDay }) {
+  const toast = useToast();
+  const own = data.body?.kcalOverride ?? null;
+  const [open, setOpen] = useState(false);
+  const [kcal, setKcal] = useState(own != null ? String(own) : "");
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    const n = Number(kcal);
+    if (!Number.isInteger(n) || n < KCAL_TARGET_MIN || n > KCAL_TARGET_MAX) return setProblem(`Use a whole number from ${KCAL_TARGET_MIN} to ${n0(KCAL_TARGET_MAX)}.`);
+    setProblem(null);
+    await setKcalOverride(data.date, n);
+    toast(`Calories for this day set to ${n0(n)}.`);
+    setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <p className="text-sm">
+        <button type="button" className="link" onClick={() => setOpen(true)}>
+          {own != null ? "Change this day's calories" : "Change calories for this day"}
+        </button>
+        {own != null && (
+          <>
+            {" · "}
+            <button
+              type="button"
+              className="link"
+              onClick={async () => {
+                await setKcalOverride(data.date, null);
+                setKcal("");
+                toast("Back to the usual target for this day.");
+              }}
+            >
+              Use the usual target
+            </button>
+          </>
+        )}
+      </p>
+    );
+  }
+  return (
+    <form onSubmit={(e) => void save(e)} className="flex flex-wrap items-end gap-2.5">
+      <label className="flex flex-col gap-1">
+        <span className="text-[13px] font-semibold text-ink-2">Calories for this day</span>
+        <input value={kcal} onChange={(e) => setKcal(e.target.value.replace(/[^\d]/g, ""))} inputMode="numeric" className="input tnum w-40" autoFocus />
+      </label>
+      <button type="submit" className="btn-primary">
+        Save
+      </button>
+      <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+        Cancel
+      </button>
+      {problem && (
+        <p role="alert" className="basis-full text-sm font-medium">
+          {problem}
+        </p>
+      )}
+    </form>
+  );
+}
+
 function CaloriesCard({ data, onTab }: { data: FitnessDay; onTab: (t: "week" | "phase") => void }) {
   const eaten = data.totals.kcal;
   const target = data.targets?.kcal ?? data.maintenance.kcal;
@@ -67,8 +132,13 @@ function CaloriesCard({ data, onTab }: { data: FitnessDay; onTab: (t: "week" | "
   const week = `W${isoWeek(data.date).week}`;
   const carried = data.maintenance.fromWeek ? `W${data.maintenance.fromWeek.slice(-2)}` : null;
   const kind = data.phase?.kind ?? "recomp";
+  const source = data.targets?.source ?? "auto";
   const targetLine =
-    kind === "cut" && delta > 0
+    source === "day"
+      ? "Target typed in for this day."
+      : source === "manual"
+        ? "Target typed in by you (Phase tab)."
+        : kind === "cut" && delta > 0
       ? `Target = maintenance − ${n0(delta)} kcal${data.targets?.capped ? "" : `, to lose ${Math.abs(data.phase?.ratePctPerWeek ?? 0)} % a week`}`
       : kind === "bulk" && delta < 0
         ? `Target = maintenance + ${n0(-delta)} kcal, to gain ${data.phase?.ratePctPerWeek ?? 0} % a week`
@@ -105,6 +175,7 @@ function CaloriesCard({ data, onTab }: { data: FitnessDay; onTab: (t: "week" | "
             </button>
           </p>
           <p className="text-sm leading-relaxed text-ink-2">{targetLine}</p>
+          <DayCalories data={data} />
           {data.targets?.capped && (
             <p className="rounded-card-inner bg-surface-2 px-3.5 py-2.5 text-[13px] leading-snug text-ink-2">
               Limit applied: never more than {n0(1000)} kcal under maintenance and never below {n0(1500)} kcal. At this target, about{" "}
