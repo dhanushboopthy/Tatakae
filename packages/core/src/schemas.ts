@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { MICRO_KEYS } from "./fitness";
 import { SYNC_TABLES, type SyncTable } from "./sync";
+import { parseIsoWeek } from "./time";
 import type {
-  Anchor, Area, Day, Experiment, FocusSession, Goal, Habit, HabitLog, InboxItem, Mission, MuraEvent, RechargeItem,
-  RankedSlot, Review, SettingRow, Slot, StoryRef, StuckEvent, SyncRowMap, WatchQueueItem,
+  Anchor, Area, BodyLog, Day, Experiment, FitnessPhase, FocusSession, Food, FoodLog, Goal, Habit, HabitLog,
+  InboxItem, MaintenanceWeek, MicroKey, Mission, MuraEvent, RechargeItem, RankedSlot, Review, SettingRow, Slot,
+  StoryRef, StuckEvent, SyncRowMap, WatchQueueItem, Workout, WorkoutSet,
 } from "./types";
 
 // Zod schemas for every API input/output and every synced row.
@@ -253,6 +256,101 @@ export const watchQueueRow = z.object({
   ...rowMeta,
 }) satisfies RowSchema<WatchQueueItem>;
 
+// ===================== Fitness rows (synced from F2) =====================
+export const mealSlot = z.enum(["breakfast", "lunch", "dinner", "snack"]);
+export const phaseKind = z.enum(["cut", "bulk", "recomp"]);
+const nonNeg = z.number().nonnegative().finite();
+/** "2026-W42". */
+export const isoWeekKey = z.string().refine((s) => parseIsoWeek(s) !== null, "expected an ISO week like 2026-W42");
+/** Micros: any subset of MICRO_KEYS, each a non-negative amount; unknown keys are rejected. */
+export const microsSchema = z
+  .object(Object.fromEntries(MICRO_KEYS.map((k) => [k, nonNeg.optional()])) as Record<MicroKey, z.ZodOptional<z.ZodNumber>>)
+  .strict();
+
+export const bodyLogRow = z.object({
+  id: z.string().min(1),
+  date: isoDate,
+  weightKg: z.number().min(20).max(400).nullable(),
+  steps: z.number().int().min(0).max(200000).nullable(),
+  waterMl: z.number().int().min(0).max(20000).nullable(),
+  sleepMin: z.number().int().min(0).max(1440).nullable(),
+  note: optText(500),
+  ...rowMeta,
+}) satisfies RowSchema<BodyLog>;
+
+export const foodRow = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(120),
+  servingLabel: z.string().min(1).max(60),
+  servingG: nonNeg.nullable(),
+  kcal: nonNeg,
+  proteinG: nonNeg,
+  carbsG: nonNeg,
+  fatG: nonNeg,
+  fibreG: nonNeg.nullable(),
+  micros: microsSchema,
+  favourite: z.boolean(),
+  ...rowMeta,
+}) satisfies RowSchema<Food>;
+
+export const foodLogRow = z.object({
+  id: z.string().min(1),
+  date: isoDate,
+  meal: mealSlot,
+  foodId: z.string().min(1).nullable(),
+  name: z.string().min(1).max(120),
+  servings: z.number().positive().max(100),
+  kcal: nonNeg,
+  proteinG: nonNeg,
+  carbsG: nonNeg,
+  fatG: nonNeg,
+  fibreG: nonNeg.nullable(),
+  micros: microsSchema,
+  ...rowMeta,
+}) satisfies RowSchema<FoodLog>;
+
+export const fitnessPhaseRow = z.object({
+  id: z.string().min(1),
+  kind: phaseKind,
+  startDate: isoDate,
+  endDate: isoDate.nullable(),
+  ratePctPerWeek: z.number().min(-3).max(3),
+  proteinGPerKg: z.number().min(0).max(5),
+  fatGPerKg: z.number().min(0).max(3),
+  startWeightKg: z.number().min(20).max(400),
+  note: optText(500),
+  ...rowMeta,
+}) satisfies RowSchema<FitnessPhase>;
+
+export const workoutRow = z.object({
+  id: z.string().min(1),
+  date: isoDate,
+  name: z.string().min(1).max(120),
+  durationMin: z.number().int().min(0).max(1440).nullable(),
+  note: optText(500),
+  ...rowMeta,
+}) satisfies RowSchema<Workout>;
+
+export const workoutSetRow = z.object({
+  id: z.string().min(1),
+  workoutId: z.string().min(1),
+  exercise: z.string().min(1).max(120),
+  muscle: z.string().min(1).max(40),
+  order: z.number().int().min(0),
+  reps: z.number().int().min(1).max(200),
+  kg: z.number().min(0).max(1000),
+  rpe: z.number().min(1).max(10).nullable(),
+  ...rowMeta,
+}) satisfies RowSchema<WorkoutSet>;
+
+export const maintenanceWeekRow = z.object({
+  id: z.string().min(1),
+  isoWeek: isoWeekKey,
+  kcal: z.number().int().min(800).max(8000),
+  note: optText(300),
+  ...rowMeta,
+}) satisfies RowSchema<MaintenanceWeek>;
+
 /** Row schema per synced table; the API validates every incoming sync row with this. */
 export const rowSchemas: { readonly [T in SyncTable]: RowSchema<SyncRowMap[T]> } = {
   days: dayRow,
@@ -434,6 +532,11 @@ export const settingValueSchemas = {
   haptics_enabled: z.boolean(),
   afternoon_nudge: z.object({ enabled: z.boolean(), time: hhmm }),
   focus_week_target: z.number().int().min(0).max(5000), // minutes; scoreboard "Focus minutes (week)" bar
+  "fitness.maintenanceKcal": z.number().int().min(800).max(8000), // used only before any week has been set
+  "fitness.stepsTarget": z.number().int().min(0).max(100000),
+  "fitness.waterTargetMl": z.number().int().min(0).max(20000),
+  "fitness.sleepTargetMin": z.number().int().min(0).max(1440),
+  "fitness.fibreTargetG": z.number().int().min(0).max(200),
 } as const;
 
 export type SettingKey = keyof typeof settingValueSchemas;

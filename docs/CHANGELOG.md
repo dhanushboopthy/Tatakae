@@ -36,3 +36,4 @@
 - Thirukkural for each calm moment (13 Kurals; 619 stays on Login): shutdown, restart, capacity, welcome back, focus complete, stuck, inbox, cycle, reviews, notes, Japanese (docs/05 § Copy).
 - Removed (owner, 12 Oct 2026): the show references (scene cards, story pictures, imported lines). Only the Thirukkural stays; the story layer is back to its original paraphrase-only rules.
 - Night ritual restart: `POST /days/:date/restart` + a high-friction flow on "Shutdown complete" (reason, 15 s pause, typed word, 3 s hold; once per plan, 2 per week; logged for Sunday).
+- core (Fitness F1): `fitness.ts` (trend weight EMA, per-week maintenance with carry-forward, daily targets with the cut limit, day/week/month summaries, weekly check-in, e1RM, training stats, `MICRO_KEYS`), Zod row schemas for the seven fitness tables (not synced until F2) and five `fitness.*` settings; table-driven tests.

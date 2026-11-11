@@ -16,6 +16,11 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
   haptics_enabled: true,
   afternoon_nudge: { enabled: false, time: "14:00" },
   focus_week_target: 600,
+  "fitness.maintenanceKcal": 2800,
+  "fitness.stepsTarget": 8000,
+  "fitness.waterTargetMl": 3000,
+  "fitness.sleepTargetMin": 450,
+  "fitness.fibreTargetG": 30,
 };
 
 /** Keys whose rows are only writable when canEditScoring(todayIST()). */
