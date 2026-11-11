@@ -87,7 +87,7 @@ Plan and decisions: `docs/plans/fitness.md`. One task per PR, in order. All fitn
 - [x] **F3** web Fitness page: Day tab + food library
 - [x] **F4** web Week / Month / Phase tabs + weekly maintenance entry + Weekly Review check-in
 - [x] **F5** web Training tab
-- [ ] **F6** phone quick-log modals + Today card
+- [x] **F6** phone quick-log modals + Today card
 - **Gate:** a cut started in the app shows targets, a week of food and weight logged on the phone and reviewed on the laptop.
 
 ## Later (not scheduled)

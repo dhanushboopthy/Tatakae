@@ -105,6 +105,9 @@ function AuthGate() {
         <Stack.Screen name="stuck/[missionId]" options={{ presentation: "modal" }} />
         <Stack.Screen name="recharge" options={{ presentation: "modal" }} />
         <Stack.Screen name="capture" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/body" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/food" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fitness/set" options={{ presentation: "modal" }} />
         <Stack.Screen name="day/[date]" />
       </Stack>
       {auth === "loading" ? <View style={[StyleSheet.absoluteFill, styles.cover]} /> : null}
