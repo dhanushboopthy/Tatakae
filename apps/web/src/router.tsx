@@ -18,6 +18,7 @@ import { Japanese } from "./routes/Japanese";
 import { Settings } from "./routes/Settings";
 import { Login } from "./routes/Login";
 import { Calendar } from "./routes/Calendar";
+import { DevDesign } from "./routes/DevDesign";
 import { welcomeBackSeenKey } from "./lib/format";
 import { useDay, useToday } from "./lib/hooks";
 import { decideHome } from "./lib/plan";
@@ -63,6 +64,8 @@ export const router = createBrowserRouter([
       { path: "/stories", element: <Stories /> },          // v3
       { path: "/japanese", element: <Japanese /> },        // v3
       { path: "/settings", element: <Settings /> },        // v1+
+      // v2.0 design page with sample data, development builds only
+      ...(import.meta.env.DEV ? [{ path: "/dev/design", element: <DevDesign /> }] : []),
     ],
   },
 ]);

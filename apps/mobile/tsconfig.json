@@ -5,5 +5,5 @@
     "noUncheckedIndexedAccess": true,
     "paths": { "@tatakae/core": ["../../packages/core/src/index.ts"], "@/*": ["./src/*"] }
   },
-  "include": ["app", "src", "app.config.ts", "expo-env.d.ts"]
+  "include": ["app", "src", "index.ts", "app.config.ts", "expo-env.d.ts"]
 }

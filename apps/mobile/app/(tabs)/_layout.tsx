@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useQuickActionRouting } from "expo-quick-actions/router";
 import { BottomNav } from "../../src/components/BottomNav";
 import { useTheme } from "../../src/lib/theme";
 
@@ -8,6 +9,8 @@ import { useTheme } from "../../src/lib/theme";
  */
 export default function TabsLayout() {
   const { c } = useTheme();
+  // Launcher shortcuts (src/native/quickActions.ts) navigate from here, below the root layout.
+  useQuickActionRouting();
   return (
     <Tabs
       tabBar={(p) => <BottomNav state={p.state} navigation={p.navigation} />}

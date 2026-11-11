@@ -5,6 +5,7 @@ import {
   formatClock,
   isFinished,
   newSession,
+  ongoingText,
   parseSession,
   pause,
   progress,
@@ -85,5 +86,23 @@ describe("focus timer", () => {
       pausedMs: 0,
       pausedAt: null,
     });
+  });
+});
+
+describe("ongoingText", () => {
+  // 2026-10-19 09:00 IST
+  const start = Date.parse("2026-10-19T03:30:00Z");
+  it("shows the IST end time while running", () => {
+    const s = newSession("m1", 50, start);
+    expect(ongoingText(s, "Terraform", start + 10 * MIN)).toEqual({ title: "Focus · Terraform", body: "Until 09:50 · 50 min block" });
+  });
+  it("moves the end time by the pause", () => {
+    const s = resume(pause(newSession("m1", 50, start), start + 10 * MIN), start + 20 * MIN);
+    expect(ongoingText(s, null, start + 30 * MIN).body).toBe("Until 10:00 · 50 min block");
+  });
+  it("says how much is left while paused, and when it is done", () => {
+    const paused = pause(newSession("m1", 25, start), start + 5 * MIN);
+    expect(ongoingText(paused, "X", start + 9 * MIN).body).toBe("Paused · 20 minutes left");
+    expect(ongoingText(newSession("m1", 25, start), "X", start + 26 * MIN).body).toBe("Block done. Note where you'll pick it up.");
   });
 });

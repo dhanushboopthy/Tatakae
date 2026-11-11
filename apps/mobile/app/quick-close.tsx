@@ -11,6 +11,7 @@ import { BigButton } from "../src/components/BigButton";
 import { Card, Screen, SheetHeader } from "../src/components/Screen";
 import { tapDone } from "../src/haptics";
 import { requestPermission } from "../src/notifications/local";
+import { usageStatsAvailable, useUsageAccess, useUsageMinutes } from "../src/native/usageStats";
 import { f, space } from "../src/theme";
 import { useForceDark, useStyles, useTheme, type Theme } from "../src/lib/theme";
 
@@ -40,13 +41,30 @@ export default function QuickClose() {
     if (view.day?.screenMin != null) setScreen(String(view.day.screenMin));
   }, [view]);
 
+  // With usage access and apps ticked in Settings, fill in today's minutes unless a number is
+  // already saved or typed. The field stays editable; it's a starting point, not a measurement.
+  const usageAllowed = useUsageAccess();
+  const usage = useUsageMinutes(today, usageAllowed);
+  const [filled, setFilled] = useState<string | null>(null);
+  const touched = useRef(false);
+  useEffect(() => {
+    if (!view || touched.current || view.day?.screenMin != null || usage.data == null) return;
+    const v = String(Math.min(1440, usage.data));
+    setScreen(v);
+    setFilled(v);
+  }, [view, usage.data]);
+  const edit = (v: string) => {
+    touched.current = true;
+    setScreen(v);
+  };
+
   const missions = (view?.missions ?? []).filter((m) => m.status !== "rescheduled");
   const minutes = screen.trim() === "" ? null : Number(screen);
   const minutesOk = minutes === null || (Number.isInteger(minutes) && minutes >= 0 && minutes <= 1440);
 
   function nudge(delta: number) {
     const base = minutes != null && Number.isFinite(minutes) ? minutes : 0;
-    setScreen(String(Math.min(1440, Math.max(0, base + delta))));
+    edit(String(Math.min(1440, Math.max(0, base + delta))));
   }
 
   async function close() {
@@ -103,7 +121,7 @@ export default function QuickClose() {
           value={
             <TextInput
               value={screen}
-              onChangeText={(v) => setScreen(v.replace(/[^0-9]/g, ""))}
+              onChangeText={(v) => edit(v.replace(/[^0-9]/g, ""))}
               keyboardType="number-pad"
               placeholder="—"
               placeholderTextColor={c.ink2}
@@ -114,6 +132,8 @@ export default function QuickClose() {
           }
         />
         {!minutesOk ? <Text style={s.small}>Use a whole number of minutes, up to 1440.</Text> : null}
+        {filled != null && screen === filled ? <Text style={s.small}>Filled in from usage access. Change it if it's off.</Text> : null}
+        {usageStatsAvailable && !usageAllowed ? <Text style={s.small}>This can be filled in for you: Settings → Screen minutes.</Text> : null}
       </Card>
     </Screen>
   );

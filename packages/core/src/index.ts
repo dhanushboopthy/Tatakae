@@ -9,6 +9,7 @@ export * from "./syncClient";
 export * from "./stats";
 export * from "./icons";
 export * from "./kural";
+export * from "./designSamples";
 export * from "./notes";
 export * from "./fitness";
 export * from "./fitnessDay";
