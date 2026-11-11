@@ -3,6 +3,7 @@
 // to PNG without dependencies (zlib + a tiny PNG encoder, 4×4 supersampling).
 //   node scripts/make-icons.mjs            → apps/web/public/icon-192.png, icon-512.png, icon-maskable.png
 //   node scripts/make-icons.mjs <dir> ...  → same files into each <dir>
+//   node scripts/make-icons.mjs --mobile   → apps/mobile/assets/icon.png, adaptive-icon.png, monochrome-icon.png
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,12 +25,20 @@ function inRoundRect(px, py, x, y, w, h, r) {
   return (px - cx) ** 2 + (py - cy) ** 2 <= r * r;
 }
 
-/** RGBA pixels. maskable = full-bleed background with the mark scaled into the 80 % safe zone. */
-function render(size, maskable) {
+/**
+ * RGBA pixels. Modes:
+ *  - tile: rounded charcoal tile with the mark
+ *  - maskable: full-bleed background with the mark scaled into the 80 % safe zone
+ *  - foreground: transparent, the three steps only, inside the central 66 % (Android adaptive icon)
+ *  - mono: like foreground but solid white (Android 13 themed icon)
+ */
+function render(size, mode) {
   const px = Buffer.alloc(size * size * 4);
   const SS = 4;
-  const scale = maskable ? (size * 0.8) / 48 : size / 48;
-  const off = maskable ? size * 0.1 : 0;
+  const maskable = mode === "maskable";
+  const layer = mode === "foreground" || mode === "mono";
+  const scale = layer ? (size * 0.66) / 48 : maskable ? (size * 0.8) / 48 : size / 48;
+  const off = layer ? size * 0.17 : maskable ? size * 0.1 : 0;
   for (let j = 0; j < size; j++) {
     for (let i = 0; i < size; i++) {
       let r = 0, g = 0, b = 0, a = 0;
@@ -37,6 +46,13 @@ function render(size, maskable) {
         for (let si = 0; si < SS; si++) {
           const x = (i + (si + 0.5) / SS - off) / scale;
           const y = (j + (sj + 0.5) / SS - off) / scale;
+          if (layer) {
+            const hit = STEPS.find(([sx, sy, sw, sh]) => inRoundRect(x, y, sx, sy, sw, sh, 3.5));
+            if (!hit) continue;
+            const col = mode === "mono" ? [255, 255, 255] : hit[4];
+            r += col[0]; g += col[1]; b += col[2]; a += 255;
+            continue;
+          }
           const tile = maskable || inRoundRect(x, y, 0, 0, 48, 48, 14);
           if (!tile) continue;
           let c = CHARCOAL;
@@ -93,11 +109,21 @@ function png(size, rgba) {
   ]);
 }
 
-const dirs = process.argv.length > 2 ? process.argv.slice(2) : [join(root, "apps/web/public")];
+const args = process.argv.slice(2);
+if (args.includes("--mobile")) {
+  const dir = join(root, "apps/mobile/assets");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "icon.png"), png(1024, render(1024, "tile")));
+  writeFileSync(join(dir, "adaptive-icon.png"), png(1024, render(1024, "foreground")));
+  writeFileSync(join(dir, "monochrome-icon.png"), png(1024, render(1024, "mono")));
+  console.log(`icons → ${dir}`);
+  process.exit(0);
+}
+const dirs = args.length > 0 ? args : [join(root, "apps/web/public")];
 for (const dir of dirs) {
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "icon-192.png"), png(192, render(192, false)));
-  writeFileSync(join(dir, "icon-512.png"), png(512, render(512, false)));
-  writeFileSync(join(dir, "icon-maskable.png"), png(512, render(512, true)));
+  writeFileSync(join(dir, "icon-192.png"), png(192, render(192, "tile")));
+  writeFileSync(join(dir, "icon-512.png"), png(512, render(512, "tile")));
+  writeFileSync(join(dir, "icon-maskable.png"), png(512, render(512, "maskable")));
   console.log(`icons → ${dir}`);
 }
