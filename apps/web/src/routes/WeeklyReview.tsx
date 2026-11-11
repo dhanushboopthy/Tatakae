@@ -25,6 +25,7 @@ import { Sparkline } from "../components/Sparkline";
 import { StripeTrend, stripeSummary } from "../components/StripeTrend";
 import { useToast } from "../components/Toast";
 import { areaColor } from "../lib/colors";
+import { FitnessCheckIn } from "./fitness/CheckIn";
 import { formatDay, weekdayInitial } from "../lib/format";
 import {
   saveExperiment,
@@ -96,6 +97,7 @@ export function WeeklyReview() {
                 <TrendCards end={end} />
               </div>
             </div>
+            <FitnessCheckIn week={week} today={today} />
             <ReviewForm key={existing?.id ?? start} start={start} end={end} stats={stats} existing={existing} />
             <Kural n={620} className="max-w-read" />
           </>

@@ -42,7 +42,9 @@ export interface CalendarDay {
 }
 
 export type MetricKey =
-  | "today_score" | "days_shown_up" | "avg_7d" | "p1_hit_rate" | "focus_week" | "screen_avg" | "habits_week" | "comebacks" | "inbox";
+  | "today_score" | "days_shown_up" | "avg_7d" | "p1_hit_rate" | "focus_week" | "screen_avg" | "habits_week" | "comebacks" | "inbox"
+  // fitness cards (MetricCard reuse): week and month views
+  | "fit_avg_kcal" | "fit_balance" | "fit_protein" | "fit_rate" | "fit_trend" | "fit_days";
 
 export interface MetricBox {
   key: MetricKey;

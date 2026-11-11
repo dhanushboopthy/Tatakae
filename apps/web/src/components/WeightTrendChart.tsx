@@ -18,7 +18,13 @@ export function WeightTrendChart(props: {
   /** Colour of the trend line (a dark card passes a lighter lime). */
   lineColor?: string;
   dotColor?: string;
+  /** On a charcoal card: light labels, grid and latest dot. */
+  onDark?: boolean;
 }) {
+  // On the charcoal card the surface itself swaps in dark mode, so use that card's own tokens.
+  const muted = props.onDark ? "rgb(var(--on-charcoal-2))" : "rgb(var(--ink-2))";
+  const grid = props.onDark ? "rgb(var(--charcoal-line))" : "rgb(var(--line))";
+  const latest = props.onDark ? "rgb(var(--on-charcoal))" : "rgb(var(--ink))";
   const W = 600;
   const H = props.height ?? (props.compact ? 56 : 160);
   const padL = props.compact ? 8 : 44;
@@ -53,16 +59,16 @@ export function WeightTrendChart(props: {
   const weighIns = pts.filter((p) => p.weightKg != null);
   const lastWeighIn = weighIns[weighIns.length - 1];
   const lineColor = props.lineColor ?? "#7E9A1E";
-  const dotColor = props.dotColor ?? "rgb(var(--ink-2))";
+  const dotColor = props.dotColor ?? muted;
 
   return (
     <figure className="m-0">
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={props.label} style={{ display: "block", height: "auto" }}>
         {!props.compact && (
-          <g fontSize="12" fill="rgb(var(--ink-2))" fontFamily="inherit" style={{ fontVariantNumeric: "tabular-nums" }}>
+          <g fontSize="12" fill={muted} fontFamily="inherit" style={{ fontVariantNumeric: "tabular-nums" }}>
             {[yMax, (yMax + yMin) / 2, yMin].map((v) => (
               <g key={v}>
-                <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="rgb(var(--line))" strokeWidth="1" />
+                <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke={grid} strokeWidth="1" />
                 <text x={padL - 6} y={y(v)} textAnchor="end" dominantBaseline="central">
                   {v.toFixed(1)}
                 </text>
@@ -76,17 +82,17 @@ export function WeightTrendChart(props: {
             y1={y(props.goal.fromKg)}
             x2={x(last)}
             y2={y(goalEnd(props.goal))}
-            stroke="rgb(var(--ink-2))"
+            stroke={muted}
             strokeWidth="1.5"
             strokeDasharray="6 6"
           />
         )}
-        <polyline points={line} fill="none" stroke={lineColor} strokeWidth={props.compact ? 2.5 : 3.5} strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={line} fill="none" stroke={lineColor} className={props.onDark ? "stroke-lime dark:stroke-lime-deep" : undefined} strokeWidth={props.compact ? 2.5 : 3.5} strokeLinecap="round" strokeLinejoin="round" />
         {weighIns.map((p) => (
-          <circle key={p.date} cx={x(p.date)} cy={y(p.weightKg as number)} r={props.compact ? 3 : 3.5} fill={p === lastWeighIn ? "rgb(var(--ink))" : dotColor} />
+          <circle key={p.date} cx={x(p.date)} cy={y(p.weightKg as number)} r={props.compact ? 3 : 3.5} fill={p === lastWeighIn ? latest : dotColor} />
         ))}
         {!props.compact && (
-          <g fontSize="12" fill="rgb(var(--ink-2))" fontFamily="inherit">
+          <g fontSize="12" fill={muted} fontFamily="inherit">
             <text x={padL} y={H - 4}>{formatDay(first)}</text>
             <text x={W - padR} y={H - 4} textAnchor="end">{formatDay(last)}</text>
           </g>

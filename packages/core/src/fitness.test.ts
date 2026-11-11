@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   activePhaseOn,
+  balanceKg,
   bestByExercise,
+  bodyAverages,
+  maintenanceRuns,
+  phaseProgress,
+  rateToKcalPerDay,
+  targetsOn,
   dailyTargets,
   dayTotals,
   e1rm,
@@ -477,6 +483,122 @@ describe("fitness schemas", () => {
     expect(readSettings([]) ["fitness.maintenanceKcal"]).toBe(2800);
     expect(readSettings([{ key: "fitness.maintenanceKcal", value: "2650", deletedAt: null }])["fitness.maintenanceKcal"]).toBe(2650);
     expect(readSettings([{ key: "fitness.maintenanceKcal", value: "\"x\"", deletedAt: null }])["fitness.maintenanceKcal"]).toBe(2800);
+  });
+});
+
+// ---------- targets on a date, averages, phase progress, maintenance history ----------
+describe("targetsOn", () => {
+  const cut = { id: "c", kind: "cut" as const, startDate: "2026-09-01", endDate: null, ratePctPerWeek: -1, proteinGPerKg: 2.2, fatGPerKg: 0.8, startWeightKg: 90 };
+
+  it("uses the phase, the trend weight and the carried-forward maintenance of that date", () => {
+    const r = targetsOn("2026-10-14", { phases: [cut], bodyLogs: [{ date: "2026-10-01", weightKg: 85 }], maintenanceWeeks: [{ isoWeek: "2026-W41", kcal: 2750 }] });
+    expect(r.phase?.id).toBe("c");
+    expect(r.trendKg).toBe(85);
+    expect(r.maintenance).toEqual({ kcal: 2750, setForThisWeek: false, fromWeek: "2026-W41" });
+    expect(r.targets).toMatchObject({ kcal: 1815, proteinG: 187, capped: false });
+  });
+
+  it("falls back to the phase's start weight when nothing has been weighed", () => {
+    const r = targetsOn("2026-10-14", { phases: [cut], bodyLogs: [], maintenanceWeeks: [{ isoWeek: "2026-W41", kcal: 2750 }] });
+    expect(r.trendKg).toBe(90);
+    expect(r.targets).toMatchObject({ kcal: 1760, capped: false });
+  });
+
+  it("no phase and no weight: no targets; no phase with a weight: recomp at the default maintenance", () => {
+    expect(targetsOn("2026-10-14", { phases: [], bodyLogs: [], maintenanceWeeks: [] })).toMatchObject({ phase: null, trendKg: null, targets: null });
+    expect(targetsOn("2026-10-14", { phases: [], bodyLogs: [{ date: "2026-10-10", weightKg: 80 }], maintenanceWeeks: [] }).targets).toMatchObject({ kcal: 2800, proteinG: 176, capped: false });
+  });
+
+  it("a phase that has not started yet does not apply", () => {
+    expect(targetsOn("2026-08-31", { phases: [cut], bodyLogs: [], maintenanceWeeks: [] }).phase).toBeNull();
+  });
+});
+
+describe("bodyAverages", () => {
+  const logs = [
+    { date: "2026-10-12", steps: 8000, waterMl: 2000, sleepMin: 420 },
+    { date: "2026-10-13", steps: 7000, waterMl: null, sleepMin: 450 },
+    { date: "2026-10-14", steps: null, waterMl: null, sleepMin: null },
+    { date: "2026-10-15", steps: 100000, waterMl: 9000, sleepMin: 600, deletedAt: "2026-10-15T00:00:00.000Z" },
+    { date: "2026-10-20", steps: 1, waterMl: 1, sleepMin: 1 },
+  ];
+  it("averages the days that have a value, in range, skipping deleted rows", () => {
+    expect(bodyAverages(logs, "2026-10-12", "2026-10-18")).toEqual({ steps: 7500, waterMl: 2000, sleepMin: 435 });
+  });
+  it("is null with nothing in range", () => {
+    expect(bodyAverages(logs, "2026-11-01", "2026-11-07")).toEqual({ steps: null, waterMl: null, sleepMin: null });
+  });
+});
+
+describe("rateToKcalPerDay", () => {
+  it.each([[84.4, 1, 928.4], [95, 1, 1045], [80, 0.25, 220], [80, 0, 0]])("%s kg at %s %%/wk → %s kcal", (kg, rate, kcal) => {
+    expect(rateToKcalPerDay(kg, rate)).toBeCloseTo(kcal, 1);
+  });
+});
+
+describe("balanceKg", () => {
+  it.each([[-5710, -0.74], [7700, 1], [0, 0], [-7700, -1], [385, 0.05]])("%s kcal → %s kg", (kcal, kg) => {
+    expect(balanceKg(kcal)).toBe(kg);
+  });
+});
+
+describe("phaseProgress", () => {
+  const cut = { kind: "cut" as const, startDate: "2026-09-01", ratePctPerWeek: -1, startWeightKg: 90 };
+
+  it("weeks, change and the average rate against the goal", () => {
+    expect(phaseProgress(cut, [{ date: "2026-09-01", weightKg: 85 }], "2026-10-14")).toEqual({
+      weeks: 7, startKg: 90, trendKg: 85, changeKg: -5, changePct: -5.6, avgRatePct: -0.91, onPace: true,
+    });
+  });
+  it("behind the goal is not on pace", () => {
+    expect(phaseProgress(cut, [{ date: "2026-09-01", weightKg: 89 }], "2026-10-14")).toMatchObject({ avgRatePct: -0.18, onPace: false });
+  });
+  it("under a week of data has no average rate", () => {
+    expect(phaseProgress(cut, [{ date: "2026-09-01", weightKg: 89 }], "2026-09-05")).toMatchObject({ weeks: 1, avgRatePct: null, onPace: null });
+  });
+  it("recomp has no pace; no weigh-ins leave the change empty", () => {
+    expect(phaseProgress({ ...cut, kind: "recomp", ratePctPerWeek: 0 }, [{ date: "2026-09-01", weightKg: 90 }], "2026-10-14").onPace).toBeNull();
+    expect(phaseProgress(cut, [], "2026-10-14")).toMatchObject({ trendKg: null, changeKg: null, changePct: null, avgRatePct: null, onPace: null });
+  });
+});
+
+describe("maintenanceRuns", () => {
+  it("merges consecutive weeks with the same value, newest first, carried weeks included", () => {
+    const weeks = [
+      { isoWeek: "2026-W36", kcal: 2800 },
+      { isoWeek: "2026-W38", kcal: 2750 },
+      { isoWeek: "2026-W41", kcal: 2750 },
+    ];
+    expect(maintenanceRuns(weeks, "2026-W42")).toEqual([
+      { fromWeek: "2026-W38", toWeek: "2026-W42", kcal: 2750, setByHand: true },
+      { fromWeek: "2026-W36", toWeek: "2026-W37", kcal: 2800, setByHand: true },
+    ]);
+  });
+  it("runs across the ISO year boundary (2026 has 53 weeks)", () => {
+    expect(maintenanceRuns([{ isoWeek: "2026-W52", kcal: 3000 }], "2027-W02")).toEqual([{ fromWeek: "2026-W52", toWeek: "2027-W02", kcal: 3000, setByHand: true }]);
+  });
+  it("is empty before the first value and ignores deleted weeks", () => {
+    expect(maintenanceRuns([], "2026-W42")).toEqual([]);
+    expect(maintenanceRuns([{ isoWeek: "2026-W43", kcal: 2800 }], "2026-W42")).toEqual([]);
+    expect(maintenanceRuns([{ isoWeek: "2026-W40", kcal: 2800, deletedAt: "2026-10-01T00:00:00.000Z" }], "2026-W42")).toEqual([]);
+  });
+});
+
+describe("period summary extras", () => {
+  it("average fibre, weigh-in count and trend start/end", () => {
+    const s = weekSummary("2026-W42", {
+      foodLogs: [food("2026-10-12", 2000, 150, { fibreG: 20 }), food("2026-10-13", 1800, 140, { fibreG: 30 })],
+      bodyLogs: [{ date: "2026-10-11", weightKg: 100 }, { date: "2026-10-12", weightKg: 99 }, { date: "2026-10-14", weightKg: 99 }],
+      maintenanceWeeks: [],
+      today: "2026-10-18",
+    });
+    expect(s.avgFibreG).toBe(25);
+    expect(s.weighIns).toBe(2);
+    expect(s.trendStartKg).toBe(100);
+    expect(s.trendEndKg).toBe(99.8); // 100 → 99.9 on the 12th → 99.81 on the 14th, carried to the 18th
+  });
+  it("are empty with no data", () => {
+    expect(weekSummary("2026-W42", { foodLogs: [], bodyLogs: [], maintenanceWeeks: [] })).toMatchObject({ avgFibreG: null, weighIns: 0, trendStartKg: null, trendEndKg: null });
   });
 });
 

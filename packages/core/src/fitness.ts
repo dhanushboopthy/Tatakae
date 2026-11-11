@@ -124,7 +124,12 @@ export function maintenanceFor(
 }
 
 // ===================== daily targets =====================
-export type TargetPhase = Pick<FitnessPhase, "kind" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg">;
+/** kcal per day that a weekly rate of body weight is worth: rate % × trend kg × 7700 ÷ 7 (1 % of 84.4 kg ≈ 928 kcal). */
+export function rateToKcalPerDay(trendKg: number, ratePctPerWeek: number): number {
+  return (ratePctPerWeek / 100) * trendKg * KCAL_PER_KG / 7;
+}
+
+export type TargetPhase =Pick<FitnessPhase, "kind" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg">;
 export interface DailyTargets {
   kcal: number;
   proteinG: number;
@@ -150,7 +155,7 @@ export function dailyTargets(input: {
 }): DailyTargets {
   const { phase, maintenance, trendKg } = input;
   const magnitude = Math.abs(phase.ratePctPerWeek);
-  const wanted = (magnitude / 100) * trendKg * KCAL_PER_KG / 7; // kcal/day, ≥ 0
+  const wanted = rateToKcalPerDay(trendKg, magnitude); // kcal/day, ≥ 0
   let delta = 0; // signed kcal/day versus maintenance
   let capped = false;
   if (phase.kind === "cut") {
@@ -230,6 +235,12 @@ export interface PeriodSummary {
   weightChangeKg: number | null;
   /** Weight change as % of the starting trend weight, per week (null as above). */
   ratePctPerWeek: number | null;
+  avgFibreG: number | null;
+  /** Real weigh-ins in the period. */
+  weighIns: number;
+  /** Trend weight at the start and end of the measured span, kg (null when there is no change to measure). */
+  trendStartKg: number | null;
+  trendEndKg: number | null;
 }
 export interface WeekSummary extends PeriodSummary {
   isoWeek: string;
@@ -256,7 +267,7 @@ function summarise(start: ISODate, end: ISODate, input: SummaryInput): PeriodSum
   const defaultKcal = input.defaultMaintenance ?? DEFAULT_MAINTENANCE_KCAL;
   const last = input.today && input.today < end ? input.today : end;
   const days: SummaryDay[] = [];
-  let kcalSum = 0, proteinSum = 0, balance = 0, logged = 0;
+  let kcalSum = 0, proteinSum = 0, fibreSum = 0, balance = 0, logged = 0;
   for (let d = start; d <= end; d = addDays(d, 1)) {
     const maintenanceKcal = maintenanceFor(input.maintenanceWeeks, d, defaultKcal).kcal;
     const t = d <= last ? dayTotals(input.foodLogs, d) : null;
@@ -264,6 +275,7 @@ function summarise(start: ISODate, end: ISODate, input: SummaryInput): PeriodSum
       days.push({ date: d, kcal: t.kcal, proteinG: t.proteinG, maintenanceKcal });
       kcalSum += t.kcal;
       proteinSum += t.proteinG;
+      fibreSum += t.fibreG;
       balance += t.kcal - maintenanceKcal;
       logged++;
     } else {
@@ -296,6 +308,10 @@ function summarise(start: ISODate, end: ISODate, input: SummaryInput): PeriodSum
     maintenanceKcal: maintenanceFor(input.maintenanceWeeks, end, defaultKcal).kcal,
     weightChangeKg: changeKg != null ? Math.round(changeKg * 100) / 100 : null,
     ratePctPerWeek: ratePct != null ? Math.round(ratePct * 100) / 100 : null,
+    avgFibreG: logged ? Math.round(fibreSum / logged) : null,
+    weighIns,
+    trendStartKg: changeKg != null && baseT != null ? Math.round(baseT * 10) / 10 : null,
+    trendEndKg: changeKg != null && endT != null ? Math.round(endT * 10) / 10 : null,
   };
 }
 
@@ -442,6 +458,115 @@ export function recentFoodIds(logs: readonly (Pick<FoodLog, "id" | "date" | "foo
     if (key > (latest.get(l.foodId) ?? "")) latest.set(l.foodId, key);
   }
   return [...latest].sort((a, b) => (a[1] < b[1] ? 1 : -1)).slice(0, limit).map(([id]) => id);
+}
+
+export interface TargetsOnInput {
+  phases: readonly PhaseRow[];
+  bodyLogs: readonly WeighIn[];
+  maintenanceWeeks: readonly MaintenanceRow[];
+  defaultMaintenance?: number;
+  fibreTargetG?: number;
+}
+export interface TargetsOn {
+  phase: PhaseRow | null;
+  /** Trend weight on the date, else the phase's start weight; null until there is any weight. */
+  trendKg: number | null;
+  maintenance: MaintenanceResult;
+  /** Null until there is a weight to base protein and fat on. */
+  targets: DailyTargets | null;
+}
+
+/** Everything the targets of one date depend on, in one place (the phase that day, trend weight, that week's maintenance). */
+export function targetsOn(date: ISODate, input: TargetsOnInput): TargetsOn {
+  const phase = activePhaseOn(input.phases, date);
+  const trendKg = trendNow(input.bodyLogs, date) ?? phase?.startWeightKg ?? null;
+  const maintenance = maintenanceFor(input.maintenanceWeeks, date, input.defaultMaintenance);
+  const targets =
+    trendKg == null
+      ? null
+      : dailyTargets({
+          phase: phase ?? { kind: "recomp", ...PHASE_DEFAULTS.recomp },
+          maintenance: maintenance.kcal,
+          trendKg,
+          fibreTargetG: input.fibreTargetG,
+        });
+  return { phase, trendKg, maintenance, targets };
+}
+
+/** Averages of the daily stats over the days that have a value, in [from, to]. Null when none. */
+export function bodyAverages(
+  logs: readonly (Pick<BodyLog, "date" | "steps" | "waterMl" | "sleepMin"> & { deletedAt?: string | null })[],
+  from: ISODate,
+  to: ISODate,
+): { steps: number | null; waterMl: number | null; sleepMin: number | null } {
+  const rows = live(logs).filter((l) => l.date >= from && l.date <= to);
+  const avg = (pick: (l: (typeof rows)[number]) => number | null) => {
+    const v = rows.map(pick).filter((x): x is number => x != null);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+  };
+  return { steps: avg((l) => l.steps), waterMl: avg((l) => l.waterMl), sleepMin: avg((l) => l.sleepMin) };
+}
+
+/** kg of body weight a kcal balance is worth (7700 kcal per kg), rounded to 0.01. Sign follows the balance. */
+export function balanceKg(balanceKcal: number): number {
+  return Math.round((balanceKcal / KCAL_PER_KG) * 100) / 100;
+}
+
+export interface PhaseProgress {
+  weeks: number;
+  startKg: number;
+  trendKg: number | null;
+  changeKg: number | null;
+  changePct: number | null;
+  /** Average trend change per week since the phase began, %. */
+  avgRatePct: number | null;
+  /** True when the average rate is within a quarter of the goal rate; null for recomp or too little data. */
+  onPace: boolean | null;
+}
+
+/** How far a phase has come on `date`: weeks, start → trend, change and the average weekly rate against the goal. */
+export function phaseProgress(phase: Pick<FitnessPhase, "kind" | "startDate" | "ratePctPerWeek" | "startWeightKg">, bodyLogs: readonly WeighIn[], date: ISODate): PhaseProgress {
+  const trendKg = trendNow(bodyLogs, date);
+  const weeks = phaseWeek(phase, date);
+  const days = daysBetween(phase.startDate, date);
+  const changeKg = trendKg != null ? Math.round((trendKg - phase.startWeightKg) * 100) / 100 : null;
+  const changePct = changeKg != null ? Math.round((changeKg / phase.startWeightKg) * 1000) / 10 : null;
+  const avgRatePct = changePct != null && days >= 7 ? Math.round((changePct / (days / 7)) * 100) / 100 : null;
+  const goal = phase.kind === "recomp" ? 0 : phase.ratePctPerWeek;
+  const onPace = avgRatePct == null || goal === 0 ? null : Math.abs(avgRatePct - goal) <= Math.abs(goal) * 0.25;
+  return { weeks, startKg: phase.startWeightKg, trendKg, changeKg, changePct, avgRatePct, onPace };
+}
+
+export interface MaintenanceRun {
+  /** First and last ISO week of a stretch with the same value. */
+  fromWeek: string;
+  toWeek: string;
+  kcal: number;
+  /** True when the stretch starts with a week where the value was typed (not only carried). */
+  setByHand: boolean;
+}
+
+/**
+ * Maintenance history, newest first: one run per stretch of consecutive weeks with the same value, from the
+ * first week you set through `throughWeek` (carried-forward weeks count). Empty before the first value.
+ */
+export function maintenanceRuns(weeks: readonly MaintenanceRow[], throughWeek: string): MaintenanceRun[] {
+  const set = live(weeks).filter((w) => w.isoWeek <= throughWeek).sort((a, b) => a.isoWeek.localeCompare(b.isoWeek));
+  const through = parseIsoWeek(throughWeek);
+  const firstWeek = set[0] ? parseIsoWeek(set[0].isoWeek) : null;
+  if (!through || !firstWeek) return [];
+  const runs: MaintenanceRun[] = [];
+  const end = isoWeekRange(through.year, through.week).start;
+  for (let d = isoWeekRange(firstWeek.year, firstWeek.week).start; d <= end; d = addDays(d, 7)) {
+    const key = formatIsoWeek(isoWeek(d));
+    const m = maintenanceFor(set, d);
+    const last = runs[runs.length - 1];
+    if (last && last.kcal === m.kcal) {
+      last.toWeek = key;
+      last.setByHand ||= m.setForThisWeek;
+    } else runs.push({ fromWeek: key, toWeek: key, kcal: m.kcal, setByHand: m.setForThisWeek });
+  }
+  return runs.reverse();
 }
 
 /** kcal left today (negative = over) and how far through the target the day is, as a 0–100+ percentage. */
