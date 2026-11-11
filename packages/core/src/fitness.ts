@@ -382,3 +382,69 @@ export function bestByExercise(sets: readonly SetRow[]): BestLift[] {
   }
   return [...best.values()].sort((a, b) => a.exercise.localeCompare(b.exercise));
 }
+
+// ===================== phases, foods and day view =====================
+export type PhaseRow = Pick<FitnessPhase, "id" | "kind" | "startDate" | "endDate" | "ratePctPerWeek" | "proteinGPerKg" | "fatGPerKg" | "startWeightKg"> & {
+  deletedAt?: string | null;
+};
+
+/** The phase running on `date` (started, not ended; the latest start wins); null when none. */
+export function activePhaseOn<P extends PhaseRow>(phases: readonly P[], date: ISODate): P | null {
+  let best: P | null = null;
+  for (const p of live(phases)) {
+    if (p.startDate > date || (p.endDate != null && p.endDate < date)) continue;
+    if (!best || p.startDate > best.startDate) best = p;
+  }
+  return best;
+}
+
+/** 1-based week of a phase on `date` (week 1 = the first 7 days). */
+export function phaseWeek(phase: Pick<FitnessPhase, "startDate">, date: ISODate): number {
+  return Math.max(1, Math.floor(daysBetween(phase.startDate, date) / 7) + 1);
+}
+
+/** One line on the phase for headers: "Cut · week 7 · −1 % a week". */
+export function phaseLabel(phase: Pick<FitnessPhase, "kind" | "startDate" | "ratePctPerWeek">, date: ISODate): string {
+  const name = phase.kind === "cut" ? "Cut" : phase.kind === "bulk" ? "Bulk" : "Recomp";
+  const rate =
+    phase.kind === "recomp" || phase.ratePctPerWeek === 0
+      ? "at maintenance"
+      : `${phase.kind === "cut" ? "−" : "+"}${fmt(Math.abs(phase.ratePctPerWeek), 2)} % a week`;
+  return `${name} · week ${phaseWeek(phase, date)} · ${rate}`;
+}
+
+/** Trend weight on `date` from all weigh-ins up to it; null before the first weigh-in. */
+export function trendNow(logs: readonly WeighIn[], date: ISODate): number | null {
+  return trendOn(trendWeight(logs.filter((l) => l.date <= date), date), date);
+}
+
+export type FoodNutrients = Pick<FoodLog, "kcal" | "proteinG" | "carbsG" | "fatG" | "fibreG" | "micros">;
+
+/** Per-serving nutrients copied onto a food log, so editing the food later never rewrites history. */
+export function foodSnapshot(food: FoodNutrients): FoodNutrients {
+  return { kcal: food.kcal, proteinG: food.proteinG, carbsG: food.carbsG, fatG: food.fatG, fibreG: food.fibreG, micros: { ...food.micros } };
+}
+
+/** Saved foods matching a query (case-insensitive, every word must appear), favourites first, then by name. */
+export function searchFoods<F extends { name: string; favourite: boolean; deletedAt?: string | null }>(foods: readonly F[], query: string): F[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return live(foods)
+    .filter((f) => words.every((w) => f.name.toLowerCase().includes(w)))
+    .sort((a, b) => Number(b.favourite) - Number(a.favourite) || a.name.localeCompare(b.name));
+}
+
+/** Foods used most recently (by their latest log date, ties by log id), at most `limit`, foods still saved only. */
+export function recentFoodIds(logs: readonly (Pick<FoodLog, "id" | "date" | "foodId"> & { deletedAt?: string | null })[], limit = 8): string[] {
+  const latest = new Map<string, string>();
+  for (const l of live(logs)) {
+    if (!l.foodId) continue;
+    const key = `${l.date}|${l.id}`;
+    if (key > (latest.get(l.foodId) ?? "")) latest.set(l.foodId, key);
+  }
+  return [...latest].sort((a, b) => (a[1] < b[1] ? 1 : -1)).slice(0, limit).map(([id]) => id);
+}
+
+/** kcal left today (negative = over) and how far through the target the day is, as a 0–100+ percentage. */
+export function remaining(eaten: number, target: number): { left: number; pct: number; over: boolean } {
+  return { left: Math.round(target - eaten), pct: target > 0 ? Math.round((eaten / target) * 100) : 0, over: eaten > target };
+}

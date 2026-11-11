@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  activePhaseOn,
   bestByExercise,
   dailyTargets,
   dayTotals,
   e1rm,
+  foodSnapshot,
   maintenanceFor,
   MICRO_INFO,
   MICRO_KEYS,
   monthSummary,
   PHASE_DEFAULTS,
+  phaseLabel,
+  phaseWeek,
+  recentFoodIds,
+  remaining,
+  searchFoods,
+  trendNow,
   trendOn,
   trendWeight,
   weeklyCheckIn,
@@ -469,5 +477,93 @@ describe("fitness schemas", () => {
     expect(readSettings([]) ["fitness.maintenanceKcal"]).toBe(2800);
     expect(readSettings([{ key: "fitness.maintenanceKcal", value: "2650", deletedAt: null }])["fitness.maintenanceKcal"]).toBe(2650);
     expect(readSettings([{ key: "fitness.maintenanceKcal", value: "\"x\"", deletedAt: null }])["fitness.maintenanceKcal"]).toBe(2800);
+  });
+});
+
+// ---------- phases, foods, day view ----------
+describe("activePhaseOn / phaseWeek / phaseLabel", () => {
+  const p = (id: string, kind: "cut" | "bulk" | "recomp", startDate: string, endDate: string | null, extra = {}) => ({
+    id, kind, startDate, endDate, ratePctPerWeek: PHASE_DEFAULTS[kind].ratePctPerWeek, proteinGPerKg: 2.2, fatGPerKg: 0.8, startWeightKg: 90, ...extra,
+  });
+  const phases = [p("a", "recomp", "2026-07-01", "2026-08-31"), p("b", "cut", "2026-09-01", null), p("c", "bulk", "2026-01-01", null, { deletedAt: "2026-01-02T00:00:00.000Z" })];
+
+  it.each([
+    ["2026-06-30", null],
+    ["2026-07-01", "a"],
+    ["2026-08-31", "a"],
+    ["2026-09-01", "b"],
+    ["2027-03-01", "b"],
+  ])("%s → %s", (date, id) => {
+    expect(activePhaseOn(phases, date)?.id ?? null).toBe(id);
+  });
+
+  it("the latest start wins when phases overlap", () => {
+    expect(activePhaseOn([p("x", "cut", "2026-09-01", null), p("y", "bulk", "2026-10-01", null)], "2026-10-14")?.id).toBe("y");
+  });
+
+  it.each([
+    ["2026-09-01", 1], ["2026-09-07", 1], ["2026-09-08", 2], ["2026-10-14", 7],
+  ])("phase week on %s is %s", (date, week) => {
+    expect(phaseWeek({ startDate: "2026-09-01" }, date)).toBe(week);
+  });
+
+  it("labels the phase", () => {
+    expect(phaseLabel(p("b", "cut", "2026-09-01", null), "2026-10-14")).toBe("Cut · week 7 · −1 % a week");
+    expect(phaseLabel(p("c", "bulk", "2026-09-01", null), "2026-09-02")).toBe("Bulk · week 1 · +0.25 % a week");
+    expect(phaseLabel(p("a", "recomp", "2026-09-01", null), "2026-09-02")).toBe("Recomp · week 1 · at maintenance");
+  });
+});
+
+describe("trendNow", () => {
+  it("ignores weigh-ins after the date and is null before the first", () => {
+    const logs = [{ date: "2026-10-10", weightKg: 80 }, { date: "2026-10-12", weightKg: 90 }];
+    expect(trendNow(logs, "2026-10-09")).toBeNull();
+    expect(trendNow(logs, "2026-10-11")).toBe(80);
+    expect(trendNow(logs, "2026-10-12")).toBeCloseTo(81, 10);
+  });
+});
+
+describe("foodSnapshot / searchFoods / recentFoodIds / remaining", () => {
+  it("snapshot copies the nutrients and the micros object", () => {
+    const f = { kcal: 100, proteinG: 5, carbsG: 10, fatG: 2, fibreG: null, micros: { iron: 1 } };
+    const s = foodSnapshot(f);
+    expect(s).toEqual(f);
+    expect(s.micros).not.toBe(f.micros);
+  });
+
+  it("search matches every word, favourites first, skipping deleted foods", () => {
+    const foods = [
+      { name: "Paneer tikka", favourite: false },
+      { name: "Paneer 100 g", favourite: true },
+      { name: "Chapati", favourite: false },
+      { name: "Paneer old", favourite: true, deletedAt: "2026-10-01T00:00:00.000Z" },
+    ];
+    expect(searchFoods(foods, "paneer").map((f) => f.name)).toEqual(["Paneer 100 g", "Paneer tikka"]);
+    expect(searchFoods(foods, "tikka paneer").map((f) => f.name)).toEqual(["Paneer tikka"]);
+    expect(searchFoods(foods, "").map((f) => f.name)).toEqual(["Paneer 100 g", "Chapati", "Paneer tikka"]);
+    expect(searchFoods(foods, "xyz")).toEqual([]);
+  });
+
+  it("recent foods are unique, newest first, limited, without free-text entries", () => {
+    const logs = [
+      { id: "1", date: "2026-10-10", foodId: "a" },
+      { id: "2", date: "2026-10-12", foodId: "b" },
+      { id: "3", date: "2026-10-12", foodId: "a" },
+      { id: "4", date: "2026-10-13", foodId: null },
+      { id: "5", date: "2026-10-09", foodId: "c", deletedAt: "2026-10-09T00:00:00.000Z" },
+      { id: "6", date: "2026-10-01", foodId: "d" },
+    ];
+    expect(recentFoodIds(logs)).toEqual(["a", "b", "d"]);
+    expect(recentFoodIds(logs, 2)).toEqual(["a", "b"]);
+  });
+
+  it.each([
+    [1240, 1820, { left: 580, pct: 68, over: false }],
+    [1820, 1820, { left: 0, pct: 100, over: false }],
+    [2000, 1820, { left: -180, pct: 110, over: true }],
+    [0, 1820, { left: 1820, pct: 0, over: false }],
+    [500, 0, { left: -500, pct: 0, over: true }],
+  ])("remaining(%s, %s)", (eaten, target, expected) => {
+    expect(remaining(eaten, target)).toEqual(expected);
   });
 });

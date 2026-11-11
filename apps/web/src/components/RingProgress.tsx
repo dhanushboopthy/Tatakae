@@ -1,5 +1,16 @@
-/** Ring progress (docs/11 C5): 56 ring, 6 stroke, number in the centre, coloured by the area's deep tone. */
-export function RingProgress(props: { pct: number; color?: string; size?: number; stroke?: number; label: string }) {
+/**
+ * Ring progress (docs/11 C5): 56 ring, 6 stroke, number in the centre, coloured by the area's deep tone.
+ * `centre` replaces the centre number (e.g. "1,240") and `caption` adds a small line under it ("kcal eaten").
+ */
+export function RingProgress(props: {
+  pct: number;
+  color?: string;
+  size?: number;
+  stroke?: number;
+  label: string;
+  centre?: string;
+  caption?: string;
+}) {
   const size = props.size ?? 56;
   const stroke = props.stroke ?? 6;
   const r = (size - stroke) / 2;
@@ -23,16 +34,21 @@ export function RingProgress(props: { pct: number; color?: string; size?: number
       )}
       <text
         x="50%"
-        y="50%"
+        y={props.caption ? "46%" : "50%"}
         dominantBaseline="central"
         textAnchor="middle"
-        fontSize={size * 0.27}
+        fontSize={size * (props.centre ? 0.17 : 0.27)}
         fontWeight="600"
         fill="rgb(var(--ink))"
         style={{ fontVariantNumeric: "tabular-nums" }}
       >
-        {p}
+        {props.centre ?? p}
       </text>
+      {props.caption && (
+        <text x="50%" y="62%" dominantBaseline="central" textAnchor="middle" fontSize={size * 0.075} fontWeight="500" fill="rgb(var(--ink-2))">
+          {props.caption}
+        </text>
+      )}
     </svg>
   );
 }

@@ -10,6 +10,7 @@ import { WelcomeBack } from "./routes/WelcomeBack";
 import { WeeklyReview } from "./routes/WeeklyReview";
 import { MonthlyReview } from "./routes/MonthlyReview";
 import { Cycle } from "./routes/Cycle";
+import { Fitness } from "./routes/Fitness";
 import { Notes } from "./routes/Notes";
 import { Applications } from "./routes/Applications";
 import { Stories } from "./routes/Stories";
@@ -56,6 +57,7 @@ export const router = createBrowserRouter([
       { path: "/review/week", element: <WeeklyReview /> }, // v2
       { path: "/review/month", element: <MonthlyReview /> },// v2
       { path: "/cycle", element: <Cycle /> },              // v2
+      { path: "/fitness", element: <Fitness /> },          // fitness
       { path: "/notes/*", element: <Notes /> },            // v3
       { path: "/applications", element: <Applications /> },// v3
       { path: "/stories", element: <Stories /> },          // v3
