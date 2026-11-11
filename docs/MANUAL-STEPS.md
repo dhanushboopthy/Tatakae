@@ -174,7 +174,6 @@ OCI allows 2 customer secret keys per user. Store this one in your password mana
 1. On the laptop, generate the values:
    ```bash
    openssl rand -hex 32                 # SESSION_SECRET
-   openssl rand -hex 32                 # API_TOKEN
    deploy/scripts/hash-password.sh      # asks for your login password twice, prints OWNER_PASSWORD_HASH='...'
    ```
    `hash-password.sh` uses the repo's `@node-rs/argon2` after `pnpm install`, or Docker if that's missing.
@@ -186,7 +185,8 @@ OCI allows 2 customer secret keys per user. Store this one in your password mana
    nano /opt/tatakae/.env
    ```
 3. Fill in: `GH_OWNER=<owner>` (lowercase), `DOMAIN=tatakae.<name>.me`, `PUBLIC_ORIGIN=https://tatakae.<name>.me`,
-   `ACME_EMAIL`, `OWNER_EMAIL`, `SESSION_SECRET`, `API_TOKEN`, all `S3_*` (step 9).
+   `ACME_EMAIL`, `OWNER_EMAIL`, `SESSION_SECRET`, all `S3_*` (step 9). Delete the `API_TOKEN=` line if your copy
+   still has it: the API no longer reads it (scripts log in with `client: "mobile"` instead).
 4. **Replace the whole `OWNER_PASSWORD_HASH=` line with the line `hash-password.sh` printed, single quotes
    included.** The hash contains `$` signs, and Docker Compose would try to expand them without the quotes.
 5. Store a copy of the finished `.env` in your password manager (it's needed for a restore on a new VM).
@@ -308,6 +308,18 @@ Done when the dev client is installed and logs in to production.
      fix with `EAS_PROJECT_ID=<id> npx eas-cli@latest update --channel production --message "…"` from
      `apps/mobile`; it reaches only APKs with the same `version`. Without the variable the build has no
      `updates` block and nothing changes.
+   - **Updates must be signed** (the app refuses unsigned ones; without the certificate it gets no `updates`
+     block at all). Once, in `apps/mobile`:
+     ```bash
+     npx expo-updates codesigning:generate --key-output-directory keys \
+       --certificate-output-directory certs --certificate-validity-duration-years 10 \
+       --certificate-common-name "Tatakae"
+     git add certs/certificate.pem    # public, committed; keys/ is git-ignored
+     ```
+     Keep `keys/private-key.pem` in your password manager. Publish with
+     `npx eas-cli@latest update --channel production --private-key-path keys/private-key.pem --message "…"`.
+     Turn on two-factor authentication for the Expo account too: whoever controls it could otherwise publish
+     to the channel.
    - "Update available" on the phone: after a release, set `MIN_MOBILE_VERSION` (the new version) and
      `LATEST_APK_URL` (the APK's download link from the release) in the server's env and redeploy. Older
      phones then show a calm banner on Today and in Settings; nothing is blocked.

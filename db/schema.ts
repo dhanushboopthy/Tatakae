@@ -112,6 +112,7 @@ export const sessions = sqliteTable("sessions", {
   createdAt: text("created_at").notNull(),
   expiresAt: text("expires_at").notNull(),
   lastSeenAt: text("last_seen_at"),     // Settings → Devices ("last seen")
+  authAt: text("auth_at"),              // last password/passkey check; sensitive actions need it recent
   ...meta,
 });
 
@@ -125,6 +126,28 @@ export const passkeys = sqliteTable("passkeys", { // v4, web login (WebAuthn); n
   name: text("name").notNull(),              // "Laptop fingerprint", "Phone" — Settings → Passkeys
   createdAt: text("created_at").notNull(),
   lastUsedAt: text("last_used_at"),
+  ...meta,
+});
+
+// Sign-ins and security changes (Settings → Devices). Server-only: never synced or exported; the
+// newest 500 are kept.
+export const securityEvents = sqliteTable("security_events", {
+  id: text("id").primaryKey(),
+  at: text("at").notNull(),
+  kind: text("kind").notNull(),          // SecurityEventKind in @tatakae/core
+  client: text("client"),                // "web" | "mobile" when known
+  device: text("device"),                // device name (or the one being signed out)
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  detail: text("detail"),
+  ...meta,
+}, (t) => ({ atIdx: index("security_events_at_idx").on(t.at) }));
+
+// Server-only key/value state that isn't a user setting (e.g. the login fingerprint that signs every
+// device out when the password in .env changes). Never synced or exported.
+export const serverMeta = sqliteTable("server_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
   ...meta,
 });
 

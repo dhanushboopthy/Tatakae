@@ -15,7 +15,7 @@ Phone: tag `mobile-vX.Y.Z` → `mobile.yml` builds a signed APK → GitHub Relea
 ## Secrets
 | Where | What |
 |---|---|
-| `/opt/tatakae/.env` (chmod 600) | OWNER_EMAIL, OWNER_PASSWORD_HASH, SESSION_SECRET, API_TOKEN, S3_*, VAPID_*, DOMAIN |
+| `/opt/tatakae/.env` (chmod 600) | OWNER_EMAIL, OWNER_PASSWORD_HASH, SESSION_SECRET, S3_*, VAPID_*, DOMAIN |
 | GitHub secrets | TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET, VM_USER, VM_TAILNET_HOST, ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD |
 | GitHub variables | DOMAIN |
 | Your password manager | Android keystore file + passwords (losing it = can't update the app in place) |
@@ -28,7 +28,8 @@ Phone holds an offline copy of v1 data as a last resort.
 
 ## Runbooks
 - **Restore on a new VM:** `terraform apply` → cloud-init → copy `.env` → `restore.sh` → `docker compose up -d` → check `/api/health` → devices resync.
-- **Rotate a lost phone:** revoke device in web Settings → Devices; log in on new phone.
+- **Rotate a lost phone:** revoke device in web Settings → Devices; log in on new phone. Check "Recent sign-ins and changes" there for anything that wasn't you.
+- **Change the password:** `deploy/scripts/hash-password.sh` → replace the `OWNER_PASSWORD_HASH=` line in `/opt/tatakae/.env` → `docker compose up -d api`. On boot the api notices the new login and signs every device out (logged as "Password changed"); sign in again everywhere. Without a restart, Settings → Devices → "Sign out every other device" does the same for the others.
 - **Change domain:** update DNS, `DOMAIN`/`PUBLIC_ORIGIN` in `.env`, redeploy; reinstall web app on laptops; rebuild phone app with new `EXPO_PUBLIC_API_URL`.
 - **Disk full:** `docker image prune -af`, check Litestream retention, check files dir.
 - **Cert issues:** `docker compose logs web`; confirm 80/443 open in both firewalls.

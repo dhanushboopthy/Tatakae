@@ -2,8 +2,9 @@ import { Hono } from "hono";
 import type { AppBindings, Env } from "./env";
 import type { Db } from "./lib/db";
 import { auth } from "./middleware/auth";
+import { bodyLimits } from "./middleware/bodyLimit";
 import { errors } from "./middleware/errors";
-import { rateLimit } from "./middleware/rateLimit";
+import { failureLimit, rateLimit } from "./middleware/rateLimit";
 import { health } from "./routes/health";
 import { session } from "./routes/session";
 import { passkeyRoutes } from "./routes/passkeys";
@@ -37,15 +38,24 @@ export function createApp(env: Env, db: Db) {
     c.set("email", "");
     await next();
   });
+  app.use("*", bodyLimits);                                // per-path caps, see middleware/bodyLimit.ts
 
   app.route("/health", health);                            // public
-  // Login only (not /me): 10 attempts per 15 min per IP. One limiter per app instance.
+  // Login only (not /me): 10 attempts per 15 min per IP, and at most 30 wrong passwords per hour from
+  // all IPs together (passkeys and existing sessions keep working). One limiter per app instance.
+  const passwordFailures = failureLimit({ windowSec: 3600, max: 30 });
   app.use("/session/login", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
+  app.use("/session/login", passwordFailures);
+  // Step-up password check: same limits, sharing the failure count with login.
+  app.use("/session/reauth", rateLimit({ windowSec: 900, max: 10, methods: ["POST"] }));
+  app.use("/session/reauth", passwordFailures);
   app.route("/session", session);                          // login public; me/logout/devices apply auth inside
   // Passkey sign-in (options + verify): its own 20 per 15 min per IP; management applies auth inside.
   const passkeyLimit = rateLimit({ windowSec: 900, max: 20, methods: ["POST"] });
   app.use("/passkeys/login", passkeyLimit);
   app.use("/passkeys/login/*", passkeyLimit);
+  app.use("/passkeys/reauth", passkeyLimit);
+  app.use("/passkeys/reauth/*", passkeyLimit);
   app.route("/passkeys", passkeyRoutes());
   app.route("/app", appVersion);                           // public: mobile update check
   app.use("*", auth);                                      // everything below needs a session

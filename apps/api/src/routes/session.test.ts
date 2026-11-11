@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { sessions } from "../../../../db/schema";
 import { hashToken } from "../lib/auth.service";
-import { API_TOKEN, call, login, OWNER, setup } from "../test/helpers";
+import { call, login, OWNER, setup, TEST_DEVICE } from "../test/helpers";
 
 const DAY_MS = 86_400_000;
 
@@ -99,7 +99,7 @@ describe("session routes", () => {
 
     const list = await call(app, "GET", "/session/devices", undefined, laptop);
     expect(list.status).toBe(200);
-    const devices = list.body["devices"] as { id: string; deviceName: string; current: boolean }[];
+    const devices = (list.body["devices"] as { id: string; deviceName: string; current: boolean }[]).filter((d) => d.deviceName !== TEST_DEVICE);
     expect(devices).toHaveLength(2);
     expect(devices.find((d) => d.deviceName === "laptop-1")?.current).toBe(true);
     const phoneDevice = devices.find((d) => d.deviceName === "phone");
@@ -143,13 +143,12 @@ describe("session routes", () => {
     expect(me.res.headers.get("set-cookie") ?? "").toMatch(/^tatakae_session=/);
   });
 
-  it("API_TOKEN bearer works for scripts; a wrong token does not", async () => {
-    const { app } = await setup();
-    const ok = await call(app, "GET", "/session/me", undefined, { authorization: `Bearer ${API_TOKEN}` });
-    expect(ok.status).toBe(200);
-    expect(ok.body).toMatchObject({ email: OWNER.email, client: null });
-    const bad = await call(app, "GET", "/session/me", undefined, { authorization: `Bearer ${API_TOKEN}nope` });
-    expect(bad.status).toBe(401);
+  it("there is no static API token: only session bearers work", async () => {
+    const { app } = await setup({ API_TOKEN: "script-token-".padEnd(48, "x") });
+    const old = await call(app, "GET", "/session/me", undefined, { authorization: `Bearer ${"script-token-".padEnd(48, "x")}` });
+    expect(old.status).toBe(401);
+    const phone = await login(app, "mobile");
+    expect((await call(app, "GET", "/session/me", undefined, phone)).body).toMatchObject({ email: OWNER.email, client: "mobile" });
   });
 
   it("a tampered cookie is rejected", async () => {
@@ -198,6 +197,19 @@ describe("env", () => {
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.message).toMatch(/OWNER_PASSWORD_HASH/);
+  });
+
+  it("production refuses DEV_BYPASS_AUTH=1", async () => {
+    const { parseEnv } = await import("../env");
+    const res = parseEnv({
+      NODE_ENV: "production",
+      OWNER_EMAIL: OWNER.email,
+      OWNER_PASSWORD_HASH: "$argon2id$v=19$m=19456,t=2,p=1$abc$def",
+      SESSION_SECRET: "x".repeat(40),
+      DEV_BYPASS_AUTH: "1",
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.message).toMatch(/DEV_BYPASS_AUTH/);
   });
 
   it("lists missing variables", async () => {

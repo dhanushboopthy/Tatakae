@@ -2,13 +2,18 @@ import { hash } from "@node-rs/argon2";
 import type { Day, Mission } from "@tatakae/core";
 import { createApp } from "../app";
 import { parseEnv, type Env } from "../env";
+import { createSession } from "../lib/auth.service";
 import { openDb, runMigrations, type Db } from "../lib/db";
 
 // Test harness: in-memory SQLite with the real migrations + default rows, env with an argon2 hash
 // computed once per test file, and small request helpers around app.request().
+// Every setup() signs in a "test-runner" phone session; `call` uses it unless given other headers.
 
 export const OWNER = { email: "owner@example.com", password: "correct horse battery staple" };
-export const API_TOKEN = "script-token-".padEnd(48, "x");
+export const TEST_DEVICE = "test-runner";
+
+/** Bearer headers of the latest setup()'s test-runner session. */
+export let ownerAuth: Record<string, string> = {};
 
 let ownerHash: Promise<string> | null = null;
 function getOwnerHash(): Promise<string> {
@@ -18,23 +23,24 @@ function getOwnerHash(): Promise<string> {
 
 export type TestApp = ReturnType<typeof createApp>;
 
-export async function setup(overrides: Record<string, string> = {}): Promise<{ app: TestApp; db: Db; env: Env }> {
+export async function setup(
+  overrides: Record<string, string> = {},
+): Promise<{ app: TestApp; db: Db; env: Env; auth: Record<string, string> }> {
   const parsed = parseEnv({
     NODE_ENV: "test",
     DATABASE_PATH: ":memory:",
     OWNER_EMAIL: OWNER.email,
     OWNER_PASSWORD_HASH: await getOwnerHash(),
     SESSION_SECRET: "test-session-secret-".padEnd(48, "s"),
-    API_TOKEN,
     ...overrides,
   });
   if (!parsed.ok) throw new Error(parsed.message);
   const db = openDb(":memory:");
   runMigrations(db);
-  return { app: createApp(parsed.env, db), db, env: parsed.env };
+  const { token } = createSession(db, { client: "mobile", deviceName: TEST_DEVICE, days: parsed.env.SESSION_DAYS });
+  ownerAuth = { authorization: `Bearer ${token}` };
+  return { app: createApp(parsed.env, db), db, env: parsed.env, auth: ownerAuth };
 }
-
-export const scriptAuth = { authorization: `Bearer ${API_TOKEN}` };
 
 export function jsonInit(method: string, body?: unknown, headers: Record<string, string> = {}): RequestInit {
   return {
@@ -50,7 +56,7 @@ export async function call(
   method: string,
   path: string,
   body?: unknown,
-  headers: Record<string, string> = scriptAuth,
+  headers: Record<string, string> = ownerAuth,
 ): Promise<{ status: number; body: Record<string, unknown>; res: Response }> {
   const res = await app.request(`/api${path}`, jsonInit(method, body, headers));
   const text = await res.text();

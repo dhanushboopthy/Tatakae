@@ -15,6 +15,12 @@ import type {
 // ===================== primitives =====================
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD");
 export const isoTime = z.string().refine((s) => !Number.isNaN(Date.parse(s)), "expected an ISO timestamp");
+/** True for an absolute http(s) link: the only kind the apps ever turn into a clickable href. */
+export function isHttpUrl(s: string): boolean {
+  return /^https?:\/\//i.test(s);
+}
+/** z.string().url() alone accepts `javascript:` and `data:`; links stored by the owner must be web pages. */
+export const httpUrl = z.string().url().max(2000).refine(isHttpUrl, "expected an http(s) link");
 /** 24-hour wall-clock time "HH:MM". */
 export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
 
@@ -636,12 +642,12 @@ export const noteInput = z.object({
   tags: z.array(z.string().min(1).max(50)).max(30).default([]),
   areaId: z.string().nullable().default(null),
   goalId: z.string().nullable().default(null),
-  sourceUrl: z.string().url().max(2000).nullable().default(null),
+  sourceUrl: httpUrl.nullable().default(null),
   bodyJson: z.array(z.unknown()).nullable().default(null), // BlockNote document (array of blocks)
   canExplain: z.boolean().nullable().default(null),
   canImplement: z.boolean().nullable().default(null),
   misunderstood: z.string().max(2000).nullable().default(null),
-  publishedUrl: z.string().url().max(2000).nullable().default(null),
+  publishedUrl: httpUrl.nullable().default(null),
 });
 export const notePatch = noteInput.partial();
 export const noteSearchQuery = z.object({ q: z.string().min(1).max(200) });
@@ -656,7 +662,7 @@ export const applicationInput = z.object({
   role: z.string().min(1).max(200),
   status: applicationStatus.default("applied"),
   appliedOn: isoDate.nullable().default(null),
-  url: z.string().url().max(2000).nullable().default(null),
+  url: httpUrl.nullable().default(null),
   source: z.string().max(100).nullable().default(null),
   nextStep: z.string().max(300).nullable().default(null),
   nextStepOn: isoDate.nullable().default(null),
@@ -723,13 +729,23 @@ export const syncResponse = z.object({
 });
 
 // ===================== auth =====================
+/** Upper bound so a public login can't make argon2 chew through megabytes. */
+export const PASSWORD_MAX = 256;
 export const loginInput = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email().max(254),
+  password: z.string().min(8).max(PASSWORD_MAX),
   client: clientKind,
   deviceName: z.string().min(1).max(40), // "laptop-1", "laptop-2", "phone"
 });
 export const loginMobileResponse = z.object({ token: z.string(), expiresAt: z.string() });
+/** POST /session/reauth: confirm the password on an existing session (step-up for sensitive actions). */
+export const reauthInput = z.object({ password: z.string().min(1).max(PASSWORD_MAX) });
+export const reauthResponse = z.object({ authAt: z.string() });
+/** The API's answer when an action needs a fresh password/passkey check (HTTP 403). */
+export const REAUTH_REQUIRED = "reauth_required";
+export function isReauthRequired(body: unknown): boolean {
+  return typeof body === "object" && body !== null && (body as { error?: unknown }).error === REAUTH_REQUIRED;
+}
 
 // ---- passkeys (v4, web only; password login stays as the fallback) ----
 // The browser's credential JSON (WebAuthn Level 3 `toJSON()` shape, base64url strings). The server
@@ -772,6 +788,35 @@ export const passkeyLoginInput = z.object({
   response: passkeyAuthenticationResponse,
   deviceName: z.string().trim().min(1).max(40),
 });
+export const passkeyReauthInput = z.object({ response: passkeyAuthenticationResponse });
+
+// ---- security event log (Settings → Devices; server-only, newest 500 kept) ----
+export const SECURITY_EVENT_KINDS = [
+  "login",
+  "login_failed",
+  "passkey_login",
+  "passkey_login_failed",
+  "reauth",
+  "reauth_failed",
+  "passkey_added",
+  "passkey_removed",
+  "device_signed_out",
+  "others_signed_out",
+  "password_changed",
+  "export",
+] as const;
+export const securityEventKind = z.enum(SECURITY_EVENT_KINDS);
+export const securityEvent = z.object({
+  id: z.string(),
+  at: z.string(),
+  kind: securityEventKind,
+  client: z.enum(["web", "mobile"]).nullable(),
+  device: z.string().nullable(),
+  ip: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  detail: z.string().nullable(),
+});
+export const securityEventList = z.object({ events: z.array(securityEvent) });
 export const passkeyPatch = z.object({ name: passkeyName });
 /** One registered passkey as Settings lists it (the public key never leaves the server). */
 export const passkeySummary = z.object({
@@ -829,3 +874,5 @@ export type PasskeyRegisterInput = z.infer<typeof passkeyRegisterInput>;
 export type PasskeyLoginInput = z.infer<typeof passkeyLoginInput>;
 export type PasskeyPatch = z.infer<typeof passkeyPatch>;
 export type PasskeySummary = z.infer<typeof passkeySummary>;
+export type SecurityEventKind = z.infer<typeof securityEventKind>;
+export type SecurityEvent = z.infer<typeof securityEvent>;

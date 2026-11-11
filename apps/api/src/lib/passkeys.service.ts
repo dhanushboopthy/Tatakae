@@ -12,7 +12,7 @@ import type { PasskeyAuthenticationResponse, PasskeyRegistrationResponse, Passke
 import { passkeys } from "../../../../db/schema";
 import type { Env } from "../env";
 import type { Db } from "./db";
-import { BadRequest, NotFound, Unauthorized } from "./errors";
+import { BadRequest, HttpError, NotFound, Unauthorized } from "./errors";
 
 // Passkeys (v4, R2-12 / R3-8): WebAuthn login for the website, password login stays as the fallback.
 // One user, so every passkey belongs to the owner. Challenges are one-time, kept in memory for
@@ -32,7 +32,9 @@ export function webauthnConfig(env: Env): { rpID: string; origins: string[] } {
   return { rpID: env.WEBAUTHN_RP_ID ?? new URL(env.PUBLIC_ORIGIN).hostname, origins };
 }
 
-type ChallengeKind = "register" | "login";
+/** "reauth" = step-up check on an existing session; its challenges can't be used to sign in. */
+type ChallengeKind = "register" | "login" | "reauth";
+export type AssertionKind = Exclude<ChallengeKind, "register">;
 
 /** One-time WebAuthn challenges. `take` consumes a challenge, so a response can't be replayed. */
 export function createChallengeStore(now: () => number = Date.now) {
@@ -94,8 +96,9 @@ export async function registrationOptions(db: Db, env: Env, challenges: Challeng
     userID: userHandle(env.OWNER_EMAIL),
     attestationType: "none",
     excludeCredentials: existing.map((p) => ({ id: p.id, transports: parseTransports(p.transports) })),
-    // Discoverable, so sign-in needs no email; the device decides how to verify (fingerprint, PIN).
-    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+    // Discoverable, so sign-in needs no email. User verification is required: the device must check a
+    // fingerprint, face or PIN, so a passkey alone (a touch-only security key) never signs anyone in.
+    authenticatorSelection: { residentKey: "required", userVerification: "required" },
   });
   challenges.add(options.challenge, "register");
   return options;
@@ -116,7 +119,7 @@ export async function registerPasskey(
       expectedChallenge: (c) => challenges.take(c, "register"),
       expectedOrigin: origins,
       expectedRPID: rpID,
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
   } catch (e) {
     throw new BadRequest(`The passkey could not be checked: ${(e as Error).message}`, "passkey_invalid");
@@ -142,11 +145,11 @@ export async function registerPasskey(
   return row;
 }
 
-export async function loginOptions(env: Env, challenges: ChallengeStore): Promise<PublicKeyCredentialRequestOptionsJSON> {
+export async function loginOptions(env: Env, challenges: ChallengeStore, kind: AssertionKind = "login"): Promise<PublicKeyCredentialRequestOptionsJSON> {
   const { rpID } = webauthnConfig(env);
   // No allowCredentials: the browser offers the owner's discoverable passkeys.
-  const options = await generateAuthenticationOptions({ rpID, userVerification: "preferred" });
-  challenges.add(options.challenge, "login");
+  const options = await generateAuthenticationOptions({ rpID, userVerification: "required" });
+  challenges.add(options.challenge, kind);
   return options;
 }
 
@@ -156,16 +159,21 @@ export async function verifyPasskeyLogin(
   env: Env,
   challenges: ChallengeStore,
   response: PasskeyAuthenticationResponse,
+  kind: AssertionKind = "login",
   now: Date = new Date(),
 ): Promise<PasskeyRow> {
-  const fail = () => new Unauthorized("That passkey didn't work. Try again, or use your password.", "passkey_failed");
+  // Sign-in failures are 401; a failed step-up check is 403 so the device keeps its session.
+  const fail = () =>
+    kind === "login"
+      ? new Unauthorized("That passkey didn't work. Try again, or use your password.", "passkey_failed")
+      : new HttpError(403, "passkey_failed", "That passkey didn't work. Try again, or use your password.");
   const row = db
     .select()
     .from(passkeys)
     .where(and(eq(passkeys.id, response.id), isNull(passkeys.deletedAt)))
     .get();
   if (!row) {
-    challenges.take(clientChallenge(response), "login"); // still consume it
+    challenges.take(clientChallenge(response), kind); // still consume it
     throw fail();
   }
   const { rpID, origins } = webauthnConfig(env);
@@ -173,11 +181,11 @@ export async function verifyPasskeyLogin(
   try {
     verification = await verifyAuthenticationResponse({
       response: response as Parameters<typeof verifyAuthenticationResponse>[0]["response"],
-      expectedChallenge: (c) => challenges.take(c, "login"),
+      expectedChallenge: (c) => challenges.take(c, kind),
       expectedOrigin: origins,
       expectedRPID: rpID,
       credential: { id: row.id, publicKey: fromB64(row.publicKey), counter: row.counter, transports: parseTransports(row.transports) },
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
   } catch {
     throw fail();

@@ -12,7 +12,7 @@ import { allRows } from "./rows.service";
 export const EXPORT_FORMAT = 1;
 
 /** Tables that never leave the server: auth secrets and sync bookkeeping. */
-export const NOT_EXPORTED = ["sessions", "changes", "sync_items", "push_subscriptions"] as const;
+export const NOT_EXPORTED = ["sessions", "changes", "sync_items", "push_subscriptions", "security_events"] as const;
 
 export interface ExportFile {
   app: "tatakae";

@@ -66,3 +66,15 @@ export function getDb(): SQLiteDatabase {
 }
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
+
+/**
+ * Empty the phone's copy of everything: rows, the outbox (unsynced changes are lost) and meta
+ * (cursor, focus session, device choices). The schema stays, so the next sign-in starts a full pull.
+ */
+export function eraseLocalData(): void {
+  const d = getDb();
+  d.withTransactionSync(() => {
+    d.execSync("DELETE FROM rows; DELETE FROM outbox; DELETE FROM meta;");
+  });
+  d.execSync("PRAGMA wal_checkpoint(TRUNCATE); VACUUM;"); // don't leave old pages in the files
+}

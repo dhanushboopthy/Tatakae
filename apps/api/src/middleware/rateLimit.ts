@@ -36,11 +36,38 @@ export function rateLimit(opts: {
       hits.set(ip, entry);
     }
     entry.count += 1;
-    if (entry.count > opts.max) {
-      const retryAfter = Math.max(1, Math.ceil((entry.start + windowMs - t) / 1000));
-      c.header("Retry-After", String(retryAfter));
-      return c.json({ error: "rate_limited", message: "Too many attempts. Try again later.", detail: { retryAfter } }, 429);
-    }
+    if (entry.count > opts.max) return tooMany(c, entry.start + windowMs - t);
     return next();
+  };
+}
+
+function tooMany(c: Context, msLeft: number): Response {
+  const retryAfter = Math.max(1, Math.ceil(msLeft / 1000));
+  c.header("Retry-After", String(retryAfter));
+  return c.json({ error: "rate_limited", message: "Too many attempts. Try again later.", detail: { retryAfter } }, 429);
+}
+
+/**
+ * Global cap on *failed* attempts (401 from login, 403 from the step-up re-auth), across every IP. The per-IP limiter
+ * alone lets someone with many addresses keep guessing; this stops all password guessing for the
+ * rest of the window once `max` failures pile up. Successful logins don't count, and the passkey
+ * sign-in and existing sessions keep working while it is closed. Share one instance between routes
+ * that check the same password.
+ */
+export function failureLimit(opts: { windowSec: number; max: number; now?: () => number }): MiddlewareHandler {
+  const windowMs = opts.windowSec * 1000;
+  const now = opts.now ?? Date.now;
+  let window = { start: 0, failures: 0 };
+
+  return async (c, next) => {
+    if (c.req.method.toUpperCase() !== "POST") return next();
+    const t = now();
+    if (t - window.start >= windowMs) window = { start: t, failures: 0 };
+    if (window.failures >= opts.max) return tooMany(c, window.start + windowMs - t);
+    await next();
+    if (c.res.status === 401 || c.res.status === 403) {
+      if (window.failures === 0) window.start = t; // the window starts at the first failure
+      window.failures += 1;
+    }
   };
 }

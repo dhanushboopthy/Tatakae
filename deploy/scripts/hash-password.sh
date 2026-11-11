@@ -41,7 +41,9 @@ else
   [[ ${PASSWORD} == "${again}" ]] || die "passwords do not match"
 fi
 [[ -n ${PASSWORD} ]] || die "empty password"
-[[ ${#PASSWORD} -ge 12 ]] || printf 'hash-password: warning: fewer than 12 characters\n' >&2
+# The login is on the public internet; a long passphrase is what keeps guessing hopeless.
+[[ ${#PASSWORD} -ge 12 ]] || die "use at least 12 characters (a few random words work well)"
+[[ ${#PASSWORD} -le 256 ]] || die "use at most 256 characters (the login refuses longer ones)"
 
 # Reads the password from stdin, prints the PHC string. ARGON2_FROM = a package.json that can resolve the lib.
 read -r -d '' JS <<'NODE' || true

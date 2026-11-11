@@ -22,6 +22,14 @@ function wrap(get: () => Storage | undefined) {
         /* ignore */
       }
     },
+    /** Everything this origin keeps there (sign out and erase). */
+    clear(): void {
+      try {
+        get()?.clear();
+      } catch {
+        /* ignore */
+      }
+    },
     /** JSON helpers; returns `fallback` on missing or malformed values. */
     getJson<T>(key: string, fallback: T): T {
       const raw = this.get(key);

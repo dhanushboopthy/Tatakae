@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { securityEventList, type SecurityEventKind } from "@tatakae/core";
 import { useNavigate } from "react-router-dom";
 import { LogOutIcon, RefreshIcon } from "../../components/icons";
 import { useToast } from "../../components/Toast";
-import { api, isNetworkError } from "../../lib/api";
+import { api, isNetworkError, statusOf } from "../../lib/api";
 import { syncLabel, useSyncStatus } from "../../lib/hooks";
-import { logout } from "../../lib/session";
+import { logout, logoutAndErase } from "../../lib/session";
 import { flushNow } from "../../sync/engine";
 import { Section } from "./Section";
 
@@ -24,6 +26,68 @@ function parseDevices(body: unknown): Device[] {
   return Array.isArray(list) ? (list as Device[]) : [];
 }
 
+const EVENT_LABEL: Record<SecurityEventKind, string> = {
+  login: "Signed in with the password",
+  login_failed: "Sign-in didn't go through",
+  passkey_login: "Signed in with a passkey",
+  passkey_login_failed: "Passkey sign-in didn't go through",
+  reauth: "Confirmed it's you",
+  reauth_failed: "Confirmation didn't go through",
+  passkey_added: "Passkey added",
+  passkey_removed: "Passkey removed",
+  device_signed_out: "Signed out another device",
+  others_signed_out: "Signed out every other device",
+  password_changed: "Password changed, every device signed out",
+  export: "Downloaded the full export",
+};
+const SHOWN = 8;
+
+/**
+ * Recent sign-ins and security changes (S9), newest first, so a sign-in that wasn't you stands out.
+ * Words carry the meaning (no red): what happened, which device, when and from where.
+ */
+function SecurityActivity() {
+  const [all, setAll] = useState(false);
+  const events = useQuery({
+    queryKey: ["rest", "security-events"],
+    queryFn: async () => securityEventList.parse(await api("/system/security")).events,
+    retry: false,
+    staleTime: 0,
+  });
+  const list = events.data ?? [];
+  return (
+    <div>
+      <p className="mb-1 font-semibold">Recent sign-ins and changes</p>
+      <p className="mb-2 text-xs text-ink-2">If something here wasn't you, sign that device out and change the password.</p>
+      {events.isError ? (
+        <p className="text-sm text-ink-2">The activity list needs a connection.</p>
+      ) : list.length === 0 ? (
+        <p className="text-sm text-ink-2">Nothing yet.</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {(all ? list : list.slice(0, SHOWN)).map((e) => (
+            <li key={e.id} className="flex flex-wrap justify-between gap-x-3 rounded-card-inner bg-surface-2 px-4 py-2">
+              <span className="min-w-0">
+                <span className="font-medium">{EVENT_LABEL[e.kind]}</span>
+                {(e.device || e.detail) && <span className="text-ink-2"> · {[e.device, e.detail].filter(Boolean).join(" · ")}</span>}
+              </span>
+              <span className="tnum text-ink-2">
+                {when(e.at)}
+                {e.ip ? ` · ${e.ip}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {list.length > SHOWN && (
+        <button type="button" className="btn mt-2 min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setAll((v) => !v)}>
+          {all ? "Show fewer" : `Show all ${list.length}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }) : "—";
 
@@ -38,13 +102,50 @@ export function DevicesSettings() {
     retry: false,
   });
 
+  const [confirmOthers, setConfirmOthers] = useState(false);
+  const [confirmErase, setConfirmErase] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  async function erase() {
+    setErasing(true);
+    try {
+      await logoutAndErase();
+    } finally {
+      // A full reload drops every in-memory copy (query cache, sync client) along with the storage.
+      window.location.replace("/login");
+    }
+  }
+  async function signOutOthers() {
+    try {
+      const body = (await api("/session/devices/sign-out-others", { method: "POST", body: {} })) as { signedOut?: number };
+      const n = body.signedOut ?? 0;
+      toast(n === 0 ? "No other devices were signed in." : `Signed out ${n} other ${n === 1 ? "device" : "devices"}.`);
+      await qc.invalidateQueries({ queryKey: ["rest"] });
+    } catch (e) {
+      toast(
+        isNetworkError(e)
+          ? "Offline. Try again when connected."
+          : statusOf(e) === 403
+            ? "Nothing changed. This needs your password first."
+            : "Couldn't sign the other devices out.",
+      );
+    } finally {
+      setConfirmOthers(false);
+    }
+  }
+
   async function revoke(d: Device) {
     try {
       await api(`/session/devices/${encodeURIComponent(d.id)}`, { method: "DELETE" });
       toast(`${d.deviceName} is signed out.`);
       await qc.invalidateQueries({ queryKey: ["rest", "devices"] });
     } catch (e) {
-      toast(isNetworkError(e) ? "Offline. Try again when connected." : "Couldn't sign that device out.");
+      toast(
+        isNetworkError(e)
+          ? "Offline. Try again when connected."
+          : statusOf(e) === 403
+            ? "Not signed out. Signing out another device needs your password first."
+            : "Couldn't sign that device out.",
+      );
     }
   }
 
@@ -85,6 +186,28 @@ export function DevicesSettings() {
         </ul>
       )}
 
+      {(devices.data ?? []).some((d) => !d.current) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {confirmOthers ? (
+            <>
+              <button type="button" className="btn-danger min-h-tap px-4 text-sm" onClick={() => void signOutOthers()}>
+                Sign them all out
+              </button>
+              <button type="button" className="btn min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setConfirmOthers(false)}>
+                Keep them
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn min-h-tap bg-surface-2 px-4 text-sm" onClick={() => setConfirmOthers(true)}>
+              Sign out every other device…
+            </button>
+          )}
+          <p className="text-xs text-ink-2">After a lost device or a password change. This laptop stays signed in.</p>
+        </div>
+      )}
+
+      <SecurityActivity />
+
       <button
         type="button"
         className="btn-outline"
@@ -97,6 +220,31 @@ export function DevicesSettings() {
         <LogOutIcon size={18} /> Sign out of this laptop
       </button>
       <p className="text-xs text-ink-2">Signing out keeps your local data and anything waiting to sync.</p>
+
+      {confirmErase ? (
+        <div className="card-inner space-y-3" role="group" aria-labelledby="erase-title">
+          <p id="erase-title" className="text-sm font-semibold">
+            Sign out and erase this laptop's copy?
+          </p>
+          <p className="text-sm text-ink-2">
+            {status.pending > 0
+              ? `${status.pending} ${status.pending === 1 ? "change hasn't" : "changes haven't"} synced yet and will be lost. Sync first if you can.`
+              : "Everything is synced, so nothing is lost: it stays on the server and your other devices."}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" className="btn-danger min-h-tap px-4 text-sm" disabled={erasing} onClick={() => void erase()}>
+              {erasing ? "Erasing…" : "Sign out and erase"}
+            </button>
+            <button type="button" className="btn min-h-tap bg-surface px-4 text-sm" onClick={() => setConfirmErase(false)}>
+              Keep it
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="btn min-h-tap self-start bg-surface-2 px-4 text-sm" onClick={() => setConfirmErase(true)}>
+          Sign out and erase this laptop's data…
+        </button>
+      )}
     </Section>
   );
 }

@@ -1,0 +1,29 @@
+# Weekly update PRs for dependencies and the SHA-pinned GitHub Actions (security S12/S13).
+# Security fixes for npm packages come as separate PRs straight away (enable "Dependabot security
+# updates" in the repo settings). Minor/patch npm updates are grouped to keep the PR count low.
+version: 2
+updates:
+  - package-ecosystem: npm # pnpm workspace: reads pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+      day: saturday
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: saturday
+      timezone: Asia/Kolkata
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci(deps)"

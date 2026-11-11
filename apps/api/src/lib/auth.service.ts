@@ -1,6 +1,6 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
-import { sessions } from "../../../../db/schema";
+import { createHash, randomBytes } from "node:crypto";
+import { and, eq, gt, isNull, lte, ne } from "drizzle-orm";
+import { serverMeta, sessions } from "../../../../db/schema";
 import type { SessionInfo } from "../env";
 import type { Db } from "./db";
 
@@ -12,6 +12,11 @@ const DAY_MS = 86_400_000;
 export const SLIDE_WHEN_DAYS_LEFT = 30;
 /** lastSeenAt is written at most this often per session. */
 export const LAST_SEEN_THROTTLE_MS = 5 * 60_000;
+/**
+ * Step-up window: adding a passkey, signing out other devices and the full export need a password or
+ * passkey check this recent, so a stolen session token alone can't lock the owner out or persist.
+ */
+export const REAUTH_WINDOW_MS = 10 * 60_000;
 
 export type SessionRow = typeof sessions.$inferSelect;
 
@@ -23,15 +28,22 @@ export function hashToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
 
-/** Constant-time string comparison (hashes first so lengths always match). */
-export function safeEqual(a: string, b: string): boolean {
-  const ha = createHash("sha256").update(a, "utf8").digest();
-  const hb = createHash("sha256").update(b, "utf8").digest();
-  return timingSafeEqual(ha, hb) && a.length === b.length;
+export function toSessionInfo(row: SessionRow): SessionInfo {
+  return { id: row.id, client: row.client, deviceName: row.deviceName, expiresAt: row.expiresAt, authAt: row.authAt };
 }
 
-export function toSessionInfo(row: SessionRow): SessionInfo {
-  return { id: row.id, client: row.client, deviceName: row.deviceName, expiresAt: row.expiresAt };
+/** Whether the session's last password/passkey check is inside the step-up window. */
+export function isRecentAuth(authAt: string | null, now: Date = new Date()): boolean {
+  if (!authAt) return false;
+  const t = Date.parse(authAt);
+  return !Number.isNaN(t) && now.getTime() - t < REAUTH_WINDOW_MS && t <= now.getTime() + 60_000;
+}
+
+/** Record a fresh password/passkey check on a session (POST /session/reauth, /passkeys/reauth). */
+export function markAuthenticated(db: Db, id: string, now: Date = new Date()): string {
+  const at = now.toISOString();
+  db.update(sessions).set({ authAt: at, updatedAt: at }).where(eq(sessions.id, id)).run();
+  return at;
 }
 
 /** Create a session and return the raw token (never stored). Also drops expired sessions. */
@@ -50,6 +62,7 @@ export function createSession(
     createdAt: at,
     expiresAt: new Date(now.getTime() + opts.days * DAY_MS).toISOString(),
     lastSeenAt: at,
+    authAt: at, // a session is born from a password or passkey check
     updatedAt: at,
     deletedAt: null,
   };
@@ -111,4 +124,30 @@ export function listSessions(db: Db, now: Date = new Date()): SessionRow[] {
 
 export function pruneExpired(db: Db, now: Date = new Date()): void {
   db.delete(sessions).where(lte(sessions.expiresAt, now.toISOString())).run();
+}
+
+/** Revoke every session except `keepId` (Settings → "Sign out every other device"). Returns how many. */
+export function revokeOtherSessions(db: Db, keepId: string | null): number {
+  const res = keepId ? db.delete(sessions).where(ne(sessions.id, keepId)).run() : db.delete(sessions).run();
+  return res.changes;
+}
+
+const LOGIN_FINGERPRINT = "login_fingerprint";
+
+/**
+ * The password lives in .env, so changing it means a new OWNER_PASSWORD_HASH and a restart. On boot,
+ * compare a fingerprint of the owner's email + hash with the last one seen; if it changed, sign every
+ * device out (old sessions were opened with the old password). The first boot only records it.
+ * Returns the number of sessions revoked (0 when nothing changed).
+ */
+export function signOutEverywhereIfLoginChanged(db: Db, email: string, passwordHash: string, now: Date = new Date()): number {
+  const fingerprint = createHash("sha256").update(`${email.trim().toLowerCase()}\n${passwordHash}`, "utf8").digest("hex");
+  const at = now.toISOString();
+  const stored = db.select().from(serverMeta).where(eq(serverMeta.key, LOGIN_FINGERPRINT)).get();
+  db.insert(serverMeta)
+    .values({ key: LOGIN_FINGERPRINT, value: fingerprint, updatedAt: at, deletedAt: null })
+    .onConflictDoUpdate({ target: serverMeta.key, set: { value: fingerprint, updatedAt: at } })
+    .run();
+  if (!stored || stored.value === fingerprint) return 0;
+  return revokeOtherSessions(db, null);
 }

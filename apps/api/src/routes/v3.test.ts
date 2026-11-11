@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { call, scriptAuth, setup } from "../test/helpers";
+import { call, ownerAuth, setup } from "../test/helpers";
 import { cleanName } from "./files";
 
 type Json = Record<string, unknown>;
@@ -85,7 +85,7 @@ describe("files", () => {
     const form = new FormData();
     form.set("file", file);
     if (noteId) form.set("noteId", noteId);
-    const res = await app.request("/api/files", { method: "POST", body: form, headers: scriptAuth });
+    const res = await app.request("/api/files", { method: "POST", body: form, headers: ownerAuth });
     return { status: res.status, body: (await res.json()) as Json };
   }
 
@@ -103,7 +103,7 @@ describe("files", () => {
     const list = await call(app, "GET", `/files?noteId=${noteId}`);
     expect((list.body["items"] as Json[]).map((f) => f["id"])).toEqual([meta["id"]]);
 
-    const get = await app.request(`/api/files/${String(meta["id"])}`, { headers: scriptAuth });
+    const get = await app.request(`/api/files/${String(meta["id"])}`, { headers: ownerAuth });
     expect(get.status).toBe(200);
     expect(get.headers.get("content-type")).toBe("image/png");
     expect(get.headers.get("content-disposition")).toContain("inline");
@@ -116,7 +116,7 @@ describe("files", () => {
   it("serves active content as a download", async () => {
     const { app } = await setup({ FILES_DIR: dir });
     const up = await upload(app, new File(["<script>alert(1)</script>"], "x.html", { type: "text/html" }));
-    const res = await app.request(`/api/files/${String((up.body["item"] as Json)["id"])}`, { headers: scriptAuth });
+    const res = await app.request(`/api/files/${String((up.body["item"] as Json)["id"])}`, { headers: ownerAuth });
     expect(res.headers.get("content-type")).toBe("application/octet-stream");
     expect(res.headers.get("content-disposition")).toMatch(/^attachment/);
     expect(res.headers.get("content-security-policy")).toContain("sandbox");
@@ -126,7 +126,7 @@ describe("files", () => {
     const { app } = await setup({ FILES_DIR: dir });
     const form = new FormData();
     form.set("other", "x");
-    expect((await app.request("/api/files", { method: "POST", body: form, headers: scriptAuth })).status).toBe(400);
+    expect((await app.request("/api/files", { method: "POST", body: form, headers: ownerAuth })).status).toBe(400);
     expect((await upload(app, new File(["x"], "a.txt"), "nope")).status).toBe(404);
     expect((await app.request("/api/files", { method: "POST", body: new FormData() })).status).toBe(401);
   });

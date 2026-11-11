@@ -32,6 +32,8 @@ apps/mobile/android/
 apps/mobile/ios/
 *.keystore
 *.jks
+# EAS Update code-signing private key (the public certs/certificate.pem is committed)
+apps/mobile/keys/
 
 # Claude Code local settings
 .claude/settings.local.json

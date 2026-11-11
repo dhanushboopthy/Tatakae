@@ -48,7 +48,8 @@ flowchart LR
 ## Auth
 - Web: `POST /api/session/login { client: "web" }` → HttpOnly Secure SameSite=Lax cookie, 90-day sliding.
 - Phone: same endpoint with `client: "mobile"` → token returned in body, stored in `expo-secure-store`, sent as `Authorization: Bearer`.
-- Scripts: separate `API_TOKEN` bearer.
+- Scripts: log in with `client: "mobile"` and use that session's bearer (there is no static API token, so every caller shows in Devices and can be revoked).
+- Step-up: adding a passkey, signing out another device and the full export need a password or passkey check from the last 10 minutes (`sessions.auth_at`). Otherwise the API answers 403 `reauth_required`; the website opens "Confirm it's you" (password or passkey), the phone shows an inline password field, then the call is retried. `POST /api/session/reauth { password }` / `POST /api/passkeys/reauth`; a wrong answer is 403, never 401, so the device stays signed in.
 - Sessions table lists devices; any can be revoked from Settings. Login is rate-limited. Passkeys for web in v4: `POST /api/passkeys/login` (discoverable credential, no email) gives the same cookie; the password stays as the fallback.
 
 ## Time model
@@ -70,6 +71,10 @@ All "today" calculations use **Asia/Kolkata** and a **04:00 day boundary** (`tod
 
 ## Security
 Ports 80/443 only; SSH via Tailscale. Secrets only in `/opt/tatakae/.env` (chmod 600) and GitHub secrets. Argon2id password hash. Session tokens stored hashed. CSP and security headers in Caddy. unattended-upgrades on the VM. No third-party analytics.
+
+In the API itself (so it carries over to any host): step-up re-auth for sensitive actions (above); per-IP login limits plus at most 30 wrong passwords an hour overall; request body caps per path; cookie writes refused when `Origin` / `Sec-Fetch-Site` say another site; `__Host-` session cookie in production; production refuses `DEV_BYPASS_AUTH=1`; a changed login in `.env` signs every device out on boot; `security_events` logs sign-ins and security changes (Settings → Devices). Clients: "Sign out and erase" wipes the local copy; the phone is excluded from Android backup and only takes signed EAS updates. CI: OSV, gitleaks and CodeQL (`security.yml`), Dependabot, actions pinned to SHAs.
+
+Hosting is moving to Zoho Catalyst; the VM-level notes in the first paragraph describe the old Oracle setup.
 
 ## Repository layout
 ```

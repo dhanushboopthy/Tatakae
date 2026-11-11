@@ -1,5 +1,6 @@
 import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { sessions } from "../../../../db/schema";
 import { call, login, setup, type TestApp } from "../test/helpers";
 
 // Passkey routes against a small software authenticator: a P-256 key, "none" attestation and real
@@ -55,12 +56,14 @@ class SoftAuthenticator {
     };
   }
 
-  assert(challenge: string, origin = this.origin) {
+  /** `verified: false` = user presence only (a touch), no fingerprint/PIN check. */
+  assert(challenge: string, origin = this.origin, verified = true) {
     this.counter += 1;
     const clientDataJSON = JSON.stringify({ type: "webauthn.get", challenge, origin, crossOrigin: false });
     const count = Buffer.alloc(4);
     count.writeUInt32BE(this.counter);
-    const authData = Buffer.concat([sha256(this.rpId), Buffer.from([0x01 | 0x04 | 0x08 | 0x10]), count]);
+    const flags = 0x01 | (verified ? 0x04 : 0) | 0x08 | 0x10;
+    const authData = Buffer.concat([sha256(this.rpId), Buffer.from([flags]), count]);
     const signature = sign("sha256", Buffer.concat([authData, sha256(clientDataJSON)]), this.key);
     return {
       id: b64u(this.credId),
@@ -84,10 +87,11 @@ async function registerOne(app: TestApp, headers: Record<string, string>, device
   return res;
 }
 
-async function signIn(app: TestApp, device: SoftAuthenticator, origin?: string) {
+async function signIn(app: TestApp, device: SoftAuthenticator, origin?: string, verified = true) {
   const opts = await call(app, "POST", "/passkeys/login/options", {}, {});
   expect(opts.status).toBe(200);
-  const response = device.assert(String(opts.body["challenge"]), origin);
+  expect(opts.body["userVerification"]).toBe("required");
+  const response = device.assert(String(opts.body["challenge"]), origin, verified);
   return { res: await call(app, "POST", "/passkeys/login", { response, deviceName: "laptop-2" }, {}), response };
 }
 
@@ -134,6 +138,8 @@ describe("passkey routes", () => {
 
     expect((await signIn(app, device, "https://evil.example")).res.status).toBe(401);
     expect((await signIn(app, new SoftAuthenticator())).res.status).toBe(401);
+    // A touch without fingerprint/PIN (user verification) is not enough.
+    expect((await signIn(app, device, undefined, false)).res.status).toBe(401);
 
     const id = String(reg.body["id"]);
     expect((await call(app, "DELETE", `/passkeys/${id}`, undefined, web)).status).toBe(200);
@@ -172,7 +178,29 @@ describe("passkey routes", () => {
     await registerOne(app, web, device);
     const opts = await call(app, "POST", "/passkeys/register/options", {}, web);
     expect(opts.body["excludeCredentials"]).toEqual([{ id: device.credId.toString("base64url"), type: "public-key", transports: ["internal", "hybrid"] }]);
-    expect(opts.body["authenticatorSelection"]).toMatchObject({ residentKey: "required" });
+    expect(opts.body["authenticatorSelection"]).toMatchObject({ residentKey: "required", userVerification: "required" });
+  });
+
+  it("a passkey can confirm it's you on an existing session (step-up), with its own challenges", async () => {
+    const { app, db } = await env();
+    const web = await login(app, "web");
+    const device = new SoftAuthenticator();
+    await registerOne(app, web, device);
+    db.update(sessions).set({ authAt: new Date(Date.now() - 60 * 60_000).toISOString() }).run();
+    expect((await call(app, "GET", "/export", undefined, web)).status).toBe(403);
+
+    // A sign-in challenge can't be spent on a step-up check (and failing one is 403, not 401).
+    const loginOpts = await call(app, "POST", "/passkeys/login/options", {}, {});
+    const wrongKind = await call(app, "POST", "/passkeys/reauth", { response: device.assert(String(loginOpts.body["challenge"])) }, web);
+    expect(wrongKind.status).toBe(403);
+    expect(wrongKind.body["error"]).toBe("passkey_failed");
+
+    const opts = await call(app, "POST", "/passkeys/reauth/options", {}, web);
+    expect(opts.status).toBe(200);
+    const ok = await call(app, "POST", "/passkeys/reauth", { response: device.assert(String(opts.body["challenge"])) }, web);
+    expect(ok.status).toBe(200);
+    expect((await call(app, "GET", "/export", undefined, web)).status).toBe(200);
+    expect((await call(app, "POST", "/passkeys/reauth/options", {}, {})).status).toBe(401);
   });
 
   it("rate-limits sign-in attempts", async () => {
