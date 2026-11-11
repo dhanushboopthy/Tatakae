@@ -36,6 +36,13 @@ export const TABLES = {
   experiments: schema.experiments,
   story_refs: schema.storyRefs,
   watch_queue: schema.watchQueue,
+  body_logs: schema.bodyLogs,
+  foods: schema.foods,
+  food_logs: schema.foodLogs,
+  fitness_phases: schema.fitnessPhases,
+  workouts: schema.workouts,
+  workout_sets: schema.workoutSets,
+  maintenance_weeks: schema.maintenanceWeeks,
 } as const satisfies Record<SyncTable, SQLiteTable>;
 
 export type Row<T extends SyncTable> = SyncRowMap[T];

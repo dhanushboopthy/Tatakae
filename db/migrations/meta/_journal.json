@@ -36,6 +36,13 @@
       "when": 1791992931235,
       "tag": "0004_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791996331681,
+      "tag": "0005_fitness",
+      "breakpoints": true
     }
   ]
 }

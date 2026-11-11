@@ -279,7 +279,7 @@ export interface JapaneseLogEntry extends RowMeta {
 }
 
 // ===================== Fitness (docs/plans/fitness.md) =====================
-// Row types only. They join SyncRowMap / SYNC_TABLES in F2 (tables, migration, sync wiring).
+// Synced. body_logs is keyed by `date` and maintenance_weeks by `isoWeek` (SYNC_TABLE_PK); `id` is kept on both.
 export type MicroKey =
   | "fibre" | "sugar" | "satFat" | "sodium" | "potassium" | "calcium" | "iron" | "magnesium"
   | "zinc" | "vitA" | "vitB12" | "vitC" | "vitD";
@@ -385,6 +385,13 @@ export interface SyncRowMap {
   experiments: Experiment;
   story_refs: StoryRef;
   watch_queue: WatchQueueItem;
+  body_logs: BodyLog;
+  foods: Food;
+  food_logs: FoodLog;
+  fitness_phases: FitnessPhase;
+  workouts: Workout;
+  workout_sets: WorkoutSet;
+  maintenance_weeks: MaintenanceWeek;
 }
 
 // ===================== scoring =====================

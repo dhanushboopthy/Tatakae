@@ -1,4 +1,7 @@
-import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, primaryKey, index } from "drizzle-orm/sqlite-core";
+
+/** Micronutrient JSON (core `Micros`: MICRO_KEYS → amount). Kept local so the schema has no package imports. */
+type Micros = Partial<Record<string, number>>;
 
 // Drizzle schema for SQLite (better-sqlite3 on the Oracle VM). Column names match docs/07-data-and-api.md.
 // Conventions: ULID text ids, IST date strings, updated_at on every row, soft delete via deleted_at.
@@ -229,6 +232,93 @@ export const watchQueue = sqliteTable("watch_queue", {
   watched: integer("watched").notNull().default(0),
   unlocked: integer("unlocked").notNull().default(0),
   status: text("status").notNull().default("queued"),
+  ...meta,
+});
+
+// ===================== Fitness (docs/plans/fitness.md) =====================
+// Synced. body_logs and maintenance_weeks sync by their natural key (date / iso_week, see SYNC_TABLE_PK),
+// so those are the primary keys; `id` is kept as a plain column. Nutrients on food_logs are a snapshot.
+export const bodyLogs = sqliteTable("body_logs", {
+  date: text("date").primaryKey(),
+  id: text("id").notNull(),
+  weightKg: real("weight_kg"),
+  steps: integer("steps"),
+  waterMl: integer("water_ml"),
+  sleepMin: integer("sleep_min"),
+  note: text("note"),
+  ...meta,
+});
+
+export const foods = sqliteTable("foods", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  servingLabel: text("serving_label").notNull(),
+  servingG: real("serving_g"),
+  kcal: real("kcal").notNull(),
+  proteinG: real("protein_g").notNull(),
+  carbsG: real("carbs_g").notNull(),
+  fatG: real("fat_g").notNull(),
+  fibreG: real("fibre_g"),
+  micros: text("micros", { mode: "json" }).$type<Micros>().notNull().default({}), // MICRO_KEYS → amount
+  favourite: integer("favourite", { mode: "boolean" }).notNull().default(false),
+  ...meta,
+});
+
+export const foodLogs = sqliteTable("food_logs", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  meal: text("meal", { enum: ["breakfast", "lunch", "dinner", "snack"] }).notNull(),
+  foodId: text("food_id"),
+  name: text("name").notNull(),
+  servings: real("servings").notNull(),
+  kcal: real("kcal").notNull(),         // per serving, copied from the food when logged
+  proteinG: real("protein_g").notNull(),
+  carbsG: real("carbs_g").notNull(),
+  fatG: real("fat_g").notNull(),
+  fibreG: real("fibre_g"),
+  micros: text("micros", { mode: "json" }).$type<Micros>().notNull().default({}),
+  ...meta,
+}, (t) => ({ dateIdx: index("food_logs_date_idx").on(t.date) }));
+
+export const fitnessPhases = sqliteTable("fitness_phases", {
+  id: text("id").primaryKey(),
+  kind: text("kind", { enum: ["cut", "bulk", "recomp"] }).notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date"),
+  ratePctPerWeek: real("rate_pct_per_week").notNull(),
+  proteinGPerKg: real("protein_g_per_kg").notNull(),
+  fatGPerKg: real("fat_g_per_kg").notNull(),
+  startWeightKg: real("start_weight_kg").notNull(),
+  note: text("note"),
+  ...meta,
+}, (t) => ({ startIdx: index("fitness_phases_start_date_idx").on(t.startDate) }));
+
+export const workouts = sqliteTable("workouts", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  name: text("name").notNull(),
+  durationMin: integer("duration_min"),
+  note: text("note"),
+  ...meta,
+}, (t) => ({ dateIdx: index("workouts_date_idx").on(t.date) }));
+
+export const workoutSets = sqliteTable("workout_sets", {
+  id: text("id").primaryKey(),
+  workoutId: text("workout_id").notNull(),
+  exercise: text("exercise").notNull(),
+  muscle: text("muscle").notNull(),
+  order: integer("sort_order").notNull().default(0), // "order" is an SQL keyword
+  reps: integer("reps").notNull(),
+  kg: real("kg").notNull(),
+  rpe: real("rpe"),
+  ...meta,
+}, (t) => ({ workoutIdx: index("workout_sets_workout_id_idx").on(t.workoutId) }));
+
+export const maintenanceWeeks = sqliteTable("maintenance_weeks", {
+  isoWeek: text("iso_week").primaryKey(), // "2026-W42"
+  id: text("id").notNull(),
+  kcal: integer("kcal").notNull(),
+  note: text("note"),
   ...meta,
 });
 

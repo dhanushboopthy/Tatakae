@@ -23,6 +23,14 @@ export const SYNC_TABLES = [
   "experiments",
   "story_refs",
   "watch_queue",
+  // fitness (docs/plans/fitness.md)
+  "body_logs",
+  "foods",
+  "food_logs",
+  "fitness_phases",
+  "workouts",
+  "workout_sets",
+  "maintenance_weeks",
 ] as const;
 
 export type SyncTable = (typeof SYNC_TABLES)[number];
@@ -46,6 +54,15 @@ export const SYNC_TABLE_PK: { readonly [T in SyncTable]: readonly (keyof SyncRow
   experiments: ["id"],
   story_refs: ["id"],
   watch_queue: ["title"],
+  // One weigh-in row per date and one maintenance value per ISO week: keyed by the natural key (like
+  // days/settings) so two offline devices writing the same date merge by LWW instead of colliding.
+  body_logs: ["date"],
+  foods: ["id"],
+  food_logs: ["id"],
+  fitness_phases: ["id"],
+  workouts: ["id"],
+  workout_sets: ["id"],
+  maintenance_weeks: ["isoWeek"],
 };
 
 export function isSyncTable(table: string): table is SyncTable {
