@@ -28,13 +28,14 @@ const config: ExpoConfig = {
   scheme: "tatakae",
   version: "0.1.0",
   orientation: "portrait",
-  userInterfaceStyle: "dark",
-  backgroundColor: "#0b0b0f",
+  // The app picks light by day and dark at night itself (src/lib/theme.tsx).
+  userInterfaceStyle: "automatic",
+  backgroundColor: "#FFFFFF",
   ...(icon ? { icon } : {}),
   android: {
     // Owner can change this before the first release build; changing it later means a fresh install.
     package: "dev.dhanush.tatakae",
-    ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#0b0b0f" } } : {}),
+    ...(adaptiveIcon ? { adaptiveIcon: { foregroundImage: adaptiveIcon, backgroundColor: "#262626" } } : {}),
     permissions: ["POST_NOTIFICATIONS", "VIBRATE", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
     softwareKeyboardLayoutMode: "resize",
     // TODO(v2): PACKAGE_USAGE_STATS (usage access, granted by user in system settings)
@@ -43,7 +44,7 @@ const config: ExpoConfig = {
     "expo-router",
     "expo-sqlite",
     "expo-secure-store",
-    ["expo-notifications", { color: "#f2a33a" }],
+    ["expo-notifications", { color: "#7E9A1E" }],
     "expo-background-task",
     // TODO(v2): "expo-share-intent", "expo-quick-actions", "react-native-android-widget"
   ],

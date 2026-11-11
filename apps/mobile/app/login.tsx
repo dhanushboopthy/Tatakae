@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { login, LoginError, type LoginProblem } from "../src/auth/session";
+import { requestPermission } from "../src/notifications/local";
 import { BigButton } from "../src/components/BigButton";
 import { TextField } from "../src/components/TextField";
 import { Card, Screen } from "../src/components/Screen";
@@ -36,6 +37,8 @@ export default function Login() {
       await login(email, password, deviceName);
       setPassword("");
       router.replace("/");
+      // Reminders: asked once, after the first sign-in (never on launch).
+      void requestPermission();
     } catch (e) {
       setProblem(e instanceof LoginError ? PROBLEM_COPY[e.problem] : PROBLEM_COPY.server);
     } finally {
