@@ -1,6 +1,6 @@
 # TATAKAE — instructions for Claude Code
 
-Personal execution system for one user. **Laptop website** (`apps/web`) for planning/reviews, **Android app** (`apps/mobile`, Expo) for daily actions, **API** (`apps/api`, Hono + SQLite) on one Oracle Cloud VM. Shared logic in `packages/core`.
+Personal execution system for one user. **Laptop website** (`apps/web`) for planning/reviews, **Android app** (`apps/mobile`, Expo) for daily actions, **API** (`apps/api`, Hono + SQLite) (hosting not decided yet). Shared logic in `packages/core`.
 
 ## Read before working
 - `docs/06-phases.md` — current phase and the next unchecked task (work in order).

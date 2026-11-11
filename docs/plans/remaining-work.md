@@ -88,21 +88,16 @@ loopback). `tsx` needs its IPC socket, so the API may have to run outside the sa
 
 ## Stage 2 — Phase 0: deploy (mostly manual, owner-driven)
 
-Follow `docs/MANUAL-STEPS.md` sections 1–16 in order. Claude's part is fixing whatever breaks in the scripts.
+Tasks 0.2–0.8 (Oracle Cloud, Terraform, Tailscale, cloud-init, Caddy, Litestream, the deploy workflow) were dropped in
+Nov 2026: the owner has another hosting plan and the Oracle and Zoho Catalyst files were removed. Hosting is undecided.
+Phone steps are in `docs/MANUAL-STEPS.md` (sections 1–2).
 
-- [ ] **0.2** Oracle Cloud account; Pay-As-You-Go decision + ₹1 budget → record as a new entry in `docs/DECISIONS.md`. *(manual, §1–2)*
-- [ ] **0.3** OCI API key, SSH key, Tailscale; `terraform apply` in `infra/terraform`. *(manual, §3–7)*
-- [ ] **0.4** cloud-init/bootstrap runs on the VM; SSH works over the tailnet only (public 22 closed in §15).
-- [ ] **0.5** Domain: `.me` via Student Pack (auto-renew off), A record → reserved IP; `dig` resolves. *(manual, §8; see `docs/DOMAIN.md` for the free fallback)*
-- [ ] **0.6** Caddy serves the app over HTTPS with a valid certificate; `/api/health` answers. *(§10, §13)*
-- [ ] **0.7** Litestream snapshot visible in the bucket. *(§9, §14)*
-- [ ] **0.8** GitHub secrets/variables set; a push to `main` deploys through `deploy.yml`. *(§11–13)*
 - [ ] **0.1** CI (`ci.yml`) green on GitHub.
 - [ ] **Production env:** `PUBLIC_ORIGIN` = the real https domain (passkeys only work for that domain, R3-8).
 - [ ] **0.10** Web installed as an app on both laptops; add a passkey on each.
 - [ ] **0.11** Phone dev build: set the real package id in `apps/mobile/app.config.ts`, USB debugging,
-      `EXPO_PUBLIC_API_URL=https://<domain> pnpm --filter mobile android`, log in to production. *(§16)*
-- **Gate:** logged in on both laptops and the phone over HTTPS; a commit to `main` redeploys. — met on: ____
+      `EXPO_PUBLIC_API_URL=https://<domain> pnpm --filter mobile android`, log in to your API. *(MANUAL-STEPS §1)*
+- **Gate:** logged in on both laptops and the phone over HTTPS. — met on: ____
 
 ---
 
@@ -197,8 +192,8 @@ usage-stats Kotlin in the first dev build (this machine has no Android SDK).
 
 ## Stage 6 — v4 hardening
 
-- [ ] **6.1 Restore drill** (task v4.2) on a fresh VM with `deploy/scripts/restore.sh` (Terraform → cloud-init →
-      Litestream restore). Record time-to-restore in `docs/08-operations.md`. *(owner + Claude)* — L
+- [ ] **6.1 Restore drill** (task v4.2): dropped with the Oracle setup. Redo it once hosting is chosen (restore from a
+      volume snapshot or the nightly JSON) and record the time in `docs/08-operations.md`. *(owner + Claude)* — L
 - [ ] **6.2 Release APK** (task v4.3):
     - [ ] Release keystore + GitHub secrets (`docs/MANUAL-STEPS.md` §17). *(manual)*
     - [ ] Run `npx eas-cli@latest init` in `apps/mobile` and set the `EAS_PROJECT_ID` repository variable (optional; without it the build has no `updates` block). *(manual, §17)*

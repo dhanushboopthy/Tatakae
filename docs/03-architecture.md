@@ -7,36 +7,26 @@ flowchart LR
     L1[Laptop 1<br/>browser] --- L2[Laptop 2<br/>browser]
     P[Android phone<br/>Expo app<br/>local SQLite + outbox]
   end
-  subgraph OCI["Oracle Cloud · Always Free A1 VM (2 OCPU / 12 GB, arm64)"]
-    C[Caddy<br/>TLS · static web · /api proxy]
+  subgraph Host["Host (to be decided)"]
+    C[Reverse proxy<br/>TLS · static web · /api]
     A[API<br/>Hono on Node 22<br/>croner jobs]
-    D[(SQLite WAL<br/>/srv/tatakae/data)]
-    LS[Litestream]
+    D[(SQLite WAL<br/>durable volume)]
     C --> A --> D
-    D --> LS
   end
-  OS[(OCI Object Storage<br/>backups)]
-  GH[GitHub Actions<br/>→ GHCR images]
-  TS[Tailscale tailnet]
+  S3[(S3-compatible bucket<br/>optional backups)]
   L1 -- HTTPS cookie --> C
   L2 -- HTTPS cookie --> C
   P -- HTTPS Bearer --> C
-  LS --> OS
-  A -- nightly JSON --> OS
-  GH -- SSH over Tailscale --> OCI
-  TS -. admin SSH .- OCI
+  A -- nightly JSON --> S3
 ```
 
 ## Components
 | Component | Responsibility | Lives in |
 |---|---|---|
 | `packages/core` | Types, Zod schemas, scoring, time (IST, 04:00 day boundary), story picker, sync helpers. Pure TS, runs in Node, browser and React Native. | shared |
-| `apps/api` | REST API, auth, sync endpoint, scoring on read, scheduled jobs (backup, optional laptop web push). | VM container `api` |
-| `apps/web` | Laptop UI (React + Vite), installable desktop PWA, IndexedDB outbox. | static files in Caddy image |
+| `apps/api` | REST API, auth, sync endpoint, scoring on read, scheduled jobs (backup, optional laptop web push). | the host |
+| `apps/web` | Laptop UI (React + Vite), installable desktop PWA, IndexedDB outbox. | static files behind the reverse proxy |
 | `apps/mobile` | Phone UI (Expo Router), local SQLite + outbox, local notifications, focus timer, native integrations (share, widget, usage stats). | APK on the phone |
-| Caddy | HTTPS (Let's Encrypt), security headers, SPA fallback, reverse proxy `/api`. | VM container `web` |
-| Litestream | Streams SQLite WAL to Object Storage continuously. | VM container `litestream` |
-| Terraform + cloud-init | Recreate the whole VM from code. | `infra/terraform`, `deploy/` |
 
 ## Data flow: a write on the phone
 1. User taps **Done** on P1 → `write("missions", row)`.
@@ -63,21 +53,15 @@ All "today" calculations use **Asia/Kolkata** and a **04:00 day boundary** (`tod
 | Failure | Effect | Answer |
 |---|---|---|
 | Phone offline all day | Nothing breaks | Outbox; sync on reconnect |
-| VM down / reclaimed | Laptops can't sync; phone keeps working offline | Recreate with Terraform + cloud-init, restore with Litestream (`deploy/scripts/restore.sh`), rehearsed in v4 |
-| Bad deploy | API unhealthy | Deploy script health-checks and rolls back to previous image tag |
+| Host down | Laptops can't sync; phone keeps working offline | Restore the volume snapshot or the nightly JSON export on a new host; devices resync |
 | Two devices edit same row | Conflict | LWW by `updated_at`; plan lock is server-authoritative; conflicts returned to client and surfaced subtly |
 | Domain change | PWA origin changes | Reinstall web app; phone just changes `EXPO_PUBLIC_API_URL` and needs a new build |
 | Lost phone | Token exposure | Revoke the device session from a laptop |
 
 ## Security
-Ports 80/443 only; SSH via Tailscale. Secrets only in `/opt/tatakae/.env` (chmod 600) and GitHub secrets. Argon2id password hash. Session tokens stored hashed. CSP and security headers in Caddy. unattended-upgrades on the VM. No third-party analytics.
+Argon2id password hash. Session tokens stored hashed. No third-party analytics. TLS, security headers and a request size cap belong to whatever reverse proxy the host uses (`deploy/Caddyfile.local` shows the routing for the local run).
 
 In the API itself (so it carries over to any host): step-up re-auth for sensitive actions (above); per-IP login limits plus at most 30 wrong passwords an hour overall; request body caps per path; cookie writes refused when `Origin` / `Sec-Fetch-Site` say another site; `__Host-` session cookie in production; production refuses `DEV_BYPASS_AUTH=1`; a changed login in `.env` signs every device out on boot; `security_events` logs sign-ins and security changes (Settings → Devices). Clients: "Sign out and erase" wipes the local copy; the phone is excluded from Android backup and only takes signed EAS updates. CI: OSV, gitleaks and CodeQL (`security.yml`), Dependabot, actions pinned to SHAs.
-
-Hosting is moving to Zoho Catalyst; the VM-level notes in the first paragraph describe the old Oracle setup.
-
-## Zoho Catalyst (in progress)
-One AppSail container (linux/amd64, min = max = 1 instance) runs the api and serves the website (`WEB_DIST`) on one origin with the Caddy-equivalent headers (`apps/api/src/site.ts`). The disk is scratch: the database is a Turso embedded replica (`libsql`, same synchronous API as better-sqlite3; nested transactions use explicit SAVEPOINTs), files and the nightly JSON go to Stratus over REST (`lib/stratus.ts`). The port is bound before the database opens (AppSail's 10-second rule). Client IPs come from the right of `X-Forwarded-For` (`TRUSTED_PROXY_HOPS`). Setup: [CATALYST.md](CATALYST.md).
 
 ## Repository layout
 ```
@@ -86,8 +70,7 @@ apps/mobile         Android app (Expo)
 apps/api            API
 packages/core       shared logic
 db/                 schema + migrations
-deploy/             compose, Caddyfile, litestream, cloud-init, scripts
-infra/terraform     OCI resources
+deploy/             local Docker run, Caddyfile.local, hash-password.sh
 references/         story pack format
 docs/               you are here
 .claude/skills      project-specific Claude Code skills

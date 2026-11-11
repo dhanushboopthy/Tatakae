@@ -11,8 +11,7 @@ API 160 of 161 pass; the one failure is a timeout fixed by task A1.
 **In scope:** app code, phone testing on a device, release steps, usage gates.
 
 **Out of scope. Do not touch or plan these:**
-- Oracle and VM work: tasks 0.2–0.8, Terraform, cloud-init, Tailscale, Litestream, Caddy on a VM.
-- Zoho Catalyst setup (v4.10) and `docs/CATALYST.md`.
+- Hosting. The Oracle and Zoho Catalyst setups were removed on 11 Nov 2026 (owner has another plan).
 - The restore drill (v4.2) and the host-level parts of security task v4.9.
 
 Where a task below needs a deployed site or domain, it is marked **Blocked by hosting**. Skip it and move on.
@@ -230,31 +229,25 @@ themed icons. `scripts/make-icons.mjs` already draws this mark for the website, 
 It has no upstream. `feat/security-hardening` is also missing from the remote. PRs #1–#19 were opened on 18 Oct and
 their current state is not known.
 
-**Decision for the owner, ask first:** merge the whole stack including the hosting commits, or stop before them?
-Recommended: the whole stack. Without the Turso and Stratus env vars the API behaves as before.
-
-**Blocker:** `libsql` is in `apps/api/package.json` but not in `pnpm-lock.yaml`, and CI runs
-`pnpm install --frozen-lockfile`, so CI fails until the lockfile is updated. The npm registry is blocked in the agent
-sandbox, so the owner has to do this.
+**Decision (owner, 11 Nov):** merge the whole stack. The Oracle and Zoho Catalyst files and code were removed first
+(commit `chore: remove the Oracle Cloud and Zoho Catalyst hosting …`), so the `libsql` dependency and the lockfile
+problem are gone: `pnpm-lock.yaml` already matches `package.json`.
 
 **Owner**
-- [ ] Run `pnpm install` from the repo root. Check that `pnpm-lock.yaml` changed and `libsql` installed.
 - [ ] Check `gh auth status`. If not logged in, run `gh auth login`.
 
-**Agent** (once the owner confirms the two steps above)
-- [ ] Run the checks from *Commands*. All must pass with `libsql` installed, and also run the API suite with
-      `TEST_MANUAL_SAVEPOINTS=1`.
-- [ ] Commit the lockfile: `chore: lockfile for libsql`.
+**Agent**
+- [ ] Run the checks from *Commands*.
 - [ ] Run `gh pr list --state all --limit 60` and record which PRs are open, merged or closed.
 - [ ] List branches not on the remote and push them, in stack order.
-- [ ] Open PRs for anything without one, in stack order. PR bodies carry no Claude attribution, and state why `libsql` was added.
+- [ ] Open PRs for anything without one, in stack order. PR bodies carry no Claude attribution.
 - [ ] Hand the merge to the owner, unless the owner explicitly says the agent may merge.
 
 **Owner**
 - [ ] Merge in stack order using merge commits, with CI green at each step.
 
-**Expected:** `deploy.yml` runs on code pushes to `main` and will fail because there's no server yet. That is a
-hosting matter. Don't fix or disable it in this task.
+**Expected:** there is no deploy workflow any more, so a push to `main` only runs `ci.yml`, `security.yml` and, on
+`mobile-v*` tags, `mobile.yml`.
 
 **Acceptance criteria**
 - [ ] `git rev-list --count origin/main..feat/catalyst-hosting` returns 0, or only the commits the owner chose to hold back.

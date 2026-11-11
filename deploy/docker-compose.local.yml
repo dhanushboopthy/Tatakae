@@ -1,4 +1,4 @@
-# Local run of the website + API on this laptop, built from source (no GHCR, no domain, no Litestream).
+# Local run of the website + API on this laptop, built from source (no registry, no domain).
 #   scripts/local-up.sh            picks a free port (8080 upward) and starts everything
 #   or: TATAKAE_PORT=8080 docker compose -f deploy/docker-compose.local.yml up -d --build
 # Then open http://localhost:$TATAKAE_PORT. Published on 127.0.0.1 only.

@@ -1,5 +1,9 @@
 # Decisions (ADR-lite)
 
+> **Update (Nov 2026):** items 1, 4, 6 and 7 below describe the Oracle Cloud VM setup, which the owner dropped, as
+> did the later Zoho Catalyst plan. Both are removed from the repo and hosting is undecided (see `08-operations.md`).
+> The rest still stands.
+
 1. **Hosting: one Oracle Cloud Always Free Ampere A1 VM** (2 OCPU / 12 GB since the June 2026 cut), Ubuntu 24.04 arm64, Docker Compose.
    Chosen over Cloudflare Workers for full control and DevOps practice. Trade-off: you run patches, TLS, backups and uptime.
 2. **Caddy** for automatic HTTPS + static web app + reverse proxy. HTTPS is mandatory for PWA install and push.
