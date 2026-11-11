@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { ApiError, apiGet, needsReauth } from "../src/api/client";
+import { ReauthPrompt } from "../src/components/ReauthPrompt";
 import { DEFAULT_SCORING, addDays, canEditScoring, type Anchor, type Area, type Habit, type ScoringSettings, type WatchQueueItem } from "@tatakae/core";
 import { useAreas, useSettings, useToday, useRecharge } from "../src/lib/hooks";
 import { useAnchors } from "../src/lib/planning";
@@ -19,7 +21,7 @@ import { pressedStyle, useStyles, type Theme } from "../src/lib/theme";
 // The settings the website has and the phone's Settings tab doesn't: anchors, habits, areas, the recharge menu, the
 // reward queue and the scoring constants. Everything syncs through the outbox and works offline.
 
-type Section = "anchors" | "habits" | "areas" | "recharge" | "reward" | "scoring";
+type Section = "anchors" | "habits" | "areas" | "recharge" | "reward" | "scoring" | "data";
 const SECTIONS: readonly { value: Section; label: string }[] = [
   { value: "anchors", label: "Anchors" },
   { value: "habits", label: "Habits" },
@@ -27,6 +29,7 @@ const SECTIONS: readonly { value: Section; label: string }[] = [
   { value: "recharge", label: "Recharge" },
   { value: "reward", label: "Reward queue" },
   { value: "scoring", label: "Scoring" },
+  { value: "data", label: "Your data" },
 ];
 
 export default function Manage() {
@@ -46,6 +49,7 @@ export default function Manage() {
       {section === "recharge" ? <Recharge /> : null}
       {section === "reward" ? <Reward /> : null}
       {section === "scoring" ? <Scoring /> : null}
+      {section === "data" ? <YourData /> : null}
     </Screen>
   );
 }
@@ -414,6 +418,52 @@ function Reward() {
           setTotal("");
         }}
       />
+    </Block>
+  );
+}
+
+// ---------- your data ----------
+
+/** A copy this big can fail to go through Android's share sheet; the website downloads a file of any size. */
+const SHARE_MAX_CHARS = 700_000;
+
+function YourData() {
+  const s = useStyles(makeStyles);
+  const [reauth, setReauth] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function share() {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const body = await apiGet<unknown>("/export");
+      const text = JSON.stringify(body, null, 2);
+      if (text.length > SHARE_MAX_CHARS) {
+        setMsg("Your data is too big to pass through the share sheet. Use Settings → Data on the website to download the file.");
+        return;
+      }
+      await Share.share({ title: "Tatakae export", message: text });
+      setReauth(false);
+    } catch (e) {
+      if (needsReauth(e)) setReauth(true);
+      else setMsg(e instanceof ApiError && e.status === 0 ? "Exporting needs a connection. Try again when you're online." : "Couldn't export just now. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Block title="Your data" note="Everything is yours. A JSON copy of all your data is also made every night on the server.">
+      <BigButton label="Share a copy (JSON)" variant="secondary" busy={busy} onPress={() => void share()} />
+      <Text style={s.small}>You'll be asked for your password first, and the copy goes to whichever app you pick (Drive, email, a note…). Keep it private.</Text>
+      {reauth ? <ReauthPrompt action="export your data" onConfirmed={() => void share()} onCancel={() => setReauth(false)} /> : null}
+      {msg ? (
+        <Text accessibilityRole="alert" style={s.body}>
+          {msg}
+        </Text>
+      ) : null}
     </Block>
   );
 }
