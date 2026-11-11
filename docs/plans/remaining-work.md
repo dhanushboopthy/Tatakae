@@ -210,8 +210,9 @@ usage-stats Kotlin in the first dev build (this machine has no Android SDK).
       lock refusals) and an accessibility audit, laptop + phone, light + dark. — M
     - [x] Phone conflict notes (toast + card line) and offline edge-case tests (code, branch `feat/m-conflict-notes`)
     - [ ] Accessibility audit on the phone and laptop, light + dark (needs the device)
-- [ ] **6.5 Area alignment + monthly review polish** (task v4.7): alignment scores are built (Monthly review,
-      Settings → Areas). **Ask the owner** what "polish" should cover, then do that list. — S–M
+- [x] **6.5 Area alignment + monthly review polish** (task v4.7): alignment scores are built (Monthly review,
+      Settings → Areas). Owner chose (18 Oct): add the two docs/05 parts that were missing, goal progress (done vs
+      minimum) and the month's experiments. Done on branch `feat/web-monthly-polish`. — S–M
 - **v4 gate:** restore rehearsed and documented. — met on: ____
 
 ---
@@ -235,7 +236,7 @@ These need days of actual use, not code. Start each as soon as its stage allows.
 3. Deploy first (recommended) or phone v1 first while doing the manual Phase 0 steps on the side?
 4. ~~Phone StoryToast~~ — answered 18 Oct: removed on the phone too. (4.4)
 5. ~~New dependencies for v2 native extras~~ — answered 18 Oct: all three approved; usage stats is a local module. (4.5)
-6. What "monthly review polish" means. (6.5)
+6. ~~What "monthly review polish" means~~ — answered 18 Oct: goal progress + the month's experiments. (6.5)
 
 ---
 
