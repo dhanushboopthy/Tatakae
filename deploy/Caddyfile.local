@@ -1,6 +1,5 @@
 # Local run (deploy/docker-compose.local.yml): plain HTTP on :80 inside the container, published on
-# 127.0.0.1 only. Same routing and caching as deploy/Caddyfile, minus what only makes sense on the real
-# HTTPS domain: no TLS/ACME, no HSTS (it would pin https on localhost in the browser) and no
+# 127.0.0.1 only. Plain HTTP only, so: no TLS/ACME, no HSTS (it would pin https on localhost in the browser) and no
 # upgrade-insecure-requests (it would rewrite http://localhost requests to https).
 :80 {
 	encode zstd gzip

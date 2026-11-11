@@ -16,15 +16,6 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  - package-ecosystem: docker # base image of the Zoho Catalyst AppSail container
-    directory: /deploy/catalyst
-    schedule:
-      interval: weekly
-      day: saturday
-      timezone: Asia/Kolkata
-    commit-message:
-      prefix: "build(deps)"
-
   - package-ecosystem: github-actions
     directory: /
     schedule:

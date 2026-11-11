@@ -1,22 +1,15 @@
 import { z } from "zod";
 import type { Db } from "./lib/db";
 
-/** All config comes from environment variables (deploy/.env on the VM). */
+/** All config comes from environment variables. */
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().int().positive().default(8787),
     DATABASE_PATH: z.string().min(1).default("./data/tatakae.db"),
-    // Turso (hosted libSQL), for hosts without a durable disk (Zoho Catalyst AppSail). When set,
-    // DATABASE_PATH is only the local embedded replica (scratch) and Turso holds the data.
-    TURSO_DATABASE_URL: z.string().regex(/^(libsql|https):\/\/\S+$/, "expected libsql://… or https://…").optional(),
-    TURSO_AUTH_TOKEN: z.string().min(1).optional(),
-    TURSO_SYNC_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
     /** Folder with drizzle migrations; defaults to the repo's db/migrations (found from this file). */
     MIGRATIONS_DIR: z.string().min(1).optional(),
     FILES_DIR: z.string().default("./data/files"),
-    /** Built website (apps/web/dist). Set where no Caddy serves it (Zoho Catalyst): the api serves it with the same headers. */
-    WEB_DIST: z.string().min(1).optional(),
     PUBLIC_ORIGIN: z.string().url().default("http://localhost:5173"),
     TZ: z.string().default("Asia/Kolkata"),
     /** Proxies in front that append to X-Forwarded-For (Caddy: 1). Check the IPs in Settings → Devices after a move. */
@@ -33,24 +26,12 @@ export const envSchema = z
     WEBAUTHN_RP_ID: z.string().min(1).optional(),
     WEBAUTHN_ORIGINS: z.string().min(1).optional(),
 
-    // Idle-reclaim guard (see cron/keepWarm.ts). Kept a no-op on purpose.
-    KEEP_WARM: z.enum(["0", "1"]).default("0"),
-
-    // Off-box backups: OCI Object Storage (S3-compatible) or any S3 endpoint
-    S3_ENDPOINT: z.string().url().optional(), // https://<namespace>.compat.objectstorage.<region>.oraclecloud.com
+    // Off-box backups: any S3-compatible endpoint
+    S3_ENDPOINT: z.string().url().optional(),
     S3_REGION: z.string().optional(),
     S3_BUCKET: z.string().optional(),
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_SECRET_ACCESS_KEY: z.string().optional(),
-
-    // Zoho Catalyst Stratus (files + nightly backups) over REST, for hosts whose disk isn't durable.
-    // Bucket URL e.g. https://tatakae-files.zohostratus.in; a Zoho self-client refresh token with scopes
-    // Stratus.fileop.CREATE,Stratus.fileop.READ. Accounts URL defaults to the one AppSail injects.
-    STRATUS_BUCKET_URL: z.string().url().optional(),
-    ZOHO_ACCOUNTS_URL: z.string().url().optional(),
-    ZOHO_CLIENT_ID: z.string().min(1).optional(),
-    ZOHO_CLIENT_SECRET: z.string().min(1).optional(),
-    ZOHO_REFRESH_TOKEN: z.string().min(1).optional(),
 
     // Nightly JSON backup: local copies (newest 7) live here; defaults to <DATABASE_PATH dir>/backups.
     BACKUP_DIR: z.string().min(1).optional(),
@@ -65,14 +46,6 @@ export const envSchema = z
     VAPID_SUBJECT: z.string().optional(),
   })
   .superRefine((e, ctx) => {
-    if (e.TURSO_DATABASE_URL && !e.TURSO_AUTH_TOKEN) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["TURSO_AUTH_TOKEN"], message: "required with TURSO_DATABASE_URL" });
-    }
-    if (e.STRATUS_BUCKET_URL) {
-      for (const key of ["ZOHO_ACCOUNTS_URL", "ZOHO_CLIENT_ID", "ZOHO_CLIENT_SECRET", "ZOHO_REFRESH_TOKEN"] as const) {
-        if (!e[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: "required with STRATUS_BUCKET_URL" });
-      }
-    }
     if (e.NODE_ENV !== "production") return;
     if (!e.OWNER_PASSWORD_HASH.startsWith("$argon2")) {
       ctx.addIssue({
@@ -109,10 +82,6 @@ export function parseEnv(
 ): { ok: true; env: Env } | { ok: false; message: string } {
   const nodeEnv = source["NODE_ENV"] ?? "development";
   const input: Record<string, string | undefined> = { ...source };
-  // Zoho Catalyst AppSail tells the app its port in X_ZOHO_CATALYST_LISTEN_PORT.
-  if (!input["PORT"] && input["X_ZOHO_CATALYST_LISTEN_PORT"]) input["PORT"] = input["X_ZOHO_CATALYST_LISTEN_PORT"];
-  // …and the Zoho accounts server of its data centre (used to refresh the Stratus token).
-  if (!input["ZOHO_ACCOUNTS_URL"] && input["X_ZOHO_CATALYST_ACCOUNTS_URL"]) input["ZOHO_ACCOUNTS_URL"] = input["X_ZOHO_CATALYST_ACCOUNTS_URL"];
   if (nodeEnv === "development") {
     for (const [k, v] of Object.entries(DEV_DEFAULTS)) {
       if (input[k] === undefined || input[k] === "") input[k] = v;
@@ -136,7 +105,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const res = parseEnv(source);
   if (!res.ok) {
     console.error(res.message);
-    console.error("Set these in /opt/tatakae/.env (production) or your shell (development).");
+    console.error("Set these in your .env or shell.");
     process.exit(1);
   }
   return res.env;

@@ -25,7 +25,7 @@ function s3(env: Env): S3Client {
       s3: new S3Client({
         endpoint: env.S3_ENDPOINT,
         region: env.S3_REGION,
-        forcePathStyle: true, // OCI's S3 compatibility API needs path-style URLs
+        forcePathStyle: true, // path-style URLs work with most S3-compatible endpoints
         credentials: { accessKeyId: env.S3_ACCESS_KEY_ID ?? "", secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? "" },
       }),
     };

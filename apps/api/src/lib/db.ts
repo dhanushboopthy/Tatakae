@@ -2,7 +2,6 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { existsSync, mkdirSync } from "node:fs";
-import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { blocksToText, defaultRechargeRows, defaultSettingRows } from "@tatakae/core";
@@ -10,114 +9,41 @@ import * as schema from "../../../../db/schema";
 
 type Sqlite = Database.Database;
 
-/**
- * Two drivers, one synchronous better-sqlite3-style API (so services and drizzle don't care):
- *  - better-sqlite3 on a local file: development, tests, a VM with a durable disk.
- *  - `libsql` as a Turso embedded replica (Zoho Catalyst AppSail, whose disk is wiped on restart):
- *    reads hit a local copy, writes and every statement inside a transaction go to the Turso primary,
- *    and read-your-writes keeps the local copy current. `libsql` is loaded only on this path, so
- *    development and tests never need its native binary.
- */
-export interface ReplicaOptions {
-  /** libsql://<db>-<org>.turso.io */
-  syncUrl: string;
-  authToken?: string;
-  /** Also pull from the primary every N seconds (writes from this process are always visible). */
-  syncPeriodSec?: number;
-}
+/** Raw better-sqlite3 handle per drizzle instance (transactions and generic row SQL use it). */
+const clients = new WeakMap<object, Sqlite>();
 
-interface Conn {
-  sqlite: Sqlite;
-  /** libsql has no nested transactions: inner `transaction()` calls use explicit SAVEPOINTs. */
-  manualSavepoints: boolean;
-}
-
-/** Raw handle per drizzle instance (transactions and generic row SQL use it). */
-const clients = new WeakMap<object, Conn>();
-
-interface LibsqlDatabase extends Sqlite {
-  sync(): { frames_synced: number };
-}
-
-function openReplica(path: string, opts: ReplicaOptions): LibsqlDatabase {
-  const require = createRequire(import.meta.url);
-  const Libsql = require("libsql") as new (path: string, options: Record<string, unknown>) => LibsqlDatabase;
-  return new Libsql(path, {
-    syncUrl: opts.syncUrl,
-    authToken: opts.authToken,
-    readYourWrites: true,
-    ...(opts.syncPeriodSec ? { syncPeriod: opts.syncPeriodSec } : {}),
-  });
-}
-
-/**
- * Open the database. Without `replica`: SQLite file (WAL, so Litestream can stream it on a VM).
- * With `replica`: a Turso embedded replica at `path` (scratch space), synced before returning.
- * `manualSavepoints` forces the libsql transaction path on better-sqlite3 (tests).
- */
-export function openDb(path: string, opts: { replica?: ReplicaOptions; manualSavepoints?: boolean } = {}) {
+/** SQLite file in WAL mode. */
+export function openDb(path: string) {
   const inMemory = path === ":memory:" || path.startsWith("file::memory:");
   if (!inMemory) mkdirSync(dirname(resolve(path)), { recursive: true });
-  let conn: Conn;
-  if (opts.replica) {
-    const sqlite = openReplica(path, opts.replica);
-    sqlite.sync(); // start from the primary's current state, not whatever a previous container left
-    conn = { sqlite, manualSavepoints: true };
-  } else {
-    const sqlite = new Database(path);
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("synchronous = NORMAL"); // safe with WAL; wal_autocheckpoint stays default for Litestream
-    sqlite.pragma("busy_timeout = 5000");
-    sqlite.pragma("foreign_keys = ON");
-    conn = { sqlite, manualSavepoints: opts.manualSavepoints ?? false };
-  }
-  const db = drizzle(conn.sqlite, { schema });
-  clients.set(db, conn);
+  const sqlite = new Database(path);
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("synchronous = NORMAL"); // safe with WAL
+  sqlite.pragma("busy_timeout = 5000");
+  sqlite.pragma("foreign_keys = ON");
+  const db = drizzle(sqlite, { schema });
+  clients.set(db, sqlite);
   return db;
 }
 export type Db = ReturnType<typeof openDb>;
 
-function connOf(db: Db): Conn {
-  const conn = clients.get(db);
-  if (!conn) throw new Error("db was not opened with openDb()");
-  return conn;
-}
-
 export function sqliteOf(db: Db): Sqlite {
-  return connOf(db).sqlite;
+  const sqlite = clients.get(db);
+  if (!sqlite) throw new Error("db was not opened with openDb()");
+  return sqlite;
 }
-
-let savepointSeq = 0;
 
 /**
- * Run `fn` inside one SQLite transaction; nested calls become savepoints, so a failing inner call
- * rolls back alone when the caller catches it (sync applies each item that way).
- * `fn` must be synchronous: the transaction commits when it returns.
+ * Run `fn` inside one SQLite transaction (nested calls become savepoints).
+ * `fn` must be synchronous: better-sqlite3 commits when it returns.
  */
 export function transaction<T>(db: Db, fn: () => T): T {
-  const { sqlite, manualSavepoints } = connOf(db);
-  if (!manualSavepoints || !sqlite.inTransaction) return sqlite.transaction(fn)();
-  const name = `tk_sp_${++savepointSeq}`;
-  sqlite.exec(`SAVEPOINT ${name}`);
-  try {
-    const result = fn();
-    sqlite.exec(`RELEASE ${name}`);
-    return result;
-  } catch (e) {
-    sqlite.exec(`ROLLBACK TO ${name}`);
-    sqlite.exec(`RELEASE ${name}`);
-    throw e;
-  }
+  return sqliteOf(db).transaction(fn)();
 }
 
 export function closeDb(db: Db): void {
-  const conn = clients.get(db);
-  if (!conn) return;
-  try {
-    conn.sqlite.close();
-  } catch {
-    // already closed
-  }
+  const sqlite = clients.get(db);
+  if (sqlite?.open) sqlite.close();
 }
 
 /**

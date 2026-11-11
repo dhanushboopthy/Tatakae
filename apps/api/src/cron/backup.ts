@@ -4,11 +4,10 @@ import { todayIST } from "@tatakae/core";
 import type { Env } from "../env";
 import type { Db } from "../lib/db";
 import { offsiteConfigured, uploadBackup } from "../lib/storage";
-import { stratusConfigured, stratusPut } from "../lib/stratus";
 import { buildExport, recordJob } from "../lib/system.service";
 
 /**
- * Second backup layer (Litestream is the first). Every night: the full JSON export →
+ * Nightly backup. Every night: the full JSON export →
  * BACKUP_DIR/YYYY-MM-DD.json (newest 7 kept) and Object Storage backups/YYYY-MM-DD.json (newest 30).
  * The result goes to `job_runs` (Settings → Data). Never throws: a failed run is logged, not fatal.
  */
@@ -31,15 +30,10 @@ export async function runBackup(env: Env, db: Db, now: Date = new Date()): Promi
     for (const f of old) await rm(join(dir, f), { force: true });
 
     const offsite = await uploadBackup(env, `backups/${name}`, json, OFFSITE_KEEP);
-    // Zoho Catalyst: Stratus deletes each copy after OFFSITE_KEEP days by itself (no listing needed).
-    if (stratusConfigured(env)) {
-      await stratusPut(env, `backups/${name}`, new TextEncoder().encode(json), "application/json", { expiresAfterSec: OFFSITE_KEEP * 86_400 });
-    }
     const kb = Math.round(json.length / 1024);
-    const where = [offsiteConfigured(env) && "Object Storage", stratusConfigured(env) && "Stratus"].filter(Boolean).join(" + ");
-    const detail = where
-      ? `${kb} KB; local + ${where}${offsite.pruned ? `, pruned ${offsite.pruned}` : ""}`
-      : `${kb} KB; local only (no off-box storage configured)`;
+    const detail = offsiteConfigured(env)
+      ? `${kb} KB; local + Object Storage${offsite.pruned ? `, pruned ${offsite.pruned}` : ""}`
+      : `${kb} KB; local only (Object Storage not configured)`;
     recordJob(db, "backup", started, true, detail);
     return true;
   } catch (e) {
