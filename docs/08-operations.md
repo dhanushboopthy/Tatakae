@@ -21,16 +21,16 @@ block, and its own port.
 | Firewall | ufw allows 22, 80, 443 only. The API port is not reachable from outside |
 
 ### Deploy an update
-On the server, as `tatakae` (put `~/.local/bin` on PATH for `pnpm`, installed through corepack):
+Merge to `main`, then from the laptop:
 ```bash
-cd ~/TATAKAE
-git pull --ff-only            # or rsync from the laptop
-pnpm install --frozen-lockfile
-pnpm --filter web build && pnpm --filter api build
-systemctl --user restart tatakae-api
-curl -s https://tatakae.srikrishnlegaloffice.in/api/health
+ssh tatakae@duolink 'cd ~/TATAKAE && deploy/scripts/deploy.sh'
 ```
-Database migrations run on API start. The website needs no restart: nginx reads the new `dist`.
+`deploy/scripts/deploy.sh [git-ref]` (run as `tatakae`, never root) fetches, fast-forwards to `origin/main` (or the ref
+you give), runs `pnpm install --frozen-lockfile`, builds web and API, snapshots the database to
+`~/tatakae-data/backups/pre-deploy-*.db` (newest 5 kept), restarts `tatakae-api` and waits for `/api/health`. If the
+health check fails it goes back to the previous commit, rebuilds and restarts, then exits 1. It refuses to run with
+local changes in the checkout or to move backwards. Database migrations run on API start. The website needs no
+restart: nginx reads the new `dist`.
 Logs: `journalctl --user -u tatakae-api -f`. Status: `systemctl --user status tatakae-api`.
 
 ### Set up from scratch (what was done)
