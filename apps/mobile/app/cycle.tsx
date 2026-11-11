@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useCycleStats, useToday } from "../src/lib/hooks";
 import { AREA_COLORS, UNASSIGNED, isAreaColor } from "../src/lib/colors";
 import { shortDate } from "../src/lib/format";
+import { BigButton } from "../src/components/BigButton";
 import { SegmentGauge } from "../src/components/SegmentGauge";
 import { RingProgress } from "../src/components/RingProgress";
 import { Kural } from "../src/components/Kural";
@@ -47,7 +48,8 @@ export default function Cycle() {
 
           <Card tone="surface">
             <Text style={s.heading}>Cycle goals</Text>
-            {cycle.goals.length === 0 ? <Text style={s.small}>No goals yet. Set up to four on the laptop.</Text> : null}
+            <Text style={s.small}>Up to four active, each a hell yeah.</Text>
+            {cycle.goals.length === 0 ? <Text style={s.small}>No goals yet.</Text> : null}
             {cycle.goals.map((g) => {
               const col = isAreaColor(g.color) ? AREA_COLORS[g.color] : UNASSIGNED;
               return (
@@ -60,9 +62,11 @@ export default function Cycle() {
                       {g.target != null ? ` of ${g.target}` : ""} points
                     </Text>
                   </View>
+                  <BigButton label="Edit" variant="secondary" size="compact" onPress={() => router.push({ pathname: "/goal", params: { id: g.id } })} accessibilityLabel={`Edit ${g.name}`} />
                 </View>
               );
             })}
+            <BigButton label="Add goal" variant="secondary" onPress={() => router.push("/goal")} />
           </Card>
 
           <Card tone="surface">

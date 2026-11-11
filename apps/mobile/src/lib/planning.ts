@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  AFTER_P1,
   RITUAL_RESTART,
+  firstFreeSlot,
   ifThenTemplates,
   newId,
   nowIso,
@@ -8,7 +10,9 @@ import {
   missionsOn,
   type Anchor,
   type ForgeProblem,
+  type Goal,
   type ISODate,
+  type InboxItem,
   type Mission,
   type Slot,
 } from "@tatakae/core";
@@ -153,4 +157,56 @@ export async function loadRitualProgress(date: ISODate): Promise<RitualProgress>
 
 export async function saveRitualProgress(date: ISODate, p: RitualProgress): Promise<void> {
   await store.setMeta(progressKey(date), JSON.stringify(p));
+}
+
+// ---------- inbox ----------
+
+export async function markProcessed(item: InboxItem, text?: string): Promise<void> {
+  await write("inbox", { ...item, text: text ?? item.text, processed: true });
+}
+
+export async function discardInbox(item: InboxItem): Promise<void> {
+  await remove("inbox", item.id);
+}
+
+/** Undo a discard / processing: the item comes back unprocessed. */
+export async function restoreInbox(item: InboxItem): Promise<void> {
+  await write("inbox", { ...item, processed: false, deletedAt: null });
+}
+
+export async function editInbox(item: InboxItem, text: string): Promise<void> {
+  const t = text.trim();
+  if (t) await write("inbox", { ...item, text: t.slice(0, 1000) });
+}
+
+/** Make an inbox item a mission (backlog, or the first free slot after P1 on a date) and mark it processed. */
+export async function inboxToMission(
+  item: InboxItem,
+  input: { title: string; dayDate: ISODate | null; slot: Slot },
+  opts?: { lockReason?: string },
+): Promise<void> {
+  await upsertMission({ title: input.title.trim().slice(0, 200), dayDate: input.dayDate, slot: input.slot }, opts);
+  await markProcessed(item);
+}
+
+/** First free slot after P1 on a date (null = every slot taken), from the local store. */
+export async function nextFreeSlot(date: ISODate): Promise<Slot | null> {
+  return firstFreeSlot(await missionsFor(date), AFTER_P1);
+}
+
+// ---------- goals (Cycle) ----------
+
+export function useGoals() {
+  return useQuery({
+    queryKey: [LOCAL, ["goals"], "goals"],
+    queryFn: async (): Promise<Goal[]> => (await store.getAll("goals")).filter((g) => g.deletedAt == null).sort((a, b) => a.name.localeCompare(b.name)),
+  });
+}
+
+export async function saveGoal(g: Omit<Goal, "id" | "updatedAt" | "deletedAt"> & { id?: string }): Promise<Goal> {
+  return write("goals", { ...g, id: g.id ?? newId() });
+}
+
+export async function removeGoal(id: string): Promise<void> {
+  await remove("goals", id);
 }
