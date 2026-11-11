@@ -2,9 +2,8 @@
 
 Everything the code can't do for you, in order. Each step says what "done" looks like.
 
-Hosting is not covered here: the Oracle Cloud and Zoho Catalyst setups were removed, and the server side will be
-documented in `docs/08-operations.md` once the new hosting plan is chosen. Replace `<owner>` with your GitHub username
-**in lowercase** and `<api-url>` with the address where your API runs.
+Hosting is not covered here: the server side (`duolink`, nginx, systemd) is in `docs/08-operations.md`. Replace
+`<owner>` with your GitHub username **in lowercase** and `<api-url>` with `https://tatakae.srikrishnlegaloffice.in`.
 
 Laptop tools you need: `gh` (GitHub CLI, logged in), `openssl`, Node 22 + pnpm, and for the phone: Android Studio
 (SDK + platform-tools) with JDK 17.

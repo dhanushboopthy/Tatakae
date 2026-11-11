@@ -6,7 +6,7 @@ A personal execution system for one person. Rather than just storing tasks, it e
 |---|---|---|
 | **Website** (`apps/web`) | Laptop browser, installable PWA | Plan and reflect |
 | **Phone app** (`apps/mobile`, Expo) | Android | Do and capture |
-| **API** (`apps/api`, Hono + SQLite) | Host to be decided | Source of truth, sync, scoring, backups |
+| **API** (`apps/api`, Hono + SQLite) | `duolink` server (nginx + systemd) | Source of truth, sync, scoring, backups |
 | **Core** (`packages/core`) | Shared, pure TS | Scoring, time, stats, sync merge, story picking |
 
 **Status legend:** ✅ built · 🟡 partly built / written but not yet verified · ⬜ planned · 🚧 uncommitted work in progress
@@ -132,7 +132,7 @@ Sections: General (includes the reward queue) · Anchors · Habits · Areas · R
 |---|---|
 | `GET /api/export`: full JSON export | ✅ |
 | Nightly JSON backup (newest 7 kept locally, newest 30 in an S3-compatible bucket when configured), logged to `job_runs` and shown in Settings → Data | ✅ |
-| Hosting | ⬜ undecided (the Oracle Cloud and Zoho Catalyst setups were removed, Nov 2026) |
+| Hosting | ✅ shared `duolink` server as user `tatakae`: nginx + Let's Encrypt, API as a systemd user service (`docs/08-operations.md`). Off-box backups ⬜ |
 | Local Docker run (`scripts/local-up.sh`, first free port from 8080) | ✅ |
 | Signed release APK on `mobile-v*` tags, `/api/app/version` | 🟡 workflow + endpoint ✅, in-app "update available" ✅ (code only, not run on a device) |
 

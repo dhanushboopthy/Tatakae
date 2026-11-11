@@ -15,7 +15,7 @@ A personal execution system for one person (Dhanush): software that **enforces a
 |---|---|---|
 | **Website** (`apps/web`) | 2 laptops, browser | Plan and reflect: night ritual, inbox triage, reviews, cycle goals, notes, full settings |
 | **Phone app** (`apps/mobile`) | Android phone, native (Expo) | Do and capture: morning, today, focus, stuck, capture, quick close, local reminders |
-| **API** (`apps/api`) | Host to be decided | Single source of truth, sync, scoring, backups |
+| **API** (`apps/api`) | `duolink` server (nginx + systemd) | Single source of truth, sync, scoring, backups |
 
 ## Who it is for
 One user, final-year M.Tech student with an internship, freelancing and a "Winter Arc" (gym, Japanese N5, Terraform challenge, DSA, AWS SAA). Known failure modes the design targets: **over-planning, drifting after a missed day, phone distraction in the evening, and abandoning trackers when they become a chore.**

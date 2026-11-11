@@ -7,10 +7,10 @@ flowchart LR
     L1[Laptop 1<br/>browser] --- L2[Laptop 2<br/>browser]
     P[Android phone<br/>Expo app<br/>local SQLite + outbox]
   end
-  subgraph Host["Host (to be decided)"]
-    C[Reverse proxy<br/>TLS · static web · /api]
-    A[API<br/>Hono on Node 22<br/>croner jobs]
-    D[(SQLite WAL<br/>durable volume)]
+  subgraph Host["duolink server"]
+    C[nginx<br/>TLS · static web · /api]
+    A[API<br/>Hono on Node 22<br/>croner jobs<br/>127.0.0.1:8791]
+    D[(SQLite WAL<br/>~/tatakae-data)]
     C --> A --> D
   end
   S3[(S3-compatible bucket<br/>optional backups)]

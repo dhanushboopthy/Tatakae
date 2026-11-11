@@ -1,6 +1,6 @@
 # tatakae
 
-Personal execution system — plan the night before (laptop), start strict and act during the day (phone), review weekly and per 12-week cycle. One user, self-hosted (hosting not decided yet).
+Personal execution system — plan the night before (laptop), start strict and act during the day (phone), review weekly and per 12-week cycle. One user, self-hosted on a server behind nginx (`docs/08-operations.md`).
 
 > **Skeleton only.** Files contain signatures, types, config and `TODO(phase)` markers. Start with **[START_PROMPT.md](START_PROMPT.md)** and **[docs/](docs/README.md)**.
 

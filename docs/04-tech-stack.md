@@ -23,7 +23,7 @@ Versions are the baseline at skeleton time (Oct 2026). Upgrade deliberately, one
 | Auth | Argon2id + signed sessions; passkeys v4 | @node-rs/argon2 | Single user, works with any domain | Cloudflare Access (needs a Cloudflare zone), OAuth (overkill) |
 | Local run | Docker Compose with Caddy 2 (`deploy/docker-compose.local.yml`) | 2.x | Website + API on one origin on the laptop | — |
 | Backups | Nightly JSON export, optional copy to any S3-compatible bucket | — | Off-box, simple to restore | Volume snapshots only (same failure domain) |
-| Hosting | **Undecided** (owner has another plan; Oracle Cloud and Zoho Catalyst were removed) | — | Needs a persistent disk for SQLite | — |
+| Hosting | Shared `duolink` server (Ubuntu): nginx + Let's Encrypt in front, API as a `systemd --user` service, SQLite on its disk | — | Owner's server; needs a persistent disk for SQLite (Oracle Cloud and Zoho Catalyst were dropped) | — |
 | CI | GitHub Actions (`ci.yml`, `security.yml`, `mobile.yml`) | — | Typecheck, tests, security scans, signed APK | Self-hosted runner |
 | Domain | See DOMAIN.md | — | — | — |
 | Tests | Vitest; Playwright (web smoke, v4) | — | Fast unit tests for core/api | Jest |

@@ -1,7 +1,8 @@
 # Decisions (ADR-lite)
 
 > **Update (Nov 2026):** items 1, 4, 6 and 7 below describe the Oracle Cloud VM setup, which the owner dropped, as
-> did the later Zoho Catalyst plan. Both are removed from the repo and hosting is undecided (see `08-operations.md`).
+> did the later Zoho Catalyst plan. Both are removed from the repo. Tatakae now runs on the owner's shared `duolink` server behind nginx, as its own
+> Linux user (see `08-operations.md`).
 > The rest still stands.
 
 1. **Hosting: one Oracle Cloud Always Free Ampere A1 VM** (2 OCPU / 12 GB since the June 2026 cut), Ubuntu 24.04 arm64, Docker Compose.
