@@ -1,6 +1,8 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { istTimeHHMM } from "@tatakae/core";
+import { isNightTime, istTimeHHMM } from "@tatakae/core";
 import { storage } from "./storage";
+
+export { isNightTime };
 
 // Light "Soft Bento" by day, dark from ritual time to wake time (docs/10 §2). Per-device preference
 // (auto / light / dark) lives in localStorage; the night ritual forces dark while it is open.
@@ -10,12 +12,6 @@ export type ThemePref = "auto" | "light" | "dark";
 const PREF_KEY = "tatakae.theme";
 const LAST_KEY = "tatakae.theme.last"; // last applied mode, for the first paint
 const THEME_COLOR = { light: "#F1F1EF", dark: "#0E0E10" } as const;
-
-/** True when `now` ("HH:MM", IST) is between ritual time and wake time (wrapping past midnight). */
-export function isNightTime(now: string, ritualTime: string, wakeTime: string): boolean {
-  if (ritualTime === wakeTime) return false;
-  return ritualTime > wakeTime ? now >= ritualTime || now < wakeTime : now >= ritualTime && now < wakeTime;
-}
 
 export function resolveDark(input: { pref: ThemePref; forced: boolean; now: string; ritualTime: string; wakeTime: string }): boolean {
   if (input.forced) return true;

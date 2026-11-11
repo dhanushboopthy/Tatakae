@@ -15,6 +15,30 @@ export function shortDate(date: ISODate): string {
   return `${(WEEKDAYS[weekdayOf(date)] ?? "").slice(0, 3)} ${Number(d)}`;
 }
 
+/** "Thu, 22 Oct" — the page title on Today. */
+export function titleDate(date: ISODate): string {
+  const [, m, d] = date.split("-");
+  return `${(WEEKDAYS[weekdayOf(date)] ?? "").slice(0, 3)}, ${Number(d)} ${(MONTHS[Number(m) - 1] ?? "").slice(0, 3)}`;
+}
+
+/** "M" "T" "W" … for the week strip. */
+export function weekdayInitial(date: ISODate): string {
+  return (WEEKDAYS[weekdayOf(date)] ?? "").slice(0, 1);
+}
+
+/** "October 2026" for a "YYYY-MM" month. */
+export function monthTitle(yyyymm: string): string {
+  const [y, m] = yyyymm.split("-");
+  return `${MONTHS[Number(m) - 1] ?? ""} ${y ?? ""}`;
+}
+
+/** "Good morning" / "Good afternoon" / "Good evening" from an IST "HH:MM". */
+export function greeting(hhmm: string): string {
+  if (hhmm >= "04:00" && hhmm < "12:00") return "Good morning";
+  if (hhmm >= "12:00" && hhmm < "17:00") return "Good afternoon";
+  return "Good evening";
+}
+
 /** "12 min" / "1 h 05 min" */
 export function minutesLabel(min: number): string {
   if (min < 60) return `${min} min`;
