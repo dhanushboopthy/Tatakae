@@ -42,7 +42,7 @@ const config: ExpoConfig = {
   name: "Tatakae",
   slug: "tatakae",
   scheme: "tatakae",
-  version: "0.1.0",
+  version: "0.1.1",
   orientation: "portrait",
   // The app picks light by day and dark at night itself (src/lib/theme.tsx).
   userInterfaceStyle: "automatic",
