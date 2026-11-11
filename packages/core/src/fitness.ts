@@ -140,7 +140,10 @@ export interface DailyTargets {
   capped: boolean;
   /** Rate the target will give, % of trend weight per week (negative = losing). */
   expectedRatePct: number;
+  /** Where the calories came from: calculated from the phase, a standing target typed in, or typed in for this day. */
+  source: TargetSource;
 }
+export type TargetSource = "auto" | "manual" | "day";
 
 /**
  * Targets for a day from the phase, that week's maintenance and the trend weight (never the raw scale weight).
@@ -152,6 +155,8 @@ export function dailyTargets(input: {
   maintenance: number;
   trendKg: number;
   fibreTargetG?: number;
+  /** Calories typed in by the user. Used as is (no cut limit: it is their choice); protein and fat stay per kg. */
+  kcalOverride?: { kcal: number; source: Exclude<TargetSource, "auto"> };
 }): DailyTargets {
   const { phase, maintenance, trendKg } = input;
   const magnitude = Math.abs(phase.ratePctPerWeek);
@@ -165,7 +170,8 @@ export function dailyTargets(input: {
   } else if (phase.kind === "bulk") {
     delta = wanted;
   }
-  const kcal = Math.round(maintenance + delta);
+  if (input.kcalOverride) capped = false;
+  const kcal = input.kcalOverride ? Math.round(input.kcalOverride.kcal) : Math.round(maintenance + delta);
   const proteinG = Math.round(phase.proteinGPerKg * trendKg);
   const fatG = Math.round(phase.fatGPerKg * trendKg);
   const carbsKcal = kcal - proteinG * KCAL_PER_G.protein - fatG * KCAL_PER_G.fat;
@@ -176,6 +182,7 @@ export function dailyTargets(input: {
     fibreG: input.fibreTargetG ?? DEFAULT_FIBRE_TARGET_G,
     capped,
     expectedRatePct,
+    source: input.kcalOverride?.source ?? "auto",
   };
 }
 
@@ -474,6 +481,24 @@ export function activePhaseOn<P extends PhaseRow>(phases: readonly P[], date: IS
   return best;
 }
 
+export type PhaseStartCheck =
+  | { ok: true; /** The phase before this one ended the day before; its end moves with the new start. */ prevEnd: { id: string; endDate: ISODate } | null }
+  | { ok: false; reason: "future" | "before_previous" | "after_end" };
+
+/**
+ * Can `phase` start on `newStart`? Not in the future, after the previous phase began, and not after the phase's
+ * own end. When the previous phase ended the day before the old start (the normal case), its end follows.
+ */
+export function checkPhaseStart<P extends PhaseRow>(phases: readonly P[], phase: P, newStart: ISODate, today: ISODate): PhaseStartCheck {
+  if (newStart > today) return { ok: false, reason: "future" };
+  if (phase.endDate != null && newStart > phase.endDate) return { ok: false, reason: "after_end" };
+  const others = live(phases).filter((p) => p.id !== phase.id && p.startDate < phase.startDate);
+  const prev = others.sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null;
+  if (prev && newStart <= prev.startDate) return { ok: false, reason: "before_previous" };
+  const follows = prev != null && prev.endDate != null && (prev.endDate === addDays(phase.startDate, -1) || prev.endDate >= newStart);
+  return { ok: true, prevEnd: follows && prev ? { id: prev.id, endDate: addDays(newStart, -1) } : null };
+}
+
 /** 1-based week of a phase on `date` (week 1 = the first 7 days). */
 export function phaseWeek(phase: Pick<FitnessPhase, "startDate">, date: ISODate): number {
   return Math.max(1, Math.floor(daysBetween(phase.startDate, date) / 7) + 1);
@@ -522,10 +547,13 @@ export function recentFoodIds(logs: readonly (Pick<FoodLog, "id" | "date" | "foo
 
 export interface TargetsOnInput {
   phases: readonly PhaseRow[];
-  bodyLogs: readonly WeighIn[];
+  /** Weigh-ins; rows may also carry `kcalOverride`, the calories typed in for that one day. */
+  bodyLogs: readonly (WeighIn & { kcalOverride?: number | null })[];
   maintenanceWeeks: readonly MaintenanceRow[];
   defaultMaintenance?: number;
   fibreTargetG?: number;
+  /** Standing calories target (setting `fitness.manualKcal`): applies from its `from` date; null = calculated. */
+  manualKcal?: { kcal: number; from: ISODate } | null;
 }
 export interface TargetsOn {
   phase: PhaseRow | null;
@@ -541,6 +569,10 @@ export function targetsOn(date: ISODate, input: TargetsOnInput): TargetsOn {
   const phase = activePhaseOn(input.phases, date);
   const trendKg = trendNow(input.bodyLogs, date) ?? phase?.startWeightKg ?? null;
   const maintenance = maintenanceFor(input.maintenanceWeeks, date, input.defaultMaintenance);
+  const dayKcal = live(input.bodyLogs).find((b) => b.date === date)?.kcalOverride ?? null;
+  const standing = input.manualKcal && input.manualKcal.from <= date ? input.manualKcal.kcal : null;
+  const kcalOverride =
+    dayKcal != null ? { kcal: dayKcal, source: "day" as const } : standing != null ? { kcal: standing, source: "manual" as const } : undefined;
   const targets =
     trendKg == null
       ? null
@@ -549,6 +581,7 @@ export function targetsOn(date: ISODate, input: TargetsOnInput): TargetsOn {
           maintenance: maintenance.kcal,
           trendKg,
           fibreTargetG: input.fibreTargetG,
+          kcalOverride,
         });
   return { phase, trendKg, maintenance, targets };
 }

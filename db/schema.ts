@@ -269,6 +269,7 @@ export const bodyLogs = sqliteTable("body_logs", {
   waterMl: integer("water_ml"),
   sleepMin: integer("sleep_min"),
   note: text("note"),
+  kcalOverride: integer("kcal_override"), // calories target typed in for this one day
   ...meta,
 });
 

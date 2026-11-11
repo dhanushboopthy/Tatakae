@@ -1,5 +1,6 @@
 import { DEFAULT_SCORING, scoringFromSettings } from "./scoring";
 import { isSettingKey, settingValueSchemas, type SettingKey, type SettingValues } from "./schemas";
+import { CYCLE_1 } from "./time";
 import type { RechargeItem, ScoringSettings, SettingRow } from "./types";
 
 // Settings defaults + parsing. db/seed.sql holds the same values; keep the two identical.
@@ -21,6 +22,8 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
   "fitness.waterTargetMl": 3000,
   "fitness.sleepTargetMin": 450,
   "fitness.fibreTargetG": 30,
+  "fitness.manualKcal": null,
+  "cycle.start": CYCLE_1.start,
 };
 
 /** Keys whose rows are only writable when canEditScoring(todayIST()). */
