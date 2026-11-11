@@ -67,7 +67,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # The Expo-generated gradle.properties caps the Gradle JVM at 2 GiB heap / 512 MiB metaspace, which
+          # runs out of metaspace (KSP and the Android merge tasks) with this many native modules. The runner has 16 GB.
           ./gradlew assembleRelease --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
